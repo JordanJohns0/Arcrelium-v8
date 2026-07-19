@@ -28,6 +28,7 @@ namespace FantasyBrawl.UI
         [Header("References")]
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private HandView handView;
+        [SerializeField] private int humanPlayerId = 0;
 
         [Header("UI")]
         [SerializeField] private Button passButton;
@@ -71,6 +72,7 @@ namespace FantasyBrawl.UI
 
         private void HandleTurnStarted(Character character)
         {
+            if (character == null || character.OwnerPlayerId != humanPlayerId) return;
             handView.SetCharacter(character);
             ResetSelection();
         }

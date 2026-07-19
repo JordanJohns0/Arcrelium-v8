@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using FantasyBrawl.HexGrid;
 using FantasyBrawl.Cards;
+using FantasyBrawl.Equipment;
 
 namespace FantasyBrawl.Characters
 {
@@ -15,9 +16,11 @@ namespace FantasyBrawl.Characters
     {
         [SerializeField] private CharacterStats stats = new CharacterStats();
         [SerializeField] private Deck deck;
+        [SerializeField] private EquipmentManager equipmentManager;
 
         public CharacterStats Stats => stats;
         public Deck Deck => deck;
+        public EquipmentManager Equipment => equipmentManager;
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
         public int OwnerPlayerId { get; private set; }
@@ -37,8 +40,18 @@ namespace FantasyBrawl.Characters
 
             PlaceOnCell(startingCell);
 
+            if (equipmentManager != null)
+                equipmentManager.Initialize(this);
+
             if (deck != null)
             {
+                if (equipmentManager != null)
+                {
+                    List<CardData> equipmentCards = equipmentManager.GetAllCards();
+                    if (equipmentCards.Count > 0)
+                        deck.SetStartingCards(equipmentCards);
+                }
+
                 deck.Shuffle();
                 DrawCards(startingHandSize);
             }

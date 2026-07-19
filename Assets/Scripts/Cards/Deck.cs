@@ -18,6 +18,16 @@ namespace FantasyBrawl.Cards
 
         public IReadOnlyList<CardInstance> DrawPile => drawPile;
         public IReadOnlyList<CardInstance> DiscardPile => discardPile;
+        public bool HasCards => drawPile.Count > 0 || discardPile.Count > 0;
+
+        /// <summary>
+        /// Replaces the Inspector-configured starting cards with a runtime list (e.g. built
+        /// from equipped items). Call before Shuffle().
+        /// </summary>
+        public void SetStartingCards(List<CardData> cards)
+        {
+            startingCards = cards ?? new List<CardData>();
+        }
 
         public void Shuffle()
         {
