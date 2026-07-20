@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.Characters;
-using FantasyBrawl.Cards;
+using Characters;
+using Cards;
 
-namespace FantasyBrawl.UI
+namespace UI
 {
     /// <summary>
     /// Displays the hand of whichever character is currently bound to it (normally the active

@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
-namespace FantasyBrawl.UI
+namespace UI
 {
     /// <summary>
     /// Represents one piece of equipment in the inventory panel. Draggable — can be dropped

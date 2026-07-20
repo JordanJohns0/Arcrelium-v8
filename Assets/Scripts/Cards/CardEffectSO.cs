@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace FantasyBrawl.Cards
+namespace Cards
 {
     /// <summary>
     /// Base class for card effects as ScriptableObject assets, so designers can create

@@ -128,7 +128,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ddc2f6d0fb6c86042b2d66e03f1d38e5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.HexGrid.HexCell
+  m_EditorClassIdentifier: Assembly-CSharp::HexGrid.HexCell
 --- !u!114 &4794883247323430988
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -140,7 +140,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 13673b18e9ec8b248b33d6c16ec72a2c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.HexGrid.HexMeshGenerator
+  m_EditorClassIdentifier: Assembly-CSharp::HexGrid.HexMeshGenerator
   size: 1
   borderWidthRatio: 0.05
   borderHeight: 0.05
@@ -160,4 +160,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 15e661f7daa4650458411560dc75cde6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.HexGrid.HexCellSelectable
+  m_EditorClassIdentifier: Assembly-CSharp::HexGrid.HexCellSelectable

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace FantasyBrawl.Cards
+namespace Cards
 {
     /// <summary>
     /// A character's personal deck: draw pile + discard pile. When the draw pile empties,

@@ -1,13 +1,13 @@
 using UnityEngine;
 
-namespace FantasyBrawl.Cards
+namespace Cards
 {
     /// <summary>
-    /// Definition of a single card. Create as an asset (right-click > Create > FantasyBrawl > Card).
+    /// Definition of a single card. Create as an asset (right-click > Create >  > Card).
     /// Deliberately generic right now — Effect + TargetType + Range cover most action types
     /// (move, attack, ability). Add fields here as your design needs grow.
     /// </summary>
-    [CreateAssetMenu(fileName = "NewCard", menuName = "FantasyBrawl/Card")]
+    [CreateAssetMenu(fileName = "NewCard", menuName = "/Card")]
     public class CardData : ScriptableObject
     {
         public string CardName = "New Card";

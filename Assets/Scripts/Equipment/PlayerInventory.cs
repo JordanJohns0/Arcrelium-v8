@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace FantasyBrawl.Equipment
+namespace Equipment
 {
     /// <summary>
     /// Persistent store of all equipment the player has unlocked. ScriptableObject so it
-    /// survives scene loads. Create one asset per save slot (right-click > Create > FantasyBrawl > Player Inventory).
+    /// survives scene loads. Create one asset per save slot (right-click > Create >  > Player Inventory).
     /// Populate it in the Inspector or via code (e.g. after earning rewards).
     /// </summary>
-    [CreateAssetMenu(fileName = "PlayerInventory", menuName = "FantasyBrawl/Player Inventory")]
+    [CreateAssetMenu(fileName = "PlayerInventory", menuName = "/Player Inventory")]
     public class PlayerInventory : ScriptableObject
     {
         [Tooltip("All equipment the player currently owns. Unequipped items sit here.")]

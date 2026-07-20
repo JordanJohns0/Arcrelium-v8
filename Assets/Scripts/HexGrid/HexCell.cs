@@ -1,7 +1,7 @@
 using UnityEngine;
-using FantasyBrawl.Characters;
+using Characters;
 
-namespace FantasyBrawl.HexGrid
+namespace HexGrid
 {
     /// <summary>
     /// A single tile on the board. Tracks its coordinates and whatever occupies it.

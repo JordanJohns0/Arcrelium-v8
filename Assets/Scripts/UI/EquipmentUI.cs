@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.Equipment;
-using FantasyBrawl.Characters;
+using Equipment;
+using Characters;
 
-namespace FantasyBrawl.UI
+namespace UI
 {
     /// <summary>
     /// Main controller for the equipment/inventory UI. Shows equipment slots on one side

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-namespace FantasyBrawl.HexGrid
+namespace HexGrid
 {
     /// <summary>
     /// Makes a hex tile clickable so it can be picked as a card's target (e.g. a movement

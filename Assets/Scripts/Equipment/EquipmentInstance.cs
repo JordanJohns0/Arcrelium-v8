@@ -1,4 +1,4 @@
-namespace FantasyBrawl.Equipment
+namespace Equipment
 {
     /// <summary>
     /// A unique runtime copy of an EquipmentData template. Two EquipmentInstances wrapping

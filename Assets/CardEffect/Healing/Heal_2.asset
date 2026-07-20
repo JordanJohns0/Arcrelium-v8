@@ -11,5 +11,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4fbccb4a603fe3948b6f1a2833c9ee9d, type: 3}
   m_Name: Heal_2
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.Effects.HealEffect
+  m_EditorClassIdentifier: Assembly-CSharp::Cards.Effects.HealEffect
   HealAmount: 2

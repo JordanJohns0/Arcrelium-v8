@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace FantasyBrawl.Characters
+namespace Characters
 {
     /// <summary>
     /// Base stat block for a character. Kept as plain data so cards/effects can read

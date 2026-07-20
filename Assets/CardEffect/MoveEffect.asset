@@ -11,4 +11,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6d24cbe455cc1f498de4a9b7dd645a8, type: 3}
   m_Name: MoveEffect
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.Effects.MoveEffect
+  m_EditorClassIdentifier: Assembly-CSharp::Cards.Effects.MoveEffect

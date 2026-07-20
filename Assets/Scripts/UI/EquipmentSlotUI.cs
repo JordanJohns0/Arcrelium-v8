@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
-namespace FantasyBrawl.UI
+namespace UI
 {
     /// <summary>
     /// Represents one equipment slot in the equipment UI (head, chest, feet, hand x2, trinket x3).

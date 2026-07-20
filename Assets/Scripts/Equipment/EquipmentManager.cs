@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.Characters;
-using FantasyBrawl.Cards;
-using FantasyBrawl.HexGrid;
-using FantasyBrawl.Game;
+using Characters;
+using Cards;
+using HexGrid;
+using Game;
 
-namespace FantasyBrawl.Equipment
+namespace Equipment
 {
     /// <summary>
     /// Manages a character's equipped items. Handles equipping/unequipping, building the

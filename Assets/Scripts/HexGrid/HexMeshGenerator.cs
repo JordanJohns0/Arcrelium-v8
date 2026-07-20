@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace FantasyBrawl.HexGrid
+namespace HexGrid
 {
     /// <summary>
     /// Generates a flat-top hexagon mesh with a raised rim/border near the outer edge

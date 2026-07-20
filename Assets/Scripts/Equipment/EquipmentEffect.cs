@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace FantasyBrawl.Equipment
+namespace Equipment
 {
     /// <summary>
     /// Base class for equipment trigger effects as ScriptableObject assets, so designers

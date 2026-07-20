@@ -54,7 +54,7 @@ and a `CardData` asset that references it — no other code needs to change.
    starting `CardData` assets once you have some).
 5. On `GameManager`, add entries to `Spawns`: prefab + owner player id + spawn hex
    coordinates.
-6. Create a couple of `CardData` assets (`Create > FantasyBrawl > Card`), set
+6. Create a couple of `CardData` assets (`Create > Card`), set
    `TargetType` (e.g. `HexCell` for a move card, `EnemyCharacter` for an attack card),
    set `Range`, and assign a `MoveEffect`/`AttackEffect` asset (or your own) as `Effect`.
 7. Press Play — `GameManager.Start()` builds the grid, spawns characters, and starts

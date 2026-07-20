@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.Characters;
-using FantasyBrawl.Cards;
-using FantasyBrawl.HexGrid;
+using Characters;
+using Cards;
+using HexGrid;
 
-namespace FantasyBrawl.Game
+namespace Game
 {
     /// <summary>
     /// The ONLY way anything happens on the board. Movement, attacks, abilities — all of it

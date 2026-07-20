@@ -606,7 +606,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f0f03b3204b9af64b9e237e050a350ef, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.UI.CardView
+  m_EditorClassIdentifier: Assembly-CSharp::UI.CardView
   artworkImage: {fileID: 2974543777525511181}
   nameText: {fileID: 7582864541838504903}
   descriptionText: {fileID: 4886505975382267865}

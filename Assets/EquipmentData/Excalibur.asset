@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Excalibur
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Equipment.EquipmentData
+  m_EditorClassIdentifier: Assembly-CSharp::Equipment.EquipmentData
   EquipmentName: Excalibur
   Description: 
   Icon: {fileID: 0}

@@ -1,16 +1,16 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.Characters;
-using FantasyBrawl.Cards;
-using FantasyBrawl.HexGrid;
+using Characters;
+using Cards;
+using HexGrid;
 
-namespace FantasyBrawl.Game
+namespace Game
 {
     /// <summary>
     /// Handles automatic turns for AI-controlled characters. On each turn start, picks a
     /// random affordable card with a valid target and plays it; passes if nothing is viable.
-    /// Assign humanPlayerId in the Inspector to 0 so that player 0 waits for human input
-    /// and all other player IDs are handled by the AI.
+    /// Waits for the TurnManager to finish any in-progress action before acting.
     /// </summary>
     public class AIController : MonoBehaviour
     {
@@ -18,6 +18,7 @@ namespace FantasyBrawl.Game
         [SerializeField] private ActionResolver actionResolver;
         [SerializeField] private HexGridManager grid;
         [SerializeField] private int humanPlayerId = 0;
+        [SerializeField] private float aiDelay = 0.4f;
 
         private void OnEnable()
         {
@@ -33,6 +34,16 @@ namespace FantasyBrawl.Game
         {
             if (character == null) return;
             if (character.OwnerPlayerId == humanPlayerId) return;
+
+            StartCoroutine(PlayWhenReady(character));
+        }
+
+        private IEnumerator PlayWhenReady(Character character)
+        {
+            while (turnManager.Busy)
+                yield return null;
+
+            yield return new WaitForSeconds(aiDelay);
 
             PlayRandomCard(character);
         }

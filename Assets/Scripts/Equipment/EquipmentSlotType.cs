@@ -1,4 +1,4 @@
-namespace FantasyBrawl.Equipment
+namespace Equipment
 {
     public enum EquipmentSlotType
     {

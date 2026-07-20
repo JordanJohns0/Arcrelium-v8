@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.Cards;
+using Cards;
 
-namespace FantasyBrawl.Equipment
+namespace Equipment
 {
     /// <summary>
-    /// Definition of a piece of equipment. Create as an asset (right-click > Create > FantasyBrawl > Equipment).
+    /// Definition of a piece of equipment. Create as an asset (right-click > Create >  > Equipment).
     /// Equipment may have cards (added to the character's deck when equipped) and/or triggers
     /// (effects that fire at specific moments during gameplay).
     /// </summary>
-    [CreateAssetMenu(fileName = "NewEquipment", menuName = "FantasyBrawl/Equipment")]
+    [CreateAssetMenu(fileName = "NewEquipment", menuName = "/Equipment")]
     public class EquipmentData : ScriptableObject
     {
         public string EquipmentName = "New Equipment";

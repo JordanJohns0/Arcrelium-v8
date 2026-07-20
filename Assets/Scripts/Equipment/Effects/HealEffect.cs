@@ -1,12 +1,12 @@
 using UnityEngine;
-using FantasyBrawl.Characters;
+using Characters;
 
-namespace FantasyBrawl.Equipment.Effects
+namespace Equipment.Effects
 {
     /// <summary>
     /// Heals the equipment owner by a flat amount.
     /// </summary>
-    [CreateAssetMenu(fileName = "HealEffect", menuName = "FantasyBrawl/Equipment Effects/Heal")]
+    [CreateAssetMenu(fileName = "HealEffect", menuName = "/Equipment Effects/Heal")]
     public class HealEffect : EquipmentEffect
     {
         public int Amount = 1;

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace FantasyBrawl.HexGrid
+namespace HexGrid
 {
     /// <summary>
     /// Axial coordinates for a flat-top hex grid.

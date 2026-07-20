@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8787bfbd0188f9d4a8d51ca6c006c7c9, type: 3}
   m_Name: GainBlock_Draw1Card
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.Effects.CompositeEffect
+  m_EditorClassIdentifier: Assembly-CSharp::Cards.Effects.CompositeEffect
   Effects:
   - {fileID: 11400000, guid: 62d740655fe03de40b89bfad2d452f8e, type: 2}
   - {fileID: 11400000, guid: f08f9f6e55a21e243a8fdf504d998f5a, type: 2}

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.HexGrid;
-using FantasyBrawl.Cards;
-using FantasyBrawl.Equipment;
+using HexGrid;
+using Cards;
+using Equipment;
 
-namespace FantasyBrawl.Characters
+namespace Characters
 {
     /// <summary>
     /// A character on the board. Holds its stats, current cell, and its card deck/hand.
@@ -65,6 +65,21 @@ namespace FantasyBrawl.Characters
             CurrentCell = cell;
             cell.SetOccupant(this);
             transform.position = cell.transform.position;
+        }
+
+        /// <summary>
+        /// Updates cell occupancy and logical position without moving the transform.
+        /// Used by animated movement effects.
+        /// </summary>
+        public void SetCellOnly(HexCell cell)
+        {
+            if (CurrentCell != null)
+            {
+                CurrentCell.ClearOccupant();
+            }
+
+            CurrentCell = cell;
+            cell.SetOccupant(this);
         }
 
         public void DrawCards(int count)

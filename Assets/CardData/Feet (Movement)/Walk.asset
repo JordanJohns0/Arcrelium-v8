@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
   m_Name: Walk
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.CardData
+  m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
   CardName: Walk
   Description: Move 1
   Artwork: {fileID: 0}

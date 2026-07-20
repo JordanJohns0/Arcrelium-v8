@@ -1,4 +1,4 @@
-namespace FantasyBrawl.Cards
+namespace Cards
 {
     /// <summary>
     /// A unique runtime copy of a CardData template. Two CardInstances wrapping the same

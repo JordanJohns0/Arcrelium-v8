@@ -128,7 +128,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e76804062d7351b47808b048ea553f1f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Characters.Character
+  m_EditorClassIdentifier: Assembly-CSharp::Characters.Character
   stats:
     CharacterName: Character
     MaxHealth: 10
@@ -147,7 +147,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5ca94961a2af2e408a135e602950f7c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Characters.CharacterSelectable
+  m_EditorClassIdentifier: Assembly-CSharp::Characters.CharacterSelectable
 --- !u!114 &1087468177673829988
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -159,7 +159,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e60c966b4e28ea439d62394648d2fbe, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Equipment.EquipmentManager
+  m_EditorClassIdentifier: Assembly-CSharp::Equipment.EquipmentManager
   inventory: {fileID: 11400000, guid: e8c61b67fab9101468ab3425024e02ed, type: 2}
   headEquipment: {fileID: 0}
   chestEquipment: {fileID: 11400000, guid: 27adf8c9266e6d045b520433b21f7e03, type: 2}

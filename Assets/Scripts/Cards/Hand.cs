@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace FantasyBrawl.Cards
+namespace Cards
 {
     /// <summary>
     /// The cards a character is currently holding and able to play.

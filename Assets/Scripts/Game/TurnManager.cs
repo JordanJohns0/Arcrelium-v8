@@ -1,14 +1,14 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.Characters;
-using FantasyBrawl.Cards;
-using FantasyBrawl.HexGrid;
+using Characters;
+using Cards;
+using HexGrid;
 
-namespace FantasyBrawl.Game
+namespace Game
 {
     public enum TurnPhase
     {
-        /// <summary>Waiting for the active character to either PlayCard or Pass. Exactly one of these per turn.</summary>
         Act,
         Draw,
         End
@@ -23,9 +23,7 @@ namespace FantasyBrawl.Game
     ///   5. draw a card
     ///   6. end of turn -> advance to the next character
     ///
-    /// This class owns the sequencing; ActionResolver only knows how to resolve a single
-    /// card play. Call PlayCard or Pass here (not on ActionResolver directly) so the
-    /// draw/end steps always happen automatically afterward.
+    /// Each step has a configurable delay so actions are visible to the player.
     /// </summary>
     public class TurnManager : MonoBehaviour
     {
@@ -33,14 +31,22 @@ namespace FantasyBrawl.Game
         [SerializeField] private ActionResolver actionResolver;
         [SerializeField] private int cardsDrawnPerTurn = 1;
 
+        [Header("Action Timing")]
+        [SerializeField] private float actionDelay = 0.5f;
+        [SerializeField] private float drawDelay = 0.3f;
+        [SerializeField] private float turnEndDelay = 0.3f;
+
         private int currentIndex = 0;
+        private Coroutine turnCoroutine;
 
         public Character ActiveCharacter => turnOrder.Count > 0 ? turnOrder[currentIndex] : null;
         public TurnPhase CurrentPhase { get; private set; } = TurnPhase.Act;
+        public bool Busy => turnCoroutine != null;
 
         public event System.Action<Character> OnTurnStarted;
         public event System.Action<Character> OnTurnEnded;
         public event System.Action<Character> OnPlayerPassed;
+        public event System.Action OnActionResolved;
 
         public void SetTurnOrder(List<Character> characters)
         {
@@ -61,12 +67,6 @@ namespace FantasyBrawl.Game
             OnTurnStarted?.Invoke(ActiveCharacter);
         }
 
-        /// <summary>
-        /// Step 2/3/4: play a card (paying its discard cost) and resolve its effect.
-        /// On success this automatically continues through draw and end-of-turn.
-        /// Returns false and leaves the turn in the Act phase if the play was invalid
-        /// (wrong phase, card not playable, bad cost/target) — nothing is consumed.
-        /// </summary>
         public bool PlayCard(
             CardInstance card,
             List<CardInstance> costCards = null,
@@ -74,34 +74,39 @@ namespace FantasyBrawl.Game
             Character targetCharacter = null)
         {
             if (CurrentPhase != TurnPhase.Act) return false;
+            if (Busy) return false;
 
             bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter);
             if (!played) return false;
 
-            AdvanceToDrawThenEnd();
+            OnActionResolved?.Invoke();
+            turnCoroutine = StartCoroutine(AdvanceToDrawThenEndCoroutine());
             return true;
         }
 
-        /// <summary>Step 2 alternative: skip playing a card entirely and go straight to draw.</summary>
         public void Pass()
         {
             if (CurrentPhase != TurnPhase.Act) return;
+            if (Busy) return;
 
             OnPlayerPassed?.Invoke(ActiveCharacter);
-            AdvanceToDrawThenEnd();
+            turnCoroutine = StartCoroutine(AdvanceToDrawThenEndCoroutine());
         }
 
-        private void AdvanceToDrawThenEnd()
+        private IEnumerator AdvanceToDrawThenEndCoroutine()
         {
-            // Step 5: draw a card.
+            yield return new WaitForSeconds(actionDelay);
+
             CurrentPhase = TurnPhase.Draw;
             ActiveCharacter?.DrawCards(cardsDrawnPerTurn);
+            yield return new WaitForSeconds(drawDelay);
 
-            // Step 6: end of turn.
             CurrentPhase = TurnPhase.End;
             OnTurnEnded?.Invoke(ActiveCharacter);
+            yield return new WaitForSeconds(turnEndDelay);
 
             AdvanceToNextCharacter();
+            turnCoroutine = null;
             BeginTurn();
         }
 

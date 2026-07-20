@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using FantasyBrawl.Cards;
+using Cards;
 
-namespace FantasyBrawl.UI
+namespace UI
 {
     /// <summary>
     /// Visual representation of a single card in hand. Purely a display + click-reporter —

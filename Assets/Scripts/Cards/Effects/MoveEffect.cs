@@ -1,15 +1,16 @@
+using System.Collections;
 using UnityEngine;
+using Characters;
+using HexGrid;
 
-namespace FantasyBrawl.Cards.Effects
+namespace Cards.Effects
 {
-    /// <summary>
-    /// Example effect: move the source character to the target cell, if it's within the
-    /// card's Range and walkable. This is a reference implementation showing the pattern —
-    /// duplicate/adapt this for Attack, Heal, Buff, etc.
-    /// </summary>
-    [CreateAssetMenu(fileName = "MoveEffect", menuName = "FantasyBrawl/Effects/Move")]
+    [CreateAssetMenu(fileName = "MoveEffect", menuName = "/Effects/Move")]
     public class MoveEffect : CardEffectSO
     {
+        [SerializeField] private float moveSpeed = 5f;
+        [SerializeField] private float arrivalThreshold = 0.05f;
+
         public override bool CanExecute(CardContext context)
         {
             if (context.TargetCell == null || !context.TargetCell.IsWalkable) return false;
@@ -20,7 +21,24 @@ namespace FantasyBrawl.Cards.Effects
 
         public override void Execute(CardContext context)
         {
-            context.Source.PlaceOnCell(context.TargetCell);
+            HexCell target = context.TargetCell;
+            context.Source.StartCoroutine(AnimateMovement(context.Source, target));
+        }
+
+        private IEnumerator AnimateMovement(Character source, HexCell target)
+        {
+            source.SetCellOnly(target);
+
+            Vector3 destination = target.transform.position;
+            Transform t = source.transform;
+
+            while (Vector3.Distance(t.position, destination) > arrivalThreshold)
+            {
+                t.position = Vector3.MoveTowards(t.position, destination, moveSpeed * Time.deltaTime);
+                yield return null;
+            }
+
+            t.position = destination;
         }
     }
 }

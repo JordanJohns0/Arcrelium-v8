@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace FantasyBrawl.Equipment
+namespace Equipment
 {
     /// <summary>
     /// A single trigger on a piece of equipment: when it fires (timing) and what it does (effect).

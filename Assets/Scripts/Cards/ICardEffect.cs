@@ -1,7 +1,7 @@
-using FantasyBrawl.Characters;
-using FantasyBrawl.HexGrid;
+using Characters;
+using HexGrid;
 
-namespace FantasyBrawl.Cards
+namespace Cards
 {
     public enum TargetType
     {

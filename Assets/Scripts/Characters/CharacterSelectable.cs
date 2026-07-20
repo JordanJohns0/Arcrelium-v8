@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-namespace FantasyBrawl.Characters
+namespace Characters
 {
     /// <summary>
     /// Makes a character clickable so it can be picked as a card's target (e.g. an attack's

@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using FantasyBrawl.Cards;
-using FantasyBrawl.Characters;
-using FantasyBrawl.HexGrid;
-using FantasyBrawl.Game;
+using Cards;
+using Characters;
+using HexGrid;
+using Game;
 
-namespace FantasyBrawl.UI
+namespace UI
 {
     /// <summary>
     /// Drives the player-facing side of the turn flow described in TurnManager:
@@ -72,14 +72,22 @@ namespace FantasyBrawl.UI
 
         private void HandleTurnStarted(Character character)
         {
-            if (character == null || character.OwnerPlayerId != humanPlayerId) return;
+            if (character == null) return;
+
+            if (character.OwnerPlayerId != humanPlayerId)
+            {
+                if (promptText != null) promptText.text = $"{character.Stats.CharacterName}'s turn...";
+                return;
+            }
+
             handView.SetCharacter(character);
             ResetSelection();
         }
 
         private void HandlePassClicked()
         {
-            if (state != SelectionState.Idle) return; // finish/cancel current selection first
+            if (state != SelectionState.Idle) return;
+            if (turnManager.Busy) return;
             turnManager.Pass();
             // TurnManager.Pass advances straight through draw/end, which fires OnTurnStarted
             // again for the next character — HandleTurnStarted takes it from there.
@@ -87,6 +95,8 @@ namespace FantasyBrawl.UI
 
         private void HandleCardClicked(CardInstance card)
         {
+            if (turnManager.Busy) return;
+
             switch (state)
             {
                 case SelectionState.Idle:
@@ -161,6 +171,7 @@ namespace FantasyBrawl.UI
 
         private void HandleCellClicked(HexCell cell)
         {
+            if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
             if (pendingCard.Data.TargetType != TargetType.HexCell) return;
 
@@ -169,6 +180,7 @@ namespace FantasyBrawl.UI
 
         private void HandleCharacterClicked(Character character)
         {
+            if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
 
             bool wantsCharacterTarget =
@@ -187,8 +199,6 @@ namespace FantasyBrawl.UI
 
             if (!success)
             {
-                // Invalid target/cost combination (e.g. out of range) — let the player retry
-                // rather than losing their card selection entirely.
                 if (promptText != null) promptText.text = "That's not a valid play — choose again.";
                 if (state == SelectionState.SelectingCost || RequiresBoardTarget(pendingCard.Data))
                 {
@@ -197,8 +207,7 @@ namespace FantasyBrawl.UI
                 return;
             }
 
-            // On success, TurnManager's PlayCard already advanced through draw/end,
-            // which triggers HandleTurnStarted and resets everything for the next turn.
+            ResetSelection();
         }
 
         private static bool RequiresBoardTarget(CardData card)

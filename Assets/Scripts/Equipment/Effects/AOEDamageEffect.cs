@@ -1,12 +1,12 @@
 using UnityEngine;
-using FantasyBrawl.HexGrid;
+using HexGrid;
 
-namespace FantasyBrawl.Equipment.Effects
+namespace Equipment.Effects
 {
     /// <summary>
     /// Deals damage to all enemies within range of the equipment owner.
     /// </summary>
-    [CreateAssetMenu(fileName = "AOEDamageEffect", menuName = "FantasyBrawl/Equipment Effects/AOE Damage")]
+    [CreateAssetMenu(fileName = "AOEDamageEffect", menuName = "/Equipment Effects/AOE Damage")]
     public class AOEDamageEffect : EquipmentEffect
     {
         public int Damage = 1;

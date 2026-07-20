@@ -1,8 +1,8 @@
-using FantasyBrawl.Characters;
-using FantasyBrawl.HexGrid;
-using FantasyBrawl.Game;
+using Characters;
+using HexGrid;
+using Game;
 
-namespace FantasyBrawl.Equipment
+namespace Equipment
 {
     /// <summary>
     /// Everything an equipment trigger needs to resolve its effect: who owns the equipment,

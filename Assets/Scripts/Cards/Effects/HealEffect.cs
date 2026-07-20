@@ -1,11 +1,11 @@
 using UnityEngine;
 
-namespace FantasyBrawl.Cards.Effects
+namespace Cards.Effects
 {
     /// <summary>
     /// Heal the source character. Does not require a target.
     /// </summary>
-    [CreateAssetMenu(fileName = "HealEffect", menuName = "FantasyBrawl/Effects/Heal")]
+    [CreateAssetMenu(fileName = "HealEffect", menuName = "/Effects/Heal")]
     public class HealEffect : CardEffectSO
     {
         public int HealAmount = 2;

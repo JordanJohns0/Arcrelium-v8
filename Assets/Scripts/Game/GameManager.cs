@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using FantasyBrawl.HexGrid;
-using FantasyBrawl.Characters;
+using HexGrid;
+using Characters;
 
-namespace FantasyBrawl.Game
+namespace Game
 {
     /// <summary>
     /// Top-level entry point: builds the board, spawns characters onto it, and starts the match.

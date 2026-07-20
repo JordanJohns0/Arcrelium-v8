@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace FantasyBrawl.HexGrid
+namespace HexGrid
 {
     /// <summary>
     /// Builds a hex-shaped board of the given radius and provides lookup/neighbor/pathing helpers.
