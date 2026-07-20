@@ -16,10 +16,6 @@ namespace FantasyBrawl.Equipment
     /// </summary>
     public class EquipmentManager : MonoBehaviour
     {
-        [Header("Inventory Source")]
-        [Tooltip("If set, equipment is loaded from this inventory at match start. Inspector equipment is ignored.")]
-        [SerializeField] private PlayerInventory inventory;
-
         [Header("Active Equipment")]
         [SerializeField] private EquipmentData headEquipment;
         [SerializeField] private EquipmentData chestEquipment;
@@ -52,63 +48,13 @@ namespace FantasyBrawl.Equipment
             turnManager = FindAnyObjectByType<TurnManager>();
             grid = FindAnyObjectByType<HexGridManager>();
 
-            if (inventory != null && inventory.UnlockedEquipment.Count > 0)
-            {
-                LoadFromInventory();
-            }
-            else
-            {
-                LoadFromInspector();
-            }
+            LoadFromInspector();
 
             if (turnManager != null)
             {
                 turnManager.OnTurnStarted += HandleTurnStarted;
                 turnManager.OnTurnEnded += HandleTurnEnded;
             }
-        }
-
-        private void LoadFromInventory()
-        {
-            var equipped = new List<EquipmentData>();
-            var unequipped = new List<EquipmentData>();
-            int handIndex = 0;
-
-            foreach (EquipmentData data in inventory.UnlockedEquipment)
-            {
-                if (data == null) continue;
-
-                switch (data.SlotType)
-                {
-                    case EquipmentSlotType.Head:
-                        if (headSlot == null) { Equip(data); equipped.Add(data); }
-                        else unequipped.Add(data);
-                        break;
-                    case EquipmentSlotType.Chest:
-                        if (chestSlot == null) { Equip(data); equipped.Add(data); }
-                        else unequipped.Add(data);
-                        break;
-                    case EquipmentSlotType.Feet:
-                        if (feetSlot == null) { Equip(data); equipped.Add(data); }
-                        else unequipped.Add(data);
-                        break;
-                    case EquipmentSlotType.Hand:
-                        if (CanEquip(data, EquipmentSlotType.Hand, handIndex))
-                        {
-                            Equip(data, EquipmentSlotType.Hand, handIndex);
-                            equipped.Add(data);
-                            handIndex++;
-                        }
-                        else unequipped.Add(data);
-                        break;
-                    case EquipmentSlotType.Trinket:
-                        if (trinketSlots.Count < 3) { Equip(data); equipped.Add(data); }
-                        else unequipped.Add(data);
-                        break;
-                }
-            }
-
-            inventory.SetUnlocked(unequipped);
         }
 
         private void LoadFromInspector()

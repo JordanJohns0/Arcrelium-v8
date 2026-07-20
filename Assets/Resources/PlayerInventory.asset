@@ -12,4 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07ec1325dc5eefa4496828bc3c00b8ae, type: 3}
   m_Name: PlayerInventory
   m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Equipment.PlayerInventory
-  unlockedEquipment: []
+  unlockedEquipment:
+  - {fileID: 11400000, guid: b1e0717c459915f4fbca3907934f2c3f, type: 2}
+  - {fileID: 11400000, guid: b542c6cf5ddb0484780c7b3f6b7ec2f1, type: 2}
+  - {fileID: 11400000, guid: 19f8d7376a42df34993046bc4ea1f9c4, type: 2}

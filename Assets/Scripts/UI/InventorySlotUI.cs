@@ -20,6 +20,18 @@ namespace FantasyBrawl.UI
         private Canvas parentCanvas;
 
         public Equipment.EquipmentData EquipmentData => equipmentData;
+        public Equipment.EquipmentSlotType SlotType => equipmentData != null ? equipmentData.SlotType : default;
+
+        public void SetVisible(bool visible)
+        {
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = visible ? 1f : 0f;
+                canvasGroup.blocksRaycasts = visible;
+                canvasGroup.interactable = visible;
+            }
+            gameObject.SetActive(visible);
+        }
 
         public void Setup(Equipment.EquipmentData data, Canvas canvas)
         {

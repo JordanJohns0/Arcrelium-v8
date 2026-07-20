@@ -38,6 +38,7 @@ namespace FantasyBrawl.UI
 
         private readonly List<InventorySlotUI> spawnedInventorySlots = new List<InventorySlotUI>();
         private EquipmentManager cachedEquipmentManager;
+        private EquipmentSlotType? currentFilter;
 
         private void OnEnable()
         {
@@ -152,6 +153,39 @@ namespace FantasyBrawl.UI
                 InventorySlotUI slot = Instantiate(inventorySlotPrefab, inventoryPanel);
                 slot.Setup(data, canvas);
                 spawnedInventorySlots.Add(slot);
+
+                bool visible = currentFilter == null || data.SlotType == currentFilter.Value;
+                slot.SetVisible(visible);
+            }
+        }
+
+        public void SetFilter(EquipmentSlotType? slotType)
+        {
+            currentFilter = slotType;
+
+            foreach (InventorySlotUI slot in spawnedInventorySlots)
+            {
+                if (slot == null || slot.EquipmentData == null) continue;
+                bool visible = currentFilter == null || slot.EquipmentData.SlotType == currentFilter.Value;
+                slot.SetVisible(visible);
+            }
+        }
+
+        /// <summary>
+        /// Button-friendly filter. Call from Inspector OnClick.
+        /// 0=All, 1=Head, 2=Chest, 3=Feet, 4=Hand, 5=Trinket
+        /// </summary>
+        public void SetFilterByIndex(int index)
+        {
+            switch (index)
+            {
+                case 0: SetFilter(null); break;
+                case 1: SetFilter(EquipmentSlotType.Head); break;
+                case 2: SetFilter(EquipmentSlotType.Chest); break;
+                case 3: SetFilter(EquipmentSlotType.Feet); break;
+                case 4: SetFilter(EquipmentSlotType.Hand); break;
+                case 5: SetFilter(EquipmentSlotType.Trinket); break;
+                default: SetFilter(null); break;
             }
         }
 

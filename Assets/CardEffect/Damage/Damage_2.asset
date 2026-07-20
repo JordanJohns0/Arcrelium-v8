@@ -10,5 +10,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e58daa374662be4b834d9fc880c8b82, type: 3}
-  m_Name: AttackEffect
+  m_Name: Damage_2
   m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.Effects.AttackEffect
+  Damage: 2
