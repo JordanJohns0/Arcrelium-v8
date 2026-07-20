@@ -4,7 +4,7 @@ namespace Cards.Effects
 {
     /// <summary>
     /// Grants the source character block equal to a fixed amount.
-    /// Block absorbs damage before health and resets at the start of each turn.
+    /// Block absorbs damage before health.
     /// </summary>
     [CreateAssetMenu(fileName = "GainBlockEffect", menuName = "/Effects/Gain Block")]
     public class GainBlockEffect : CardEffectSO

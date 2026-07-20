@@ -63,7 +63,6 @@ namespace Game
         private void BeginTurn()
         {
             CurrentPhase = TurnPhase.Act;
-            ActiveCharacter?.Stats.ResetBlock();
             OnTurnStarted?.Invoke(ActiveCharacter);
         }
 

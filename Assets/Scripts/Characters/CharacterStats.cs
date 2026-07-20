@@ -7,7 +7,6 @@ namespace Characters
     /// and modify it without caring about MonoBehaviour lifecycle.
     ///
     /// Damage flow: Block absorbs first, then Armor mitigates, then Health takes the rest.
-    /// Block resets to 0 at the start of each turn.
     /// </summary>
     [System.Serializable]
     public class CharacterStats
@@ -62,12 +61,6 @@ namespace Characters
         public void GainBlock(int amount)
         {
             Block += amount;
-        }
-
-        /// <summary>Resets block to 0. Called at the start of each turn.</summary>
-        public void ResetBlock()
-        {
-            Block = 0;
         }
     }
 }

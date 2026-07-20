@@ -1,0 +1,64 @@
+using System.Reflection;
+using NUnit.Framework;
+using UnityEngine;
+using Cards;
+using Cards.Effects;
+using Characters;
+using HexGrid;
+
+namespace Tests
+{
+    [TestFixture]
+    public class DrawCardsEffectTests
+    {
+        private DrawCardsEffect effect;
+        private Character source;
+
+        [SetUp]
+        public void SetUp()
+        {
+            effect = ScriptableObject.CreateInstance<DrawCardsEffect>();
+            effect.Amount = 2;
+
+            source = TestHelper.CreateCharacter(0, 0, 0);
+
+            var deck = new Deck();
+            var cardA = ScriptableObject.CreateInstance<CardData>();
+            cardA.CardName = "A";
+            var cardB = ScriptableObject.CreateInstance<CardData>();
+            cardB.CardName = "B";
+            var cardC = ScriptableObject.CreateInstance<CardData>();
+            cardC.CardName = "C";
+            deck.SetStartingCards(new System.Collections.Generic.List<CardData> { cardA, cardB, cardC });
+            deck.Shuffle();
+
+            typeof(Character).GetField("deck", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(source, deck);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(source.CurrentCell.gameObject);
+            Object.DestroyImmediate(source.gameObject);
+        }
+
+        [Test]
+        public void Execute_DrawsCards()
+        {
+            int handBefore = source.Hand.Cards.Count;
+            var ctx = new CardContext { Source = source };
+            effect.Execute(ctx);
+            Assert.AreEqual(handBefore + 2, source.Hand.Cards.Count);
+        }
+
+        [Test]
+        public void Execute_DoesNotExceedHandCapacity()
+        {
+            source.Hand.MaxCapacity = source.Hand.Cards.Count + 1;
+            var ctx = new CardContext { Source = source };
+            effect.Execute(ctx);
+            Assert.AreEqual(source.Hand.MaxCapacity, source.Hand.Cards.Count);
+        }
+    }
+}

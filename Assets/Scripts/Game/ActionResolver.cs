@@ -37,7 +37,6 @@ namespace Game
         {
             if (source == null || card == null) return false;
             if (!source.Hand.Contains(card)) return false;
-            if (card.Data.Effect == null) return false;
             if (card.Data.Effect == null) { Debug.Log($"[ActionResolver] FAIL: card '{card.Data.CardName}' has no effect."); return false; }
 
             costCards ??= new List<CardInstance>();
