@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
+  m_Name: Walk
+  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.CardData
+  CardName: Walk
+  Description: Move 1
+  Artwork: {fileID: 0}
+  TargetType: 2
+  Range: 1
+  Cost: 0
+  Effect: {fileID: 11400000, guid: 5c4e3fb7de6cf05458bb40e6f4b4437f, type: 2}

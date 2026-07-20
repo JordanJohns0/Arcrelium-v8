@@ -45,13 +45,11 @@ namespace FantasyBrawl.Characters
 
             if (deck != null)
             {
-                if (equipmentManager != null)
-                {
-                    List<CardData> equipmentCards = equipmentManager.GetAllCards();
-                    if (equipmentCards.Count > 0)
-                        deck.SetStartingCards(equipmentCards);
-                }
+                List<CardData> equipmentCards = equipmentManager != null
+                    ? equipmentManager.GetAllCards()
+                    : new List<CardData>();
 
+                deck.SetStartingCards(equipmentCards);
                 deck.Shuffle();
                 DrawCards(startingHandSize);
             }

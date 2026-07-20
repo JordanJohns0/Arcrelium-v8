@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6354326500633971090}
   - component: {fileID: 7177736162352147799}
   - component: {fileID: 722281499782144357}
+  - component: {fileID: 1087468177673829988}
   m_Layer: 0
   m_Name: Character
   m_TagString: Untagged
@@ -132,17 +133,9 @@ MonoBehaviour:
     CharacterName: Character
     MaxHealth: 10
     CurrentHealth: 0
-    BaseMovement: 2
-    BaseAttack: 2
     Armor: 0
-  deck:
-    startingCards:
-    - {fileID: 11400000, guid: 04b94fba1b3f7564aa8af4019e929e43, type: 2}
-    - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
-    - {fileID: 11400000, guid: 83a91f2d26407b048baa4c5da0c78262, type: 2}
-    - {fileID: 11400000, guid: 07858401faa7464449cad77e68d4bf9e, type: 2}
-    - {fileID: 11400000, guid: eb4b3c3e6acf48545bef541899eec041, type: 2}
-    - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
+    Block: 0
+  equipmentManager: {fileID: 1087468177673829988}
 --- !u!114 &722281499782144357
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -155,3 +148,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5ca94961a2af2e408a135e602950f7c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Characters.CharacterSelectable
+--- !u!114 &1087468177673829988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8754585003979157697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e60c966b4e28ea439d62394648d2fbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Equipment.EquipmentManager
+  inventory: {fileID: 11400000, guid: e8c61b67fab9101468ab3425024e02ed, type: 2}
+  headEquipment: {fileID: 0}
+  chestEquipment: {fileID: 11400000, guid: 27adf8c9266e6d045b520433b21f7e03, type: 2}
+  feetEquipment: {fileID: 11400000, guid: 082b69e6ea8a54d4383f6a4301c01b8a, type: 2}
+  leftHandEquipment: {fileID: 0}
+  rightHandEquipment: {fileID: 11400000, guid: 8d10d8b820d0c744ba4b2e19e00715a1, type: 2}
+  trinket1: {fileID: 0}
+  trinket2: {fileID: 0}
+  trinket3: {fileID: 0}

@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Move_Run
+  m_Name: Alert
   m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.CardData
-  CardName: Run
-  Description: Move 3
+  CardName: Alert
+  Description: Draw a card
   Artwork: {fileID: 0}
-  TargetType: 2
-  Range: 3
-  Cost: 2
-  Effect: {fileID: 11400000, guid: 5c4e3fb7de6cf05458bb40e6f4b4437f, type: 2}
+  TargetType: 1
+  Range: 0
+  Cost: 0
+  Effect: {fileID: 11400000, guid: f08f9f6e55a21e243a8fdf504d998f5a, type: 2}

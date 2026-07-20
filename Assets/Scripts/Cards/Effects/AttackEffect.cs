@@ -3,13 +3,14 @@ using UnityEngine;
 namespace FantasyBrawl.Cards.Effects
 {
     /// <summary>
-    /// Example effect: deal damage to a targeted enemy character within range.
-    /// Uses the source's BaseAttack stat as the damage amount — swap in a fixed
-    /// card-defined amount instead if that fits your design better.
+    /// Deal damage to a targeted enemy character within range.
+    /// Damage is defined per card, not by character stats.
     /// </summary>
     [CreateAssetMenu(fileName = "AttackEffect", menuName = "FantasyBrawl/Effects/Attack")]
     public class AttackEffect : CardEffectSO
     {
+        public int Damage = 1;
+
         public override bool CanExecute(CardContext context)
         {
             if (context.TargetCharacter == null) return false;
@@ -22,7 +23,7 @@ namespace FantasyBrawl.Cards.Effects
 
         public override void Execute(CardContext context)
         {
-            context.TargetCharacter.TakeDamage(context.Source.Stats.BaseAttack);
+            context.TargetCharacter.TakeDamage(Damage);
         }
     }
 }

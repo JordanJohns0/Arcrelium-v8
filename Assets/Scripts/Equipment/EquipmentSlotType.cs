@@ -4,7 +4,6 @@ namespace FantasyBrawl.Equipment
     {
         Head,
         Chest,
-        Legs,
         Feet,
         Hand,
         Trinket

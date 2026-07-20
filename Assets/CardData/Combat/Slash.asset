@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Attack1
+  m_Name: Slash
   m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.CardData
-  CardName: Punch in the face
-  Description: Punch the enemy in the FACE!
+  CardName: Slash
+  Description: Deal 2 damage
   Artwork: {fileID: 0}
   TargetType: 3
   Range: 1

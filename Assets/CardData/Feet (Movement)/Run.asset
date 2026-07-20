@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Move_Sprint
+  m_Name: Run
   m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Cards.CardData
-  CardName: Sprint
-  Description: Move 4
+  CardName: Run
+  Description: Move 3
   Artwork: {fileID: 0}
   TargetType: 2
-  Range: 4
-  Cost: 3
+  Range: 3
+  Cost: 2
   Effect: {fileID: 11400000, guid: 5c4e3fb7de6cf05458bb40e6f4b4437f, type: 2}

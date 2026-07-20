@@ -1,0 +1,85 @@
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using TMPro;
+
+namespace FantasyBrawl.UI
+{
+    /// <summary>
+    /// Represents one piece of equipment in the inventory panel. Draggable — can be dropped
+    /// onto an EquipmentSlotUI to equip it.
+    /// </summary>
+    public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
+    {
+        [SerializeField] private Image iconImage;
+        [SerializeField] private TMP_Text nameLabel;
+        [SerializeField] private CanvasGroup canvasGroup;
+
+        private Equipment.EquipmentData equipmentData;
+        private Transform originalParent;
+        private Canvas parentCanvas;
+
+        public Equipment.EquipmentData EquipmentData => equipmentData;
+
+        public void Setup(Equipment.EquipmentData data, Canvas canvas)
+        {
+            equipmentData = data;
+            parentCanvas = canvas;
+
+            if (data != null)
+            {
+                if (iconImage != null)
+                {
+                    iconImage.sprite = data.Icon;
+                    iconImage.enabled = true;
+                }
+                if (nameLabel != null) nameLabel.text = data.EquipmentName;
+            }
+            else
+            {
+                if (iconImage != null) iconImage.enabled = false;
+                if (nameLabel != null) nameLabel.text = "";
+            }
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            if (equipmentData == null) return;
+
+            originalParent = transform.parent;
+            transform.SetParent(parentCanvas.transform);
+            transform.SetAsLastSibling();
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.blocksRaycasts = false;
+                canvasGroup.alpha = 0.6f;
+            }
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (equipmentData == null) return;
+            transform.position = eventData.position;
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (equipmentData == null) return;
+
+            transform.SetParent(originalParent);
+            transform.localPosition = Vector3.zero;
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.blocksRaycasts = true;
+                canvasGroup.alpha = 1f;
+            }
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            // Future: show tooltip with equipment details
+        }
+    }
+}
