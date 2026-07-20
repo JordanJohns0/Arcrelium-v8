@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Staff of Healing
   m_EditorClassIdentifier: Assembly-CSharp::FantasyBrawl.Equipment.EquipmentData
-  EquipmentName: Excalibur
+  EquipmentName: Staff of Healing
   Description: 
   Icon: {fileID: 0}
   SlotType: 3
   Cards:
-  - {fileID: 11400000, guid: b5849a21652fca7488e0085347c180b6, type: 2}
-  - {fileID: 11400000, guid: 04b94fba1b3f7564aa8af4019e929e43, type: 2}
-  - {fileID: 11400000, guid: 04b94fba1b3f7564aa8af4019e929e43, type: 2}
+  - {fileID: 11400000, guid: fef01527983b00b41b3a8bc774f9ae63, type: 2}
+  - {fileID: 11400000, guid: 659542e4b3057604dbc89bc43a30f90b, type: 2}
+  - {fileID: 11400000, guid: 659542e4b3057604dbc89bc43a30f90b, type: 2}
   Triggers: []

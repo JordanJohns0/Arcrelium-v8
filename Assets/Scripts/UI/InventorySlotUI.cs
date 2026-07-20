@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -18,6 +19,7 @@ namespace FantasyBrawl.UI
         private Equipment.EquipmentData equipmentData;
         private Transform originalParent;
         private Canvas parentCanvas;
+        private readonly List<Graphic> childGraphics = new List<Graphic>();
 
         public Equipment.EquipmentData EquipmentData => equipmentData;
         public Equipment.EquipmentSlotType SlotType => equipmentData != null ? equipmentData.SlotType : default;
@@ -67,6 +69,13 @@ namespace FantasyBrawl.UI
                 canvasGroup.blocksRaycasts = false;
                 canvasGroup.alpha = 0.6f;
             }
+            else
+            {
+                childGraphics.Clear();
+                GetComponentsInChildren(childGraphics);
+                foreach (Graphic g in childGraphics)
+                    g.raycastTarget = false;
+            }
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -87,11 +96,16 @@ namespace FantasyBrawl.UI
                 canvasGroup.blocksRaycasts = true;
                 canvasGroup.alpha = 1f;
             }
+            else
+            {
+                foreach (Graphic g in childGraphics)
+                    g.raycastTarget = true;
+                childGraphics.Clear();
+            }
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            // Future: show tooltip with equipment details
         }
     }
 }
