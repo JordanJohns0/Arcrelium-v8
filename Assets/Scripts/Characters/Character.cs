@@ -84,6 +84,7 @@ namespace Characters
 
         public void DrawCards(int count)
         {
+            if (deck == null) return;
             for (int i = 0; i < count; i++)
             {
                 if (Hand.IsFull) break;

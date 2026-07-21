@@ -12,6 +12,7 @@ namespace HexGrid
         [SerializeField] private HexCell hexCellPrefab;
         [SerializeField] private int radius = 4;
         [SerializeField] private float hexSize = 1f;
+        [SerializeField] private HexCoordinates[] obstacles;
 
         private readonly Dictionary<HexCoordinates, HexCell> cells = new Dictionary<HexCoordinates, HexCell>();
 
@@ -33,6 +34,20 @@ namespace HexGrid
                 for (int r = r1; r <= r2; r++)
                 {
                     CreateCell(new HexCoordinates(q, r));
+                }
+            }
+
+            ApplyObstacles();
+        }
+
+        private void ApplyObstacles()
+        {
+            if (obstacles == null) return;
+            foreach (HexCoordinates coord in obstacles)
+            {
+                if (cells.TryGetValue(coord, out HexCell cell))
+                {
+                    cell.SetBlocked(true);
                 }
             }
         }
@@ -104,7 +119,7 @@ namespace HexGrid
                 foreach (HexCell neighbor in GetNeighbors(current))
                 {
                     if (visited.Contains(neighbor.Coordinates)) continue;
-                    if (!neighbor.IsWalkable && neighbor.Coordinates != goal) continue;
+                    if (!neighbor.IsWalkable) continue;
 
                     visited.Add(neighbor.Coordinates);
                     cameFrom[neighbor.Coordinates] = current;

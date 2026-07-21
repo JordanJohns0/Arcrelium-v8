@@ -1,10 +1,10 @@
 using System.Reflection;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Cards;
 using Cards.Effects;
 using Characters;
-using HexGrid;
 
 namespace Tests
 {
@@ -22,18 +22,16 @@ namespace Tests
 
             source = TestHelper.CreateCharacter(0, 0, 0);
 
-            var deck = new Deck();
+            var deck = (Deck)typeof(Character).GetField("deck", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(source);
             var cardA = ScriptableObject.CreateInstance<CardData>();
             cardA.CardName = "A";
             var cardB = ScriptableObject.CreateInstance<CardData>();
             cardB.CardName = "B";
             var cardC = ScriptableObject.CreateInstance<CardData>();
             cardC.CardName = "C";
-            deck.SetStartingCards(new System.Collections.Generic.List<CardData> { cardA, cardB, cardC });
+            deck.SetStartingCards(new List<CardData> { cardA, cardB, cardC });
             deck.Shuffle();
-
-            typeof(Character).GetField("deck", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(source, deck);
         }
 
         [TearDown]

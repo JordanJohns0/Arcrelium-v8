@@ -19,6 +19,8 @@ namespace Tests.PlayMode
         private Character player;
         private Character enemy;
 
+        private static readonly FieldInfo deckField = typeof(Character).GetField("deck", BindingFlags.NonPublic | BindingFlags.Instance);
+
         private static HexCell CreateCell(int q, int r)
         {
             var go = new GameObject($"Cell {q},{r}");
@@ -32,6 +34,10 @@ namespace Tests.PlayMode
             var cell = CreateCell(q, r);
             var go = new GameObject($"Character {ownerId}");
             var character = go.AddComponent<Character>();
+
+            var deck = new Deck();
+            deckField.SetValue(character, deck);
+
             character.Initialize(ownerId, cell, 0);
             return character;
         }
@@ -101,11 +107,11 @@ namespace Tests.PlayMode
         public IEnumerator TurnCycle_AdvancesToNextCharacter()
         {
             turnManager.SetTurnOrder(new List<Character> { player, enemy });
-            turnManager.StartMatch();
 
             var turnStarted = new List<Character>();
             turnManager.OnTurnStarted += (c) => turnStarted.Add(c);
 
+            turnManager.StartMatch();
             turnManager.Pass();
             yield return new WaitForSeconds(2f);
 

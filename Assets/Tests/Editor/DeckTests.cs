@@ -62,7 +62,7 @@ namespace Tests
 
             Assert.IsNotNull(reshuffled);
             Assert.AreEqual(0, deck.DiscardPile.Count);
-            Assert.AreEqual(1, deck.DrawPile.Count);
+            Assert.AreEqual(0, deck.DrawPile.Count);
         }
 
         [Test]

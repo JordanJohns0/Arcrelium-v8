@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Characters;
 using HexGrid;
@@ -16,16 +17,61 @@ namespace Cards.Effects
             if (context.TargetCell == null || !context.TargetCell.IsWalkable) return false;
 
             int distance = context.Source.CurrentCell.Coordinates.DistanceTo(context.TargetCell.Coordinates);
-            return distance <= context.Range;
+            if (distance > context.Range) return false;
+
+            if (context.Grid != null)
+            {
+                List<HexCell> path = context.Grid.FindPath(
+                    context.Source.CurrentCell.Coordinates,
+                    context.TargetCell.Coordinates,
+                    context.Range);
+                return path != null;
+            }
+
+            return true;
         }
 
         public override void Execute(CardContext context)
         {
             HexCell target = context.TargetCell;
-            context.Source.StartCoroutine(AnimateMovement(context.Source, target));
+
+            if (context.Grid != null)
+            {
+                List<HexCell> path = context.Grid.FindPath(
+                    context.Source.CurrentCell.Coordinates,
+                    target.Coordinates,
+                    context.Range);
+
+                if (path != null && path.Count > 0)
+                {
+                    context.Source.StartCoroutine(AnimatePath(context.Source, path));
+                    return;
+                }
+            }
+
+            context.Source.StartCoroutine(AnimateDirectMove(context.Source, target));
         }
 
-        private IEnumerator AnimateMovement(Character source, HexCell target)
+        private IEnumerator AnimatePath(Character source, List<HexCell> path)
+        {
+            foreach (HexCell cell in path)
+            {
+                source.SetCellOnly(cell);
+
+                Vector3 destination = cell.transform.position;
+                Transform t = source.transform;
+
+                while (Vector3.Distance(t.position, destination) > arrivalThreshold)
+                {
+                    t.position = Vector3.MoveTowards(t.position, destination, moveSpeed * Time.deltaTime);
+                    yield return null;
+                }
+
+                t.position = destination;
+            }
+        }
+
+        private IEnumerator AnimateDirectMove(Character source, HexCell target)
         {
             source.SetCellOnly(target);
 
