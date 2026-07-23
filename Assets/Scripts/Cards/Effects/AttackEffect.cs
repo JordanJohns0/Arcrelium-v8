@@ -4,12 +4,12 @@ namespace Cards.Effects
 {
     /// <summary>
     /// Deal damage to a targeted enemy character within range.
-    /// Damage is defined per card, not by character stats.
+    /// Damage can be a constant or derived from a stat (e.g. your current block).
     /// </summary>
     [CreateAssetMenu(fileName = "AttackEffect", menuName = "/Effects/Attack")]
     public class AttackEffect : CardEffectSO
     {
-        public int Damage = 1;
+        public CardValue Damage = CardValue.MakeConstant(1);
 
         public override bool CanExecute(CardContext context)
         {
@@ -18,12 +18,12 @@ namespace Cards.Effects
 
             int distance = context.Source.CurrentCell.Coordinates.DistanceTo(
                 context.TargetCharacter.CurrentCell.Coordinates);
-            return distance <= context.Range;
+            return distance <= context.EffectiveRange;
         }
 
         public override void Execute(CardContext context)
         {
-            context.TargetCharacter.TakeDamage(Damage);
+            context.TargetCharacter.TakeDamage(Damage.Evaluate(context.Source));
         }
     }
 }

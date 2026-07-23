@@ -129,6 +129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ddc2f6d0fb6c86042b2d66e03f1d38e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexGrid.HexCell
+  startBlocked: 0
 --- !u!114 &4794883247323430988
 MonoBehaviour:
   m_ObjectHideFlags: 0

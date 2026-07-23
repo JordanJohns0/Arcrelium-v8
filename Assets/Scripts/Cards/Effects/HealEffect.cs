@@ -4,11 +4,12 @@ namespace Cards.Effects
 {
     /// <summary>
     /// Heal the source character. Does not require a target.
+    /// Amount can be a constant or derived from a stat.
     /// </summary>
     [CreateAssetMenu(fileName = "HealEffect", menuName = "/Effects/Heal")]
     public class HealEffect : CardEffectSO
     {
-        public int HealAmount = 2;
+        public CardValue Amount = CardValue.MakeConstant(2);
 
         public override bool CanExecute(CardContext context)
         {
@@ -19,7 +20,7 @@ namespace Cards.Effects
 
         public override void Execute(CardContext context)
         {
-            context.Source.Stats.Heal(HealAmount);
+            context.Source.Stats.Heal(Amount.Evaluate(context.Source));
         }
     }
 }

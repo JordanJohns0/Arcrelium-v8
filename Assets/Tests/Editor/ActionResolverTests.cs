@@ -27,7 +27,7 @@ namespace Tests
             target = TestHelper.CreateCharacter(1, 1, 0);
 
             var attackEffect = ScriptableObject.CreateInstance<Cards.Effects.AttackEffect>();
-            attackEffect.Damage = 3;
+            attackEffect.Damage = CardValue.MakeConstant(3);
             attackCardData = ScriptableObject.CreateInstance<CardData>();
             attackCardData.CardName = "Attack";
             attackCardData.TargetType = TargetType.EnemyCharacter;
@@ -36,7 +36,7 @@ namespace Tests
             attackCardData.Effect = attackEffect;
 
             var selfEffect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
-            selfEffect.Amount = 2;
+            selfEffect.Amount = CardValue.MakeConstant(2);
             selfCardData = ScriptableObject.CreateInstance<CardData>();
             selfCardData.CardName = "Defend";
             selfCardData.TargetType = TargetType.Self;

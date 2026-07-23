@@ -38,9 +38,9 @@ namespace Tests
         public void Execute_RunsAllEffects()
         {
             var heal = ScriptableObject.CreateInstance<HealEffect>();
-            heal.HealAmount = 3;
+            heal.Amount = CardValue.MakeConstant(3);
             var block = ScriptableObject.CreateInstance<GainBlockEffect>();
-            block.Amount = 2;
+            block.Amount = CardValue.MakeConstant(2);
 
             source.Stats.ApplyDamage(5);
             composite.Effects = new List<CardEffectSO> { heal, block };
@@ -56,7 +56,7 @@ namespace Tests
         public void CanExecute_AllSubEffectsMustPass()
         {
             var attack = ScriptableObject.CreateInstance<AttackEffect>();
-            attack.Damage = 1;
+            attack.Damage = CardValue.MakeConstant(1);
             composite.Effects = new List<CardEffectSO> { attack };
 
             var ctx = new CardContext { Source = source, TargetCharacter = null, Range = 5 };
@@ -83,9 +83,9 @@ namespace Tests
         public void Execute_OrderRespected()
         {
             var block = ScriptableObject.CreateInstance<GainBlockEffect>();
-            block.Amount = 5;
+            block.Amount = CardValue.MakeConstant(5);
             var attack = ScriptableObject.CreateInstance<AttackEffect>();
-            attack.Damage = 3;
+            attack.Damage = CardValue.MakeConstant(3);
 
             composite.Effects = new List<CardEffectSO> { block, attack };
             var ctx = new CardContext { Source = source, TargetCharacter = target, Range = 5 };

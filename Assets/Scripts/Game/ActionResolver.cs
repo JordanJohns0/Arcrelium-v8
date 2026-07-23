@@ -20,6 +20,7 @@ namespace Game
         [SerializeField] private HexGridManager grid;
 
         public event System.Action<Character, CardData> OnCardPlayed;
+        public event System.Action<CardContext> OnBeforeCardPlay;
 
         /// <summary>
         /// Attempts to play a card from the source character's hand against an optional target,
@@ -51,6 +52,10 @@ namespace Game
                 TargetCharacter = targetCharacter,
                 Range = card.Data.Range
             };
+
+            if (!card.Data.Effect.CanExecute(context)) return false;
+
+            OnBeforeCardPlay?.Invoke(context);
 
             if (!card.Data.Effect.CanExecute(context)) return false;
 

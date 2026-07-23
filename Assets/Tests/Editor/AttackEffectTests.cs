@@ -18,7 +18,7 @@ namespace Tests
         public void SetUp()
         {
             effect = ScriptableObject.CreateInstance<AttackEffect>();
-            effect.Damage = 5;
+            effect.Damage = CardValue.MakeConstant(5);
 
             source = TestHelper.CreateCharacter(0, 0, 0);
             target = TestHelper.CreateCharacter(1, 1, 0);

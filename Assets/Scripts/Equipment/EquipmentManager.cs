@@ -28,6 +28,7 @@ namespace Equipment
 
         private Character character;
         private TurnManager turnManager;
+        private ActionResolver actionResolver;
         private HexGridManager grid;
 
         private EquipmentInstance headSlot;
@@ -46,6 +47,7 @@ namespace Equipment
             this.character = character;
 
             turnManager = FindAnyObjectByType<TurnManager>();
+            actionResolver = FindAnyObjectByType<ActionResolver>();
             grid = FindAnyObjectByType<HexGridManager>();
 
             LoadFromInspector();
@@ -55,6 +57,13 @@ namespace Equipment
                 turnManager.OnTurnStarted += HandleTurnStarted;
                 turnManager.OnTurnEnded += HandleTurnEnded;
             }
+
+            if (actionResolver != null)
+            {
+                actionResolver.OnBeforeCardPlay += HandleBeforeCardPlay;
+            }
+
+            character.OnMovedToCell += HandleMovedToCell;
         }
 
         private void LoadFromInspector()
@@ -261,6 +270,44 @@ namespace Equipment
             FireTriggers(TriggerTiming.EndOfTurn);
         }
 
+        private void HandleBeforeCardPlay(CardContext cardContext)
+        {
+            if (cardContext.Source != character) return;
+            var context = new EquipmentContext
+            {
+                Source = character,
+                Grid = grid,
+                TurnManager = turnManager,
+                Timing = TriggerTiming.OnBeforeCardPlay,
+                TargetCell = cardContext.TargetCell,
+                CardContext = cardContext
+            };
+
+            foreach (var trigger in GetTriggers(TriggerTiming.OnBeforeCardPlay))
+            {
+                if (trigger.Effect != null)
+                    trigger.Effect.Execute(context);
+            }
+        }
+
+        private void HandleMovedToCell(HexCell cell)
+        {
+            var context = new EquipmentContext
+            {
+                Source = character,
+                Grid = grid,
+                TurnManager = turnManager,
+                Timing = TriggerTiming.OnMovedToCell,
+                TargetCell = cell
+            };
+
+            foreach (var trigger in GetTriggers(TriggerTiming.OnMovedToCell))
+            {
+                if (trigger.Effect != null)
+                    trigger.Effect.Execute(context);
+            }
+        }
+
         public void FireTriggers(TriggerTiming timing)
         {
             var context = new EquipmentContext
@@ -303,6 +350,16 @@ namespace Equipment
             {
                 turnManager.OnTurnStarted -= HandleTurnStarted;
                 turnManager.OnTurnEnded -= HandleTurnEnded;
+            }
+
+            if (actionResolver != null)
+            {
+                actionResolver.OnBeforeCardPlay -= HandleBeforeCardPlay;
+            }
+
+            if (character != null)
+            {
+                character.OnMovedToCell -= HandleMovedToCell;
             }
         }
     }

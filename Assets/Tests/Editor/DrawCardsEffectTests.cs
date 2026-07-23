@@ -18,7 +18,7 @@ namespace Tests
         public void SetUp()
         {
             effect = ScriptableObject.CreateInstance<DrawCardsEffect>();
-            effect.Amount = 2;
+            effect.Amount = CardValue.MakeConstant(2);
 
             source = TestHelper.CreateCharacter(0, 0, 0);
 

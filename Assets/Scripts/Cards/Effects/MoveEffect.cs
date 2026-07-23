@@ -17,14 +17,14 @@ namespace Cards.Effects
             if (context.TargetCell == null || !context.TargetCell.IsWalkable) return false;
 
             int distance = context.Source.CurrentCell.Coordinates.DistanceTo(context.TargetCell.Coordinates);
-            if (distance > context.Range) return false;
+            if (distance > context.EffectiveRange) return false;
 
             if (context.Grid != null)
             {
                 List<HexCell> path = context.Grid.FindPath(
                     context.Source.CurrentCell.Coordinates,
                     context.TargetCell.Coordinates,
-                    context.Range);
+                    context.EffectiveRange);
                 return path != null;
             }
 
@@ -40,7 +40,7 @@ namespace Cards.Effects
                 List<HexCell> path = context.Grid.FindPath(
                     context.Source.CurrentCell.Coordinates,
                     target.Coordinates,
-                    context.Range);
+                    context.EffectiveRange);
 
                 if (path != null && path.Count > 0)
                 {

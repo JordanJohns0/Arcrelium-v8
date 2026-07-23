@@ -17,7 +17,7 @@ namespace Tests
         public void SetUp()
         {
             effect = ScriptableObject.CreateInstance<GainBlockEffect>();
-            effect.Amount = 3;
+            effect.Amount = CardValue.MakeConstant(3);
 
             source = TestHelper.CreateCharacter(0, 0, 0);
         }

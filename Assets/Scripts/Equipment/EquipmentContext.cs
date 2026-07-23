@@ -1,4 +1,5 @@
 using Characters;
+using Cards;
 using HexGrid;
 using Game;
 
@@ -16,5 +17,7 @@ namespace Equipment
         public TurnManager TurnManager;
         public TriggerTiming Timing;
         public int Amount;
+        public HexCell TargetCell;
+        public CardContext CardContext;
     }
 }

@@ -3,17 +3,17 @@ using UnityEngine;
 namespace Cards.Effects
 {
     /// <summary>
-    /// Grants the source character block equal to a fixed amount.
+    /// Grants the source character block. Amount can be a constant or derived from a stat.
     /// Block absorbs damage before health.
     /// </summary>
     [CreateAssetMenu(fileName = "GainBlockEffect", menuName = "/Effects/Gain Block")]
     public class GainBlockEffect : CardEffectSO
     {
-        public int Amount = 1;
+        public CardValue Amount = CardValue.MakeConstant(1);
 
         public override void Execute(CardContext context)
         {
-            context.Source.Stats.GainBlock(Amount);
+            context.Source.Stats.GainBlock(Amount.Evaluate(context.Source));
         }
     }
 }

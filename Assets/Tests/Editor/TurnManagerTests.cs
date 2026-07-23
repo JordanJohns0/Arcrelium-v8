@@ -34,7 +34,7 @@ namespace Tests
             enemy = TestHelper.CreateCharacter(1, 1, 0);
 
             var selfEffect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
-            selfEffect.Amount = 1;
+            selfEffect.Amount = CardValue.MakeConstant(1);
             selfCardData = ScriptableObject.CreateInstance<CardData>();
             selfCardData.CardName = "Defend";
             selfCardData.TargetType = TargetType.Self;

@@ -5,9 +5,11 @@ namespace Equipment
         StartOfTurn,
         EndOfTurn,
         OnCardPlayed,
+        OnBeforeCardPlay,
         OnDamageTaken,
         OnDealDamage,
         OnDraw,
-        OnDiscard
+        OnDiscard,
+        OnMovedToCell
     }
 }

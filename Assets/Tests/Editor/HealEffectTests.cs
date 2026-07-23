@@ -17,7 +17,7 @@ namespace Tests
         public void SetUp()
         {
             effect = ScriptableObject.CreateInstance<HealEffect>();
-            effect.HealAmount = 4;
+            effect.Amount = CardValue.MakeConstant(4);
 
             source = TestHelper.CreateCharacter(0, 0, 0);
         }

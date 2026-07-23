@@ -26,6 +26,7 @@ namespace Characters
         public int OwnerPlayerId { get; private set; }
 
         public event Action<Character> OnDefeated;
+        public event Action<HexCell> OnMovedToCell;
 
         private Renderer[] renderers;
         private readonly List<(Renderer renderer, Color originalColor)> originalColors = new List<(Renderer, Color)>();
@@ -80,6 +81,7 @@ namespace Characters
 
             CurrentCell = cell;
             cell.SetOccupant(this);
+            OnMovedToCell?.Invoke(cell);
         }
 
         public void DrawCards(int count)
