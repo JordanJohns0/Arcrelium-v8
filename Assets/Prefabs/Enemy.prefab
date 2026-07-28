@@ -15,7 +15,7 @@ PrefabInstance:
     - target: {fileID: 7148383819020381768, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+      objectReference: {fileID: 2100000, guid: 2b42e0759fb38c947a22e859e76fbb88, type: 2}
     - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: stats.MaxHealth
       value: 3

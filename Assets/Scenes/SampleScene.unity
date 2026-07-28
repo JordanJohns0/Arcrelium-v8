@@ -2206,6 +2206,12 @@ MonoBehaviour:
   grid: {fileID: 396940646}
   actionResolver: {fileID: 531838724}
   turnManager: {fileID: 531838723}
+  playerCharacterPrefab: {fileID: 0}
+  enemyCharacterPrefab: {fileID: 0}
+  baseEnemyCount: 2
+  extraEnemiesPerLevel: 1
+  allySpawnQ: 0
+  allySpawnR: -2
   spawns:
   - characterPrefab: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
     ownerPlayerId: 0

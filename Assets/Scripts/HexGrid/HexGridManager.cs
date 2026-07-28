@@ -61,6 +61,8 @@ namespace HexGrid
             cells[coordinates] = cell;
         }
 
+        public IEnumerable<HexCell> AllCells => cells.Values;
+
         public bool TryGetCell(HexCoordinates coordinates, out HexCell cell)
         {
             return cells.TryGetValue(coordinates, out cell);
