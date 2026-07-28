@@ -2074,8 +2074,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1250, y: 350}
+  m_AnchoredPosition: {x: -100, y: 0}
+  m_SizeDelta: {x: 1360, y: 350}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &511087455
 MonoBehaviour:
@@ -2175,9 +2175,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.TurnManager
   turnOrder: []
   actionResolver: {fileID: 531838724}
-  cardsDrawnPerTurn: 1
+  cardsDrawnPerTurn: 2
   actionDelay: 0.5
-  drawDelay: 0.3
   turnEndDelay: 0.3
 --- !u!114 &531838724
 MonoBehaviour:

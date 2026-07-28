@@ -16,12 +16,11 @@ namespace Game
 
     /// <summary>
     /// Drives whose turn it is and enforces the turn structure:
-    ///   1. Turn start
+    ///   1. Turn start — draw 2 cards
     ///   2. Active character plays ONE card, or passes
     ///   3. (if playing) cost is paid by discarding other cards from hand
     ///   4. the card's effect resolves
-    ///   5. draw a card
-    ///   6. end of turn -> advance to the next character
+    ///   5. end of turn -> advance to the next character
     ///
     /// Each step has a configurable delay so actions are visible to the player.
     /// </summary>
@@ -29,11 +28,10 @@ namespace Game
     {
         [SerializeField] private List<Character> turnOrder = new List<Character>();
         [SerializeField] private ActionResolver actionResolver;
-        [SerializeField] private int cardsDrawnPerTurn = 1;
+        [SerializeField] private int cardsDrawnPerTurn = 2;
 
         [Header("Action Timing")]
         [SerializeField] private float actionDelay = 0.5f;
-        [SerializeField] private float drawDelay = 0.3f;
         [SerializeField] private float turnEndDelay = 0.3f;
 
         private int currentIndex = 0;
@@ -63,6 +61,7 @@ namespace Game
         private void BeginTurn()
         {
             CurrentPhase = TurnPhase.Act;
+            ActiveCharacter?.DrawCards(cardsDrawnPerTurn);
             OnTurnStarted?.Invoke(ActiveCharacter);
         }
 
@@ -95,10 +94,6 @@ namespace Game
         private IEnumerator AdvanceToDrawThenEndCoroutine()
         {
             yield return new WaitForSeconds(actionDelay);
-
-            CurrentPhase = TurnPhase.Draw;
-            ActiveCharacter?.DrawCards(cardsDrawnPerTurn);
-            yield return new WaitForSeconds(drawDelay);
 
             CurrentPhase = TurnPhase.End;
             OnTurnEnded?.Invoke(ActiveCharacter);

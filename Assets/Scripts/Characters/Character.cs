@@ -39,7 +39,7 @@ namespace Characters
         private static readonly int colorID = Shader.PropertyToID("_Color");
         private static readonly int baseColorID = Shader.PropertyToID("_BaseColor");
 
-        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 3)
+        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1)
         {
             OwnerPlayerId = ownerPlayerId;
             stats.Initialize();
