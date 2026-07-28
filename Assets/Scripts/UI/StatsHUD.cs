@@ -202,6 +202,7 @@ namespace UI
 
             if (entry.bg != null) entry.bg.color = isAlly ? allyColor : enemyColor;
             UpdateEntryLabels(entry, character.Stats);
+            UpdateBars(entry, character.Stats);
 
             entries[character] = entry;
             character.OnDefeated += HandleCharacterDefeated;
@@ -225,14 +226,26 @@ namespace UI
             {
                 if (kv.Key == null || kv.Key.Stats != stats) continue;
                 UpdateEntryLabels(kv.Value, stats);
-
-                if (kv.Value.hpFill != null)
-                {
-                    float ratio = (float)stats.CurrentHealth / Mathf.Max(1, stats.MaxHealth);
-                    kv.Value.hpFill.rectTransform.anchorMax = new Vector2(ratio, 1f);
-                    kv.Value.hpFill.color = Color.Lerp(Color.red, Color.green, ratio);
-                }
+                UpdateBars(kv.Value, stats);
                 break;
+            }
+        }
+
+        private void UpdateBars(StatEntry entry, CharacterStats stats)
+        {
+            float max = Mathf.Max(1, stats.MaxHealth);
+
+            if (entry.hpFill != null)
+            {
+                float hpRatio = (float)stats.CurrentHealth / max;
+                entry.hpFill.rectTransform.anchorMax = new Vector2(hpRatio, 1f);
+                entry.hpFill.color = Color.Lerp(Color.red, Color.green, hpRatio);
+            }
+
+            if (entry.blockOverlay != null)
+            {
+                float blockRatio = (float)stats.Block / max;
+                entry.blockOverlay.rectTransform.anchorMax = new Vector2(blockRatio, 1f);
             }
         }
 

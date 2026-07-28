@@ -67,7 +67,7 @@ namespace Characters
 
         public void GainBlock(int amount)
         {
-            Block += amount;
+            Block = Mathf.Min(MaxHealth, Block + amount);
             OnStatsChanged?.Invoke(this);
         }
     }

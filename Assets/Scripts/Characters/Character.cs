@@ -119,6 +119,7 @@ namespace Characters
         {
             CurrentCell?.ClearOccupant();
             OnDefeated?.Invoke(this);
+            Destroy(gameObject);
         }
 
         private void OnDestroy()

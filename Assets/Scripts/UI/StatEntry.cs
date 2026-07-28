@@ -8,6 +8,7 @@ namespace UI
     {
         public Image bg;
         public Image hpFill;
+        public Image blockOverlay;
         public TMP_Text nameLabel;
         public TMP_Text hpLabel;
         public TMP_Text armorLabel;

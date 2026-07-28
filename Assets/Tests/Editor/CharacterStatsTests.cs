@@ -162,6 +162,13 @@ namespace Tests
         }
 
         [Test]
+        public void GainBlock_CannotExceedMaxHealth()
+        {
+            stats.GainBlock(20);
+            Assert.AreEqual(10, stats.Block);
+        }
+
+        [Test]
         public void ZeroDamage_NoChange()
         {
             stats.ApplyDamage(0);

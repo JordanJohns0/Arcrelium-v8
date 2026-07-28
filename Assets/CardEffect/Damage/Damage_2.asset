@@ -12,4 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e58daa374662be4b834d9fc880c8b82, type: 3}
   m_Name: Damage_2
   m_EditorClassIdentifier: Assembly-CSharp::Cards.Effects.AttackEffect
-  Damage: 2
+  Damage:
+    Type: 0
+    Constant: 2
