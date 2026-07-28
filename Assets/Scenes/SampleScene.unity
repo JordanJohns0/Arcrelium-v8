@@ -2216,6 +2216,14 @@ MonoBehaviour:
     ownerPlayerId: 1
     spawnQ: 1
     spawnR: 1
+  - characterPrefab: {fileID: 3890759042152615654, guid: 735c479c759ce754e8f03d722122b14a, type: 3}
+    ownerPlayerId: 1
+    spawnQ: 0
+    spawnR: 1
+  - characterPrefab: {fileID: 3890759042152615654, guid: 735c479c759ce754e8f03d722122b14a, type: 3}
+    ownerPlayerId: 1
+    spawnQ: 2
+    spawnR: 1
 --- !u!4 &531838726
 Transform:
   m_ObjectHideFlags: 0
