@@ -1456,6 +1456,7 @@ MonoBehaviour:
   hexCellPrefab: {fileID: 7457840096263263654, guid: 468f9f37491a7214eacd48c2d9942c23, type: 3}
   radius: 4
   hexSize: 1
+  obstacles: []
 --- !u!4 &396940647
 Transform:
   m_ObjectHideFlags: 0
@@ -2683,6 +2684,53 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 580467770}
   m_CullTransparentMesh: 1
+--- !u!1 &610972943
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 610972944}
+  - component: {fileID: 610972945}
+  m_Layer: 0
+  m_Name: StatsHUD
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &610972944
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 610972943}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 829.7577, y: 0.00003, z: 5910.8667}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &610972945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 610972943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a5b707d9ebd3aa4ca9ed2fc609c0e97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Arcrelium.Game::UI.StatsHUD
+  statEntryPrefab: {fileID: 1269761494858330571, guid: f43c4cf0098957e47a7f3682333c1f5b, type: 3}
+  allyColor: {r: 0.15, g: 0.25, b: 0.5, a: 0.7}
+  enemyColor: {r: 0.5, g: 0.15, b: 0.15, a: 0.7}
 --- !u!1 &697631504
 GameObject:
   m_ObjectHideFlags: 0
@@ -6985,3 +7033,4 @@ SceneRoots:
   - {fileID: 992314880}
   - {fileID: 2007295701}
   - {fileID: 1364112889}
+  - {fileID: 610972944}

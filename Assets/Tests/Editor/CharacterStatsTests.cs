@@ -167,5 +167,63 @@ namespace Tests
             stats.ApplyDamage(0);
             Assert.AreEqual(10, stats.CurrentHealth);
         }
+
+        [Test]
+        public void ApplyDamage_FiresOnStatsChanged()
+        {
+            int fired = 0;
+            stats.OnStatsChanged += _ => fired++;
+
+            stats.ApplyDamage(3);
+
+            Assert.AreEqual(1, fired);
+        }
+
+        [Test]
+        public void Heal_FiresOnStatsChanged()
+        {
+            stats.ApplyDamage(5);
+            int fired = 0;
+            stats.OnStatsChanged += _ => fired++;
+
+            stats.Heal(3);
+
+            Assert.AreEqual(1, fired);
+        }
+
+        [Test]
+        public void GainBlock_FiresOnStatsChanged()
+        {
+            int fired = 0;
+            stats.OnStatsChanged += _ => fired++;
+
+            stats.GainBlock(5);
+
+            Assert.AreEqual(1, fired);
+        }
+
+        [Test]
+        public void Initialize_FiresOnStatsChanged()
+        {
+            int fired = 0;
+            stats.OnStatsChanged += _ => fired++;
+
+            stats.Initialize();
+
+            Assert.AreEqual(1, fired);
+        }
+
+        [Test]
+        public void MultipleStatChanges_FiresEachTime()
+        {
+            int fired = 0;
+            stats.OnStatsChanged += _ => fired++;
+
+            stats.GainBlock(2);
+            stats.ApplyDamage(3);
+            stats.Heal(1);
+
+            Assert.AreEqual(3, fired);
+        }
     }
 }

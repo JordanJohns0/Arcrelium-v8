@@ -7,6 +7,8 @@ using Equipment;
 
 namespace Characters
 {
+    public enum Team { Ally, Enemy }
+
     /// <summary>
     /// A character on the board. Holds its stats, current cell, and its card deck/hand.
     /// Characters never act on their own — every action comes from a card being played
@@ -24,9 +26,13 @@ namespace Characters
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
         public int OwnerPlayerId { get; private set; }
+        public Team Team => OwnerPlayerId == 0 ? Team.Ally : Team.Enemy;
 
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
+
+        public static event Action<Character> OnCharacterCreated;
+        public static event Action<Character> OnCharacterDestroyed;
 
         private Renderer[] renderers;
         private readonly List<(Renderer renderer, Color originalColor)> originalColors = new List<(Renderer, Color)>();
@@ -54,6 +60,8 @@ namespace Characters
                 deck.Shuffle();
                 DrawCards(startingHandSize);
             }
+
+            OnCharacterCreated?.Invoke(this);
         }
 
         public void PlaceOnCell(HexCell cell)
@@ -111,6 +119,11 @@ namespace Characters
         {
             CurrentCell?.ClearOccupant();
             OnDefeated?.Invoke(this);
+        }
+
+        private void OnDestroy()
+        {
+            OnCharacterDestroyed?.Invoke(this);
         }
 
         public void SetHighlighted(Color highlightColor)

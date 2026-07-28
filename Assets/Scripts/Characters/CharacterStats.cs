@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Characters
@@ -17,10 +18,13 @@ namespace Characters
         public int Armor = 0;
         public int Block = 0;
 
+        public event Action<CharacterStats> OnStatsChanged;
+
         public void Initialize()
         {
             CurrentHealth = MaxHealth;
             Block = 0;
+            OnStatsChanged?.Invoke(this);
         }
 
         public bool IsAlive => CurrentHealth > 0;
@@ -51,16 +55,20 @@ namespace Characters
             {
                 CurrentHealth = Mathf.Max(0, CurrentHealth - remaining);
             }
+
+            OnStatsChanged?.Invoke(this);
         }
 
         public void Heal(int amount)
         {
             CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
+            OnStatsChanged?.Invoke(this);
         }
 
         public void GainBlock(int amount)
         {
             Block += amount;
+            OnStatsChanged?.Invoke(this);
         }
     }
 }
