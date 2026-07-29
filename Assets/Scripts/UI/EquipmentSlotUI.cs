@@ -67,6 +67,11 @@ namespace UI
         public void OnPointerClick(PointerEventData eventData)
         {
             if (currentEquipment == null) return;
+            if (eventData.button == PointerEventData.InputButton.Right)
+            {
+                Tooltip.Show(currentEquipment, eventData.position);
+                return;
+            }
             parentUI.TryUnequip(this);
         }
 

@@ -60,6 +60,7 @@ namespace UI
         {
             if (equipmentData == null) return;
 
+            Tooltip.Hide();
             originalParent = transform.parent;
             transform.SetParent(parentCanvas.transform);
             transform.SetAsLastSibling();
@@ -106,6 +107,9 @@ namespace UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (eventData.button != PointerEventData.InputButton.Right) return;
+            if (equipmentData == null) return;
+            Tooltip.Show(equipmentData, eventData.position);
         }
     }
 }

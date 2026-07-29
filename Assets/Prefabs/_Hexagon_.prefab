@@ -146,6 +146,9 @@ MonoBehaviour:
   borderWidthRatio: 0.05
   borderHeight: 0.05
   generateOnStart: 1
+  pillarDepth: 4
+  depthRandomRange: 0.8
+  surfaceOffsetRange: 0.2
   interiorMaterial: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
   borderMaterial: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
   interiorColor: {r: 0.1242139, g: 0.745283, b: 0, a: 1}
