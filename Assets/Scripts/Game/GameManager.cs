@@ -13,6 +13,7 @@ namespace Game
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private Character playerCharacterPrefab;
         [SerializeField] private Character enemyCharacterPrefab;
+        [SerializeField] private UnityEngine.InputSystem.InputActionAsset inputActions;
         [SerializeField] [Min(1)] private int baseEnemyCount = 2;
         [SerializeField] [Min(0)] private int extraEnemiesPerLevel = 1;
         [SerializeField] private int allySpawnQ = 0;
@@ -38,6 +39,8 @@ namespace Game
                 SetupDynamicMatch();
             else
                 SetupMatch();
+
+            PauseMenu.GetOrCreate(inputActions);
         }
 
         public void SetupMatch()
@@ -69,15 +72,10 @@ namespace Game
             grid.GenerateGrid();
             activeCharacters.Clear();
 
-            Debug.Log($"[GameManager] SetupDynamicMatch. playerPrefab: {playerCharacterPrefab?.name}, enemyPrefab: {enemyCharacterPrefab?.name}");
-
             var playerCoords = new HexCoordinates(allySpawnQ, allySpawnR);
             if (grid.TryGetCell(playerCoords, out HexCell playerCell))
             {
                 Character player = Instantiate(playerCharacterPrefab);
-                Debug.Log($"[GameManager] Player spawned at {playerCell.transform.position}. Renderers: {player.GetComponentsInChildren<Renderer>().Length}");
-                foreach (var r in player.GetComponentsInChildren<Renderer>())
-                    Debug.Log($"[GameManager]   Renderer: {r.name}, enabled: {r.enabled}, material: {r.sharedMaterial?.name}, shader: {r.sharedMaterial?.shader?.name}");
                 player.Initialize(0, playerCell);
                 player.OnDefeated += HandleCharacterDefeated;
                 activeCharacters.Add(player);

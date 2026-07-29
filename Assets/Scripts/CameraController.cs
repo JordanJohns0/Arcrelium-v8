@@ -19,8 +19,6 @@ public class CameraController : MonoBehaviour
     {
         orbitalFollow = GetComponent<CinemachineOrbitalFollow>();
 
-        Debug.Log($"[CameraController] Awake. inputActions assigned: {inputActions != null}");
-
         if (inputActions == null)
         {
             Debug.LogError("[CameraController] inputActions is null! Assign InputSystem_Actions in the inspector.");
@@ -28,33 +26,22 @@ public class CameraController : MonoBehaviour
         }
 
         var cameraMap = inputActions.FindActionMap("Camera");
-        Debug.Log($"[CameraController] Found Camera map: {cameraMap != null}");
-
-        if (cameraMap == null)
-        {
-            foreach (var map in inputActions.actionMaps)
-                Debug.Log($"[CameraController] Available map: {map.name}");
-            return;
-        }
+        if (cameraMap == null) return;
 
         horizontalAction = cameraMap.FindAction("Horizontal");
         verticalAction = cameraMap.FindAction("Vertical");
         zoomAction = cameraMap.FindAction("Zoom");
-
-        Debug.Log($"[CameraController] Actions - H:{horizontalAction != null} V:{verticalAction != null} Z:{zoomAction != null}");
     }
 
     private void OnEnable()
     {
-        Debug.Log("[CameraController] OnEnable");
-        if (horizontalAction != null) { horizontalAction.Enable(); Debug.Log("[CameraController] Horizontal enabled"); }
-        if (verticalAction != null) { verticalAction.Enable(); Debug.Log("[CameraController] Vertical enabled"); }
-        if (zoomAction != null) { zoomAction.Enable(); Debug.Log("[CameraController] Zoom enabled"); }
+        horizontalAction?.Enable();
+        verticalAction?.Enable();
+        zoomAction?.Enable();
     }
 
     private void OnDisable()
     {
-        Debug.Log("[CameraController] OnDisable");
         horizontalAction?.Disable();
         verticalAction?.Disable();
         zoomAction?.Disable();
@@ -62,18 +49,11 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
-        if (orbitalFollow == null)
-        {
-            Debug.LogWarning("[CameraController] orbitalFollow is null");
-            return;
-        }
+        if (orbitalFollow == null) return;
 
         float horizontal = horizontalAction?.ReadValue<float>() ?? 0;
         float vertical = verticalAction?.ReadValue<float>() ?? 0;
         float zoom = zoomAction?.ReadValue<float>() ?? 0;
-
-        if (horizontal != 0 || vertical != 0 || zoom != 0)
-            Debug.Log($"[CameraController] Input - H:{horizontal} V:{vertical} Z:{zoom}");
 
         if (horizontal != 0)
             orbitalFollow.HorizontalAxis.Value = ClampValue(
