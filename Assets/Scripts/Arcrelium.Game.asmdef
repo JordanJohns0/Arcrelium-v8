@@ -2,6 +2,7 @@
     "name": "Arcrelium.Game",
     "rootNamespace": "",
     "references": [
+        "Unity.Cinemachine",
         "Unity.InputSystem",
         "Unity.TextMeshPro"
     ],
