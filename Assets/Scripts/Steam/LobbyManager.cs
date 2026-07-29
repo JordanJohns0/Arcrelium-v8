@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Steamworks;
+using Steamworks.Data;
 using UnityEngine;
-
-namespace Steam
-{
     public class LobbyManager : MonoBehaviour
     {
         private static LobbyManager instance;
@@ -60,12 +58,12 @@ namespace Steam
 
         public async void FindLobbies()
         {
-            var result = await SteamMatchmaking.LobbyList.RequestAsync();
-            if (result.HasValue)
-            {
-                var lobbies = new List<Lobby>(result.Value);
-                OnLobbyListReceived?.Invoke(lobbies);
-            }
+var result = await SteamMatchmaking.LobbyList.RequestAsync();
+        if (result != null)
+        {
+            var lobbies = new List<Lobby>(result);
+            OnLobbyListReceived?.Invoke(lobbies);
+        }
         }
 
         public async void JoinLobby(Lobby lobby)
@@ -95,4 +93,3 @@ namespace Steam
             }
         }
     }
-}

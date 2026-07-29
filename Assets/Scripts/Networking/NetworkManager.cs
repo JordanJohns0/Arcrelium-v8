@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Steamworks;
-using Steam;
+using Steamworks.Data;
 using UnityEngine;
 
 namespace Networking
@@ -43,7 +43,7 @@ namespace Networking
         public void StartHost()
         {
             IsHost = true;
-            HostSteamId = Steam.SteamManager.Instance.SteamId;
+            HostSteamId = SteamClient.SteamId;
             Debug.Log("[NetworkManager] Started as host");
         }
 
@@ -80,7 +80,7 @@ namespace Networking
             Buffer.BlockCopy(header, 0, packet, 0, header.Length);
             Buffer.BlockCopy(body, 0, packet, header.Length, body.Length);
 
-            SteamNetworking.SendP2PPacket(new SteamId(HostSteamId), packet);
+            SteamNetworking.SendP2PPacket(HostSteamId, packet);
         }
 
         private void SendToAllClients(MessageType type, string json)
@@ -94,14 +94,14 @@ namespace Networking
 
             foreach (var member in LobbyManager.Instance.CurrentLobby?.Members)
             {
-                if (member == Steam.SteamManager.Instance.SteamId) continue;
-                SteamNetworking.SendP2PPacket(member, packet);
+                if (member.Id == SteamClient.SteamId) continue;
+                SteamNetworking.SendP2PPacket(member.Id, packet);
             }
         }
 
         private void Update()
         {
-            if (!Steam.SteamManager.Instance.IsInitialized) return;
+            if (!SteamClient.IsValid) return;
             ProcessIncomingPackets();
         }
 
@@ -112,7 +112,8 @@ namespace Networking
                 var result = SteamNetworking.ReadP2PPacket();
                 if (!result.HasValue) continue;
 
-                var (sender, data) = result.Value;
+                var sender = result.Value.SteamId;
+                var data = result.Value.Data;
                 if (data.Length == 0) continue;
 
                 MessageType type = (MessageType)data[0];

@@ -191,7 +191,7 @@ namespace UI
             {
                 NetworkManager.Instance.SendPlayCardRequest(new PlayCardRequest
                 {
-                    cardInstanceId = pendingCard.GetInstanceID(),
+                    cardInstanceId = pendingCard.Id,
                     targetQ = targetCell?.Coordinates.Q,
                     targetR = targetCell?.Coordinates.R,
                     targetCharacterId = targetCharacter != null ? targetCharacter.GetInstanceID() : null

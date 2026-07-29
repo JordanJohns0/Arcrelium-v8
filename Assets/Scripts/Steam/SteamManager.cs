@@ -1,9 +1,7 @@
 using Steamworks;
 using UnityEngine;
 
-namespace Steam
-{
-    public class SteamManager : MonoBehaviour
+public class SteamManager : MonoBehaviour
     {
         private static SteamManager instance;
 
@@ -63,4 +61,3 @@ namespace Steam
             }
         }
     }
-}

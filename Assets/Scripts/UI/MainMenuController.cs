@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using Steamworks;
-using Steam;
+using Lobby = Steamworks.Data.Lobby;
 using Game;
 
 namespace UI
@@ -15,7 +15,7 @@ namespace UI
         private Transform lobbyContent;
         private Transform lobbyListContent;
         private TMP_Text statusText;
-        private Button startMatchBtn;
+        private GameObject startMatchBtn;
         private readonly List<Lobby> foundLobbies = new List<Lobby>();
 
         private void Awake()
@@ -117,15 +117,25 @@ namespace UI
             spacer.GetComponent<RectTransform>().sizeDelta = new Vector2(500, 30);
 
             // Main menu buttons
-            mainContent = new GameObject("MainContent", typeof(RectTransform)).transform;
+            mainContent = new GameObject("MainContent", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
             mainContent.SetParent(content, false);
+            var mcLayout = mainContent.GetComponent<VerticalLayoutGroup>();
+            mcLayout.childAlignment = TextAnchor.MiddleCenter;
+            mcLayout.childControlWidth = true;
+            mcLayout.childControlHeight = true;
+            mcLayout.spacing = 10;
             CreateButton(mainContent, "Start Game (Single Player)", StartGame);
             CreateButton(mainContent, "Multiplayer", ShowMultiplayerPanel);
             CreateButton(mainContent, "Quit", QuitGame);
 
             // Multiplayer panel (hidden by default)
-            lobbyContent = new GameObject("LobbyContent", typeof(RectTransform)).transform;
+            lobbyContent = new GameObject("LobbyContent", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
             lobbyContent.SetParent(content, false);
+            var lcLayout = lobbyContent.GetComponent<VerticalLayoutGroup>();
+            lcLayout.childAlignment = TextAnchor.MiddleCenter;
+            lcLayout.childControlWidth = true;
+            lcLayout.childControlHeight = true;
+            lcLayout.spacing = 10;
             lobbyContent.gameObject.SetActive(false);
 
             statusText = CreateLabel(lobbyContent, "");
