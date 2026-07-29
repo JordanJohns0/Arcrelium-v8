@@ -6,6 +6,8 @@ using UI;
 
 namespace Game
 {
+    public enum GameMode { SinglePlayer, Host, Client }
+
     public class GameManager : MonoBehaviour
     {
         [SerializeField] private HexGridManager grid;
@@ -18,6 +20,7 @@ namespace Game
         [SerializeField] [Min(0)] private int extraEnemiesPerLevel = 1;
         [SerializeField] private int allySpawnQ = 0;
         [SerializeField] private int allySpawnR = -2;
+        [SerializeField] private GameMode mode = GameMode.SinglePlayer;
 
         [System.Serializable]
         public class CharacterSpawn
@@ -35,10 +38,20 @@ namespace Game
 
         private void Start()
         {
-            if (playerCharacterPrefab != null && enemyCharacterPrefab != null)
-                SetupDynamicMatch();
-            else
-                SetupMatch();
+            switch (mode)
+            {
+                case GameMode.SinglePlayer:
+                case GameMode.Host:
+                    if (playerCharacterPrefab != null && enemyCharacterPrefab != null)
+                        SetupDynamicMatch();
+                    else
+                        SetupMatch();
+                    break;
+
+                case GameMode.Client:
+                    grid.GenerateGrid();
+                    break;
+            }
 
             PauseMenu.GetOrCreate(inputActions);
         }

@@ -21,6 +21,7 @@ namespace UI
         [Header("References")]
         [SerializeField] private PlayerInventory inventory;
         [SerializeField] private Canvas canvas;
+        [SerializeField] private int localPlayerId = 0;
 
         [Header("Equipment Slots")]
         [SerializeField] private EquipmentSlotUI headSlot;
@@ -62,7 +63,7 @@ namespace UI
 
             foreach (Character c in FindObjectsByType<Character>(FindObjectsSortMode.None))
             {
-                if (c.OwnerPlayerId == 0 && c.Equipment != null)
+                if (c.OwnerPlayerId == localPlayerId && c.Equipment != null)
                 {
                     cachedEquipmentManager = c.Equipment;
                     return;

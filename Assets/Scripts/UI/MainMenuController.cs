@@ -1,15 +1,67 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using Steamworks;
+using Steam;
+using Game;
 
 namespace UI
 {
     public class MainMenuController : MonoBehaviour
     {
+        private Transform mainContent;
+        private Transform lobbyContent;
+        private Transform lobbyListContent;
+        private TMP_Text statusText;
+        private Button startMatchBtn;
+        private readonly List<Lobby> foundLobbies = new List<Lobby>();
+
         private void Awake()
         {
             CreateUI();
+            var _ = SteamManager.Instance;
+            SubscribeLobbyEvents();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeLobbyEvents();
+        }
+
+        private void SubscribeLobbyEvents()
+        {
+            LobbyManager.OnLobbyCreated += HandleLobbyCreated;
+            LobbyManager.OnLobbyJoined += HandleLobbyJoined;
+            LobbyManager.OnLobbyListReceived += HandleLobbyListReceived;
+        }
+
+        private void UnsubscribeLobbyEvents()
+        {
+            LobbyManager.OnLobbyCreated -= HandleLobbyCreated;
+            LobbyManager.OnLobbyJoined -= HandleLobbyJoined;
+            LobbyManager.OnLobbyListReceived -= HandleLobbyListReceived;
+        }
+
+        private void HandleLobbyCreated(Lobby lobby)
+        {
+            statusText.text = "Waiting for players...";
+            startMatchBtn.gameObject.SetActive(true);
+        }
+
+        private void HandleLobbyJoined(Lobby lobby)
+        {
+            ShowLobbyPanel();
+            statusText.text = "Joined lobby — waiting for host to start...";
+            startMatchBtn.gameObject.SetActive(false);
+        }
+
+        private void HandleLobbyListReceived(List<Lobby> lobbies)
+        {
+            foundLobbies.Clear();
+            foundLobbies.AddRange(lobbies);
+            RefreshLobbyList();
         }
 
         private void CreateUI()
@@ -42,13 +94,13 @@ namespace UI
             content.SetParent(panel, false);
             content.anchorMin = new Vector2(0.5f, 0.5f);
             content.anchorMax = new Vector2(0.5f, 0.5f);
-            content.sizeDelta = new Vector2(400, 500);
+            content.sizeDelta = new Vector2(500, 600);
             content.anchoredPosition = Vector2.zero;
             var contentLayout = content.GetComponent<VerticalLayoutGroup>();
             contentLayout.childAlignment = TextAnchor.MiddleCenter;
             contentLayout.childControlWidth = true;
             contentLayout.childControlHeight = true;
-            contentLayout.spacing = 20;
+            contentLayout.spacing = 10;
 
             var titleObj = new GameObject("Title", typeof(TextMeshProUGUI));
             titleObj.transform.SetParent(content, false);
@@ -58,24 +110,66 @@ namespace UI
             title.fontStyle = FontStyles.Bold;
             title.color = Color.white;
             title.alignment = TextAlignmentOptions.Center;
-            title.rectTransform.sizeDelta = new Vector2(400, 100);
+            title.rectTransform.sizeDelta = new Vector2(500, 100);
 
             var spacer = new GameObject("Spacer", typeof(RectTransform));
             spacer.transform.SetParent(content, false);
-            spacer.GetComponent<RectTransform>().sizeDelta = new Vector2(400, 60);
+            spacer.GetComponent<RectTransform>().sizeDelta = new Vector2(500, 30);
 
-            var startBtn = CreateButton(content, "Start Game", StartGame);
-            var quitBtn = CreateButton(content, "Quit", QuitGame);
+            // Main menu buttons
+            mainContent = new GameObject("MainContent", typeof(RectTransform)).transform;
+            mainContent.SetParent(content, false);
+            CreateButton(mainContent, "Start Game (Single Player)", StartGame);
+            CreateButton(mainContent, "Multiplayer", ShowMultiplayerPanel);
+            CreateButton(mainContent, "Quit", QuitGame);
+
+            // Multiplayer panel (hidden by default)
+            lobbyContent = new GameObject("LobbyContent", typeof(RectTransform)).transform;
+            lobbyContent.SetParent(content, false);
+            lobbyContent.gameObject.SetActive(false);
+
+            statusText = CreateLabel(lobbyContent, "");
+            statusText.fontSize = 22;
+            statusText.gameObject.SetActive(false);
+
+            CreateButton(lobbyContent, "Host Game", HostGame);
+            CreateButton(lobbyContent, "Refresh Lobbies", RefreshLobbies);
+
+            lobbyListContent = new GameObject("LobbyList", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
+            lobbyListContent.SetParent(lobbyContent, false);
+            var listRt = lobbyListContent.GetComponent<RectTransform>();
+            listRt.sizeDelta = new Vector2(450, 200);
+            var listLayout = lobbyListContent.GetComponent<VerticalLayoutGroup>();
+            listLayout.spacing = 4;
+
+            startMatchBtn = CreateButton(lobbyContent, "Start Match", StartMatch);
+            startMatchBtn.gameObject.SetActive(false);
+
+            CreateButton(lobbyContent, "Leave Lobby", LeaveLobby);
+            CreateButton(lobbyContent, "Back", ShowMainPanel);
 
             EnsureEventSystem();
         }
 
+        private static TMP_Text CreateLabel(Transform parent, string text)
+        {
+            var obj = new GameObject("Label", typeof(TextMeshProUGUI));
+            obj.transform.SetParent(parent, false);
+            var tmp = obj.GetComponent<TextMeshProUGUI>();
+            tmp.text = text;
+            tmp.fontSize = 24;
+            tmp.color = Color.white;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.rectTransform.sizeDelta = new Vector2(450, 40);
+            return tmp;
+        }
+
         private static GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
         {
-            var btnObj = new GameObject(label + "Button", typeof(Image), typeof(Button));
+            var btnObj = new GameObject(GetCleanName(label) + "Button", typeof(Image), typeof(Button));
             btnObj.transform.SetParent(parent, false);
             var btnRt = btnObj.GetComponent<RectTransform>();
-            btnRt.sizeDelta = new Vector2(300, 60);
+            btnRt.sizeDelta = new Vector2(300, 50);
 
             var btnImage = btnObj.GetComponent<Image>();
             btnImage.color = new Color(0.2f, 0.2f, 0.2f, 1);
@@ -84,10 +178,10 @@ namespace UI
             textObj.transform.SetParent(btnObj.transform, false);
             var text = textObj.GetComponent<TextMeshProUGUI>();
             text.text = label;
-            text.fontSize = 28;
+            text.fontSize = 24;
             text.color = Color.white;
             text.alignment = TextAlignmentOptions.Center;
-            text.rectTransform.sizeDelta = new Vector2(300, 60);
+            text.rectTransform.sizeDelta = new Vector2(300, 50);
 
             var btn = btnObj.GetComponent<Button>();
             btn.targetGraphic = btnImage;
@@ -99,6 +193,11 @@ namespace UI
             btn.colors = colors;
 
             return btnObj;
+        }
+
+        private static string GetCleanName(string label)
+        {
+            return label.Replace(" ", "").Replace("(", "").Replace(")", "");
         }
 
         private static void EnsureEventSystem()
@@ -117,9 +216,87 @@ namespace UI
             camGo.transform.position = new Vector3(0, 0, -10);
         }
 
+        private void ShowMainPanel()
+        {
+            mainContent.gameObject.SetActive(true);
+            lobbyContent.gameObject.SetActive(false);
+            statusText.gameObject.SetActive(false);
+        }
+
+        private void ShowMultiplayerPanel()
+        {
+            mainContent.gameObject.SetActive(false);
+            lobbyContent.gameObject.SetActive(true);
+            statusText.gameObject.SetActive(false);
+            RefreshLobbies();
+        }
+
+        private void ShowLobbyPanel()
+        {
+            mainContent.gameObject.SetActive(false);
+            lobbyContent.gameObject.SetActive(true);
+        }
+
+        private void HostGame()
+        {
+            LobbyManager.Instance.CreateLobby(4);
+            statusText.gameObject.SetActive(true);
+            statusText.text = "Creating lobby...";
+        }
+
+        private void RefreshLobbies()
+        {
+            statusText.gameObject.SetActive(true);
+            statusText.text = "Searching for lobbies...";
+            LobbyManager.Instance.FindLobbies();
+        }
+
+        private void RefreshLobbyList()
+        {
+            foreach (Transform child in lobbyListContent)
+                Destroy(child.gameObject);
+
+            if (foundLobbies.Count == 0)
+            {
+                var lbl = CreateLabel(lobbyListContent, "No lobbies found");
+                lbl.fontSize = 18;
+                lbl.color = new Color(0.7f, 0.7f, 0.7f);
+                return;
+            }
+
+            foreach (var lobby in foundLobbies)
+            {
+                string name = lobby.GetData("name") ?? $"Lobby {lobby.Id}";
+                int members = lobby.MemberCount;
+                var btn = CreateButton(lobbyListContent, $"{name} ({members}/4)", () => JoinLobby(lobby));
+                var rt = btn.GetComponent<RectTransform>();
+                rt.sizeDelta = new Vector2(430, 40);
+            }
+        }
+
+        private void JoinLobby(Lobby lobby)
+        {
+            statusText.gameObject.SetActive(true);
+            statusText.text = "Joining lobby...";
+            LobbyManager.Instance.JoinLobby(lobby);
+        }
+
+        private void LeaveLobby()
+        {
+            LobbyManager.Instance.LeaveLobby();
+            statusText.gameObject.SetActive(false);
+            startMatchBtn.gameObject.SetActive(false);
+        }
+
         private static void StartGame()
         {
-            Game.GameState.Restart();
+            GameState.Restart();
+        }
+
+        private void StartMatch()
+        {
+            Networking.NetworkManager.Instance.StartHost();
+            GameState.Restart();
         }
 
         private static void QuitGame()

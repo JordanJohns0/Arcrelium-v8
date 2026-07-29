@@ -6,21 +6,10 @@ using Cards;
 using Characters;
 using HexGrid;
 using Game;
+using Networking;
 
 namespace UI
 {
-    /// <summary>
-    /// Drives the player-facing side of the turn flow described in TurnManager:
-    ///   - click a card in hand to start playing it
-    ///   - if it has a cost, click that many OTHER cards in hand to pay it (click again to un-pick)
-    ///   - if it needs a target, click a hex cell or character on the board
-    ///   - once everything required is chosen, the play is submitted to TurnManager automatically
-    ///   - a Cancel button backs out of an in-progress selection at any point
-    ///   - an End Turn button ends the turn, per TurnManager.Pass()
-    ///
-    /// This is the only place that needs to know the shape of that whole flow — HandView,
-    /// CardView, HexCellSelectable, and CharacterSelectable stay dumb and reusable.
-    /// </summary>
     public class TurnFlowUIController : MonoBehaviour
     {
         private enum SelectionState { Idle, SelectingCost, SelectingTarget }
@@ -29,6 +18,8 @@ namespace UI
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private HandView handView;
         [SerializeField] private int humanPlayerId = 0;
+
+        private bool IsClient => Networking.NetworkManager.Instance != null && !Networking.NetworkManager.Instance.IsHost;
 
         [Header("UI")]
         [SerializeField] private Button passButton;
@@ -88,7 +79,10 @@ namespace UI
         {
             if (state != SelectionState.Idle) return;
             if (turnManager.Busy) return;
-            turnManager.Pass();
+            if (IsClient)
+                NetworkManager.Instance.SendPassRequest();
+            else
+                turnManager.Pass();
         }
 
         private void HandleCardClicked(CardInstance card)
@@ -193,6 +187,19 @@ namespace UI
 
         private void SubmitPlay(HexCell targetCell = null, Character targetCharacter = null)
         {
+            if (IsClient)
+            {
+                NetworkManager.Instance.SendPlayCardRequest(new PlayCardRequest
+                {
+                    cardInstanceId = pendingCard.GetInstanceID(),
+                    targetQ = targetCell?.Coordinates.Q,
+                    targetR = targetCell?.Coordinates.R,
+                    targetCharacterId = targetCharacter != null ? targetCharacter.GetInstanceID() : null
+                });
+                ResetSelection();
+                return;
+            }
+
             bool success = turnManager.PlayCard(pendingCard, new List<CardInstance>(pendingCostCards), targetCell, targetCharacter);
 
             if (!success)

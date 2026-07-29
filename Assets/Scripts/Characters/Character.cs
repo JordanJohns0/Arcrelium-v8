@@ -26,7 +26,7 @@ namespace Characters
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
         public int OwnerPlayerId { get; private set; }
-        public Team Team => OwnerPlayerId == 0 ? Team.Ally : Team.Enemy;
+        public Team Team => OwnerPlayerId < 100 ? Team.Ally : Team.Enemy;
 
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
