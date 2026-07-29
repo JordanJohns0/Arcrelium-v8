@@ -17,10 +17,10 @@ namespace Game
     /// <summary>
     /// Drives whose turn it is and enforces the turn structure:
     ///   1. Turn start — draw 2 cards
-    ///   2. Active character plays ONE card, or passes
-    ///   3. (if playing) cost is paid by discarding other cards from hand
-    ///   4. the card's effect resolves
-    ///   5. end of turn -> advance to the next character
+    ///   2. Active character plays any number of cards, or ends turn
+    ///   3. costs are paid by discarding other cards from hand
+    ///   4. card effects resolve immediately
+    ///   5. ending the turn -> advance to the next character
     ///
     /// Each step has a configurable delay so actions are visible to the player.
     /// </summary>
@@ -78,7 +78,6 @@ namespace Game
             if (!played) return false;
 
             OnActionResolved?.Invoke();
-            turnCoroutine = StartCoroutine(AdvanceToDrawThenEndCoroutine());
             return true;
         }
 

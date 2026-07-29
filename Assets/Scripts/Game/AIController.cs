@@ -7,11 +7,6 @@ using HexGrid;
 
 namespace Game
 {
-    /// <summary>
-    /// Handles automatic turns for AI-controlled characters. On each turn start, picks a
-    /// random affordable card with a valid target and plays it; passes if nothing is viable.
-    /// Waits for the TurnManager to finish any in-progress action before acting.
-    /// </summary>
     public class AIController : MonoBehaviour
     {
         [SerializeField] private TurnManager turnManager;
@@ -35,20 +30,36 @@ namespace Game
             if (character == null) return;
             if (character.OwnerPlayerId == humanPlayerId) return;
 
-            StartCoroutine(PlayWhenReady(character));
+            StartCoroutine(PlayAITurn(character));
         }
 
-        private IEnumerator PlayWhenReady(Character character)
+        private IEnumerator PlayAITurn(Character character)
         {
             while (turnManager.Busy)
                 yield return null;
 
             yield return new WaitForSeconds(aiDelay);
 
-            PlayRandomCard(character);
+            while (true)
+            {
+                var playable = FindPlayableCards(character);
+                if (playable.Count == 0)
+                {
+                    turnManager.Pass();
+                    yield break;
+                }
+
+                var chosen = playable[Random.Range(0, playable.Count)];
+                turnManager.PlayCard(chosen.card, chosen.cost, chosen.cell, chosen.target);
+
+                yield return new WaitForSeconds(0.3f);
+
+                if (turnManager.Busy)
+                    yield return null;
+            }
         }
 
-        private void PlayRandomCard(Character character)
+        private List<(CardInstance card, List<CardInstance> cost, HexCell cell, Character target)> FindPlayableCards(Character character)
         {
             Hand hand = character.Hand;
             List<CardInstance> handCards = new List<CardInstance>(hand.Cards);
@@ -87,15 +98,7 @@ namespace Game
                 }
             }
 
-            if (playable.Count > 0)
-            {
-                var chosen = playable[Random.Range(0, playable.Count)];
-                turnManager.PlayCard(chosen.card, chosen.cost, chosen.cell, chosen.target);
-            }
-            else
-            {
-                turnManager.Pass();
-            }
+            return playable;
         }
 
         private HexCell FindRandomValidCell(Character source, CardData card)

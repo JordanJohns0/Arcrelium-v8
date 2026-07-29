@@ -16,7 +16,7 @@ namespace UI
     ///   - if it needs a target, click a hex cell or character on the board
     ///   - once everything required is chosen, the play is submitted to TurnManager automatically
     ///   - a Cancel button backs out of an in-progress selection at any point
-    ///   - a Pass button skips straight to draw/end, per TurnManager.Pass()
+    ///   - an End Turn button ends the turn, per TurnManager.Pass()
     ///
     /// This is the only place that needs to know the shape of that whole flow — HandView,
     /// CardView, HexCellSelectable, and CharacterSelectable stay dumb and reusable.
@@ -89,8 +89,6 @@ namespace UI
             if (state != SelectionState.Idle) return;
             if (turnManager.Busy) return;
             turnManager.Pass();
-            // TurnManager.Pass advances straight through draw/end, which fires OnTurnStarted
-            // again for the next character — HandleTurnStarted takes it from there.
         }
 
         private void HandleCardClicked(CardInstance card)
@@ -308,7 +306,7 @@ namespace UI
             {
                 case SelectionState.Idle:
                     promptText.text = turnManager.ActiveCharacter != null
-                        ? $"{turnManager.ActiveCharacter.Stats.CharacterName}'s turn — play a card or pass."
+                        ? $"{turnManager.ActiveCharacter.Stats.CharacterName}'s turn — play cards or End Turn."
                         : string.Empty;
                     break;
 
