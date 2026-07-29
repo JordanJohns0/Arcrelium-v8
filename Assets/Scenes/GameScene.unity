@@ -1300,9 +1300,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0588edd404f87b7489c69f0c8551625a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Arcrelium.Game::CameraController
-  cameraLeftRight: {fileID: 7116460558416941225, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  cameraUpDown: {fileID: -2171348824372284639, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  cameraInOut: {fileID: -2990370643520564492, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   orbitSpeed: 60
   tiltSpeed: 40
   zoomSpeed: 8

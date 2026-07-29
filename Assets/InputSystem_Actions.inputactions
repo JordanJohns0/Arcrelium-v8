@@ -1105,7 +1105,7 @@
                 {
                     "name": "negative",
                     "id": "e5645bee-58c1-4ae4-bf15-c584517a4d0c",
-                    "path": "<Keyboard>/e",
+                    "path": "<Keyboard>/q",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -1116,7 +1116,7 @@
                 {
                     "name": "positive",
                     "id": "b7aa0e70-6f8b-4838-995e-3090ba4b0790",
-                    "path": "<Keyboard>/q",
+                    "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
