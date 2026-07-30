@@ -57,8 +57,6 @@ namespace Game
 
             OnBeforeCardPlay?.Invoke(context);
 
-            if (!card.Data.Effect.CanExecute(context)) return false;
-
             card.Data.Effect.Execute(context);
 
             // Pay cost: discard the other cards, then discard the played card itself.

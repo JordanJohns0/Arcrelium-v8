@@ -43,7 +43,7 @@ namespace Game
                 case GameMode.SinglePlayer:
                 case GameMode.Host:
                     if (playerCharacterPrefab != null && enemyCharacterPrefab != null)
-                        SetupDynamicMatch();
+                        StartCoroutine(SetupDynamicMatchDeferred());
                     else
                         SetupMatch();
                     break;
@@ -54,6 +54,12 @@ namespace Game
             }
 
             PauseMenu.GetOrCreate(inputActions);
+        }
+
+        private System.Collections.IEnumerator SetupDynamicMatchDeferred()
+        {
+            yield return null;
+            SetupDynamicMatch();
         }
 
         public void SetupMatch()

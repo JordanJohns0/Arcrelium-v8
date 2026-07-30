@@ -35,11 +35,16 @@ namespace HexGrid
 
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
+            if (Camera.main == null) { Debug.LogWarning("[HexCellSelectable] No Camera.main!"); return; }
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                HexCell hitCell = hit.collider.GetComponent<HexCell>();
-                if (hitCell != null) AnyCellClicked?.Invoke(hitCell);
+                HexCell hitCell = hit.collider.GetComponentInParent<HexCell>();
+                if (hitCell != null)
+                {
+                    Debug.Log($"[HexCellSelectable] Hit cell at {hitCell.Coordinates}");
+                    AnyCellClicked?.Invoke(hitCell);
+                }
             }
         }
 

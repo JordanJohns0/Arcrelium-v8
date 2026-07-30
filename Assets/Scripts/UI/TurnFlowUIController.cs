@@ -19,7 +19,9 @@ namespace UI
         [SerializeField] private HandView handView;
         [SerializeField] private int humanPlayerId = 0;
 
-        private bool IsClient => Networking.NetworkManager.Instance != null && !Networking.NetworkManager.Instance.IsHost;
+        private static bool IsClient => Networking.NetworkManager.Instance != null
+            && !Networking.NetworkManager.Instance.IsHost
+            && LobbyManager.Instance.CurrentLobby.HasValue;
 
         [Header("UI")]
         [SerializeField] private Button passButton;
@@ -77,8 +79,8 @@ namespace UI
 
         private void HandlePassClicked()
         {
-            if (state != SelectionState.Idle) return;
             if (turnManager.Busy) return;
+            if (state != SelectionState.Idle) ResetSelection();
             if (IsClient)
                 NetworkManager.Instance.SendPassRequest();
             else
@@ -163,9 +165,14 @@ namespace UI
 
         private void HandleCellClicked(HexCell cell)
         {
+            Debug.Log($"[TurnFlow] HandleCellClicked: cell={cell.Coordinates}, state={state}, busy={turnManager.Busy}");
             if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
-            if (pendingCard.Data.TargetType != TargetType.HexCell) return;
+            if (pendingCard.Data.TargetType != TargetType.HexCell)
+            {
+                if (promptText != null) promptText.text = "This card targets a character, not a cell.";
+                return;
+            }
 
             SubmitPlay(targetCell: cell);
         }
@@ -180,7 +187,11 @@ namespace UI
                 pendingCard.Data.TargetType == TargetType.AllyCharacter ||
                 pendingCard.Data.TargetType == TargetType.AnyCharacter;
 
-            if (!wantsCharacterTarget) return;
+            if (!wantsCharacterTarget)
+            {
+                if (promptText != null) promptText.text = "This card targets a cell, not a character.";
+                return;
+            }
 
             SubmitPlay(targetCharacter: character);
         }
@@ -201,6 +212,8 @@ namespace UI
             }
 
             bool success = turnManager.PlayCard(pendingCard, new List<CardInstance>(pendingCostCards), targetCell, targetCharacter);
+
+            Debug.Log($"[TurnFlow] SubmitPlay: card={pendingCard.Data.CardName}, success={success}, phase={turnManager.CurrentPhase}, busy={turnManager.Busy}");
 
             if (!success)
             {
@@ -239,10 +252,12 @@ namespace UI
             Character source = turnManager.ActiveCharacter;
             HexCoordinates origin = source.CurrentCell.Coordinates;
 
+            int count = 0;
             foreach (HexCell cell in grid.GetCellsInRange(origin, pendingCard.Data.Range))
             {
                 if (cell == source.CurrentCell) continue;
                 if (!IsValidTarget(pendingCard.Data, source, cell)) continue;
+                count++;
 
                 HexMeshGenerator meshGen = cell.GetComponent<HexMeshGenerator>();
                 if (meshGen != null)
@@ -257,6 +272,7 @@ namespace UI
                     highlightedCharacters.Add(cell.Occupant);
                 }
             }
+            Debug.Log($"[TurnFlow] Highlighted {count} valid targets for {pendingCard.Data.CardName} (type={pendingCard.Data.TargetType}, range={pendingCard.Data.Range})");
         }
 
         private static bool IsValidTarget(CardData card, Character source, HexCell cell)
