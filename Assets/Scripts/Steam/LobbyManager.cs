@@ -46,12 +46,16 @@ public class LobbyManager : MonoBehaviour
             Debug.Log("[LobbyManager] OnEnable - subscribing to lobby events");
             SteamMatchmaking.OnLobbyMemberJoined += HandleMemberJoined;
             SteamMatchmaking.OnLobbyMemberLeave += HandleMemberLeft;
+            SteamMatchmaking.OnLobbyInvite += HandleLobbyInvite;
+            SteamFriends.OnGameLobbyJoinRequested += HandleGameLobbyJoinRequested;
         }
 
         private void OnDisable()
         {
             SteamMatchmaking.OnLobbyMemberJoined -= HandleMemberJoined;
             SteamMatchmaking.OnLobbyMemberLeave -= HandleMemberLeft;
+            SteamMatchmaking.OnLobbyInvite -= HandleLobbyInvite;
+            SteamFriends.OnGameLobbyJoinRequested -= HandleGameLobbyJoinRequested;
         }
 
         private void HandleMemberJoined(Lobby lobby, Friend friend)
@@ -64,6 +68,28 @@ public class LobbyManager : MonoBehaviour
         {
             Debug.Log($"[LobbyManager] Member left: {friend.Name} ({friend.Id})");
             OnMembersChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Friend accepted an invite from someone already in a lobby.
+        /// </summary>
+        private void HandleLobbyInvite(Lobby lobby, SteamId inviter)
+        {
+            Debug.Log($"[LobbyManager] Invite received from {inviter} for lobby {lobby.Id}");
+            if (CurrentLobby.HasValue && CurrentLobby.Value.Id != lobby.Id)
+                LeaveLobby();
+            JoinLobby(lobby);
+        }
+
+        /// <summary>
+        /// Friend clicked "Join Game" on us in the Steam friends list / overlay.
+        /// </summary>
+        private void HandleGameLobbyJoinRequested(Lobby lobby, SteamId friendId)
+        {
+            Debug.Log($"[LobbyManager] Join game requested by {friendId} for lobby {lobby.Id}");
+            if (CurrentLobby.HasValue && CurrentLobby.Value.Id != lobby.Id)
+                LeaveLobby();
+            JoinLobby(lobby);
         }
 
         public async void CreateLobby(int maxMembers = 4)

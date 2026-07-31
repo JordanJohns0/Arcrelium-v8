@@ -24,6 +24,7 @@ namespace UI
         private GameObject backBtn;
         private Transform readyListContent;
         private GameObject readyToggleBtn;
+        private GameObject inviteFriendsBtn;
         private GameObject startMatchBtn;
         private GameObject leaveLobbyBtn;
         private readonly List<Lobby> foundLobbies = new List<Lobby>();
@@ -264,6 +265,9 @@ namespace UI
             readyToggleBtn = CreateButton(lobbyContent, "Ready Up", ToggleReady);
             readyToggleBtn.gameObject.SetActive(false);
 
+            inviteFriendsBtn = CreateButton(lobbyContent, "Invite Friends", InviteFriends);
+            inviteFriendsBtn.gameObject.SetActive(false);
+
             startMatchBtn = CreateButton(lobbyContent, "Start Match", StartMatch);
             startMatchBtn.gameObject.SetActive(false);
 
@@ -367,6 +371,7 @@ namespace UI
             currentLobbyLabel.gameObject.SetActive(false);
             readyListContent.gameObject.SetActive(false);
             readyToggleBtn.gameObject.SetActive(false);
+            inviteFriendsBtn.SetActive(false);
             startMatchBtn.gameObject.SetActive(false);
 
             hostGameBtn.SetActive(true);
@@ -385,6 +390,7 @@ namespace UI
             currentLobbyLabel.gameObject.SetActive(true);
             readyListContent.gameObject.SetActive(true);
             readyToggleBtn.gameObject.SetActive(true);
+            inviteFriendsBtn.SetActive(true);
             startMatchBtn.gameObject.SetActive(true);
 
             hostGameBtn.SetActive(false);
@@ -443,6 +449,13 @@ namespace UI
             LobbyManager.Instance.LeaveLobby();
             Networking.ReadyTracker.Instance.Reset();
             ShowMultiplayerPanel();
+        }
+
+        private void InviteFriends()
+        {
+            var lobby = LobbyManager.Instance.CurrentLobby;
+            if (!lobby.HasValue) return;
+            SteamFriends.OpenGameInviteOverlay(lobby.Value.Id.Value);
         }
 
         private static void StartGame()
