@@ -16,6 +16,7 @@ public class LobbyManager : MonoBehaviour
         public static event Action OnLobbyLeft;
         public static event Action<List<Lobby>> OnLobbyListReceived;
         public static event Action OnMembersChanged;
+        public static event Action<Lobby, Friend> OnLobbyMemberLeft;
 
         public static LobbyManager Instance
         {
@@ -68,6 +69,7 @@ public class LobbyManager : MonoBehaviour
         {
             Debug.Log($"[LobbyManager] Member left: {friend.Name} ({friend.Id})");
             OnMembersChanged?.Invoke();
+            OnLobbyMemberLeft?.Invoke(lobby, friend);
         }
 
         /// <summary>

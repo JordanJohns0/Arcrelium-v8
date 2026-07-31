@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using HexGrid;
@@ -36,6 +37,9 @@ namespace Characters
         public static event Action<Character> OnCharacterCreated;
         public static event Action<Character> OnCharacterDestroyed;
 
+        private Coroutine moveAnimation;
+        private const float MoveSpeed = 8f;
+        private const float ArrivalThreshold = 0.05f;
         private readonly List<Renderer> renderers = new List<Renderer>();
         private readonly List<(Renderer renderer, Color originalColor)> originalColors = new List<(Renderer, Color)>();
         private static readonly int colorID = Shader.PropertyToID("_Color");
@@ -93,6 +97,91 @@ namespace Characters
             CurrentCell = cell;
             cell.SetOccupant(this);
             OnMovedToCell?.Invoke(cell);
+        }
+
+        /// <summary>
+        /// Stops any cosmetic movement animation currently running on this character.
+        /// </summary>
+        public void CancelMoveAnimation()
+        {
+            if (moveAnimation != null)
+            {
+                StopCoroutine(moveAnimation);
+                moveAnimation = null;
+            }
+        }
+
+        /// <summary>
+        /// Cosmetic move from the character's current transform position to the target cell.
+        /// The logical position must already be authoritative (SetCellOnly) before calling.
+        /// Cancels any prior move animation.
+        /// </summary>
+        public void AnimateToCell(HexCell target)
+        {
+            AnimateToCell(transform.position, target);
+        }
+
+        /// <summary>
+        /// Cosmetic move from an explicit start position to the target cell.
+        /// The logical position must already be authoritative (SetCellOnly) before calling.
+        /// Cancels any prior move animation.
+        /// </summary>
+        public void AnimateToCell(Vector3 start, HexCell target)
+        {
+            if (target == null) return;
+            CancelMoveAnimation();
+            transform.position = start;
+            moveAnimation = StartCoroutine(AnimateToCellCoroutine(target));
+        }
+
+        /// <summary>
+        /// Cosmetic move along a path of cells from the character's current transform position.
+        /// The logical position must already be authoritative (SetCellOnly) before calling.
+        /// Cancels any prior move animation.
+        /// </summary>
+        public void AnimateAlongPath(List<HexCell> path)
+        {
+            if (path == null || path.Count == 0) return;
+            CancelMoveAnimation();
+            moveAnimation = StartCoroutine(AnimateAlongPathCoroutine(path));
+        }
+
+        private IEnumerator AnimateToCellCoroutine(HexCell target)
+        {
+            if (this == null || target == null) yield break;
+            Vector3 destination = target.transform.position;
+
+            while (this != null && Vector3.Distance(transform.position, destination) > ArrivalThreshold)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, destination, MoveSpeed * Time.deltaTime);
+                yield return null;
+            }
+
+            if (this != null)
+                transform.position = destination;
+            moveAnimation = null;
+        }
+
+        private IEnumerator AnimateAlongPathCoroutine(List<HexCell> path)
+        {
+            if (this == null || path == null) yield break;
+
+            foreach (HexCell cell in path)
+            {
+                if (this == null || cell == null) yield break;
+                Vector3 destination = cell.transform.position;
+
+                while (this != null && Vector3.Distance(transform.position, destination) > ArrivalThreshold)
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, destination, MoveSpeed * Time.deltaTime);
+                    yield return null;
+                }
+
+                if (this != null)
+                    transform.position = destination;
+            }
+
+            moveAnimation = null;
         }
 
         public void DrawCards(int count)

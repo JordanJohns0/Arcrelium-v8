@@ -53,6 +53,13 @@ namespace Game
         internal List<Character> activeCharacters = new List<Character>();
 
         /// <summary>
+        /// Steam id → player index captured at match setup. Kept so requests and
+        /// member-leave handling stay correct even after someone leaves the lobby
+        /// (the live member list would shift indices).
+        /// </summary>
+        private readonly Dictionary<ulong, int> steamIdToPlayerId = new Dictionary<ulong, int>();
+
+        /// <summary>
         /// Test seam: maps a sender's Steam id to a lobby player index. When null,
         /// the default lobby-member lookup is used.
         /// </summary>
@@ -104,6 +111,7 @@ namespace Game
             Networking.NetworkManager.OnRequestInitialStateReceived -= HandleRequestInitialState;
             Networking.NetworkManager.OnPlayCardRequestReceived -= HandlePlayCardRequest;
             Networking.NetworkManager.OnPassRequestReceived -= HandlePassRequest;
+            LobbyManager.OnLobbyMemberLeft -= HandleLobbyMemberLeft;
             if (turnManager != null)
             {
                 turnManager.OnActionResolved -= HandleActionResolved;
@@ -124,6 +132,7 @@ namespace Game
             Networking.NetworkManager.OnRequestInitialStateReceived += HandleRequestInitialState;
             Networking.NetworkManager.OnPlayCardRequestReceived += HandlePlayCardRequest;
             Networking.NetworkManager.OnPassRequestReceived += HandlePassRequest;
+            LobbyManager.OnLobbyMemberLeft += HandleLobbyMemberLeft;
             if (turnManager != null)
             {
                 turnManager.OnActionResolved += HandleActionResolved;
@@ -213,6 +222,10 @@ namespace Game
 
             var members = new List<Friend>(lobby.Value.Members);
             members.Sort((a, b) => a.Id.Value.CompareTo(b.Id.Value));
+
+            steamIdToPlayerId.Clear();
+            for (int i = 0; i < members.Count; i++)
+                steamIdToPlayerId[members[i].Id.Value] = i;
 
             for (int i = 0; i < members.Count; i++)
             {
@@ -405,6 +418,10 @@ namespace Game
             {
                 playerId = PlayerIdLookup(steamId);
             }
+            else if (steamIdToPlayerId.TryGetValue(steamId, out int mappedId))
+            {
+                playerId = mappedId;
+            }
             else
             {
                 var lobby = LobbyManager.Instance.CurrentLobby;
@@ -419,6 +436,44 @@ namespace Game
         {
             Debug.Log("[GameManager] Client requested initial state, broadcasting");
             BroadcastGameState();
+        }
+
+        /// <summary>
+        /// Host-only: removes the leaving player's characters from the match and
+        /// broadcasts the updated state so clients rebuild without them.
+        /// </summary>
+        private void HandleLobbyMemberLeft(Lobby lobby, Friend friend)
+        {
+            if (GameState.ActiveMode != GameMode.Host) return;
+
+            int playerId;
+            if (!steamIdToPlayerId.TryGetValue(friend.Id.Value, out playerId))
+                playerId = GameState.GetPlayerIndex(lobby, friend.Id.Value);
+            if (playerId < 0) return;
+
+            Debug.Log($"[GameManager] Removing characters for left member {friend.Name} (player {playerId})");
+
+            var leaving = new List<Character>();
+            foreach (var c in activeCharacters)
+            {
+                if (c.OwnerPlayerId == playerId) leaving.Add(c);
+            }
+            if (leaving.Count == 0) return;
+
+            Character activeBefore = turnManager.ActiveCharacter;
+            foreach (Character c in leaving)
+            {
+                activeCharacters.Remove(c);
+                turnManager.RemoveFromTurnOrder(c);
+                c.CancelMoveAnimation();
+                if (c.CurrentCell != null) c.CurrentCell.ClearOccupant();
+                Destroy(c.gameObject);
+            }
+
+            if (turnManager.ActiveCharacter != activeBefore)
+                turnManager.SetTurn(turnManager.CurrentTurnIndex);
+            else
+                BroadcastGameState();
         }
 
         private void ShowVictory()
@@ -481,8 +536,7 @@ namespace Game
                     if (oldPositions.TryGetValue(cs.ownerPlayerId, out Vector3 oldPos)
                         && Vector3.Distance(oldPos, cell.transform.position) > 0.01f)
                     {
-                        character.transform.position = oldPos;
-                        StartCoroutine(AnimateToCell(character, oldPos, cell));
+                        character.AnimateToCell(oldPos, cell);
                     }
                 }
 
@@ -502,23 +556,6 @@ namespace Game
             character.Stats.Armor = cs.armor;
             character.Stats.Block = cs.block;
             character.Stats.NotifyChanged();
-        }
-
-        private System.Collections.IEnumerator AnimateToCell(Character character, Vector3 start, HexCell target)
-        {
-            const float moveSpeed = 8f;
-            const float arrivalThreshold = 0.05f;
-            Transform t = character.transform;
-            t.position = start;
-            Vector3 destination = target.transform.position;
-
-            while (Vector3.Distance(t.position, destination) > arrivalThreshold)
-            {
-                t.position = Vector3.MoveTowards(t.position, destination, moveSpeed * Time.deltaTime);
-                yield return null;
-            }
-
-            t.position = destination;
         }
     }
 }

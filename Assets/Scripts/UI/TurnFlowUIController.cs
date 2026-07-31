@@ -22,6 +22,10 @@ namespace UI
             && !Networking.NetworkManager.Instance.IsHost
             && LobbyManager.Instance.CurrentLobby.HasValue;
 
+        private bool IsLocalTurn => turnManager != null
+            && turnManager.ActiveCharacter != null
+            && turnManager.ActiveCharacter.OwnerPlayerId == GameState.LocalPlayerId;
+
         [Header("UI")]
         [SerializeField] private Button passButton;
         [SerializeField] private Button cancelButton;
@@ -71,15 +75,18 @@ namespace UI
             if (character.OwnerPlayerId != GameState.LocalPlayerId)
             {
                 if (promptText != null) promptText.text = $"{character.Stats.CharacterName}'s turn...";
+                if (passButton != null) passButton.interactable = false;
                 return;
             }
 
+            if (passButton != null) passButton.interactable = true;
             handView.SetCharacter(character);
             ResetSelection();
         }
 
         private void HandlePassClicked()
         {
+            if (!IsLocalTurn) return;
             if (turnManager.Busy) return;
             if (requestPending) return;
             if (state != SelectionState.Idle) ResetSelection();
@@ -94,6 +101,7 @@ namespace UI
 
         private void HandleCardClicked(CardInstance card)
         {
+            if (!IsLocalTurn) return;
             if (turnManager.Busy) return;
             if (requestPending) return;
 
@@ -172,6 +180,7 @@ namespace UI
         private void HandleCellClicked(HexCell cell)
         {
             Debug.Log($"[TurnFlow] HandleCellClicked: cell={cell.Coordinates}, state={state}, busy={turnManager.Busy}");
+            if (!IsLocalTurn) return;
             if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
             if (pendingCard.Data.TargetType != TargetType.HexCell)
@@ -185,6 +194,7 @@ namespace UI
 
         private void HandleCharacterClicked(Character character)
         {
+            if (!IsLocalTurn) return;
             if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
 

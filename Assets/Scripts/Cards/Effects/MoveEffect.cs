@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Characters;
@@ -9,9 +8,6 @@ namespace Cards.Effects
     [CreateAssetMenu(fileName = "MoveEffect", menuName = "/Effects/Move")]
     public class MoveEffect : CardEffectSO
     {
-        [SerializeField] private float moveSpeed = 5f;
-        [SerializeField] private float arrivalThreshold = 0.05f;
-
         public override bool CanExecute(CardContext context)
         {
             if (context.TargetCell == null || !context.TargetCell.IsWalkable) return false;
@@ -51,40 +47,9 @@ namespace Cards.Effects
             context.Source.SetCellOnly(target);
 
             if (path != null && path.Count > 0)
-                context.Source.StartCoroutine(AnimatePath(context.Source, path));
+                context.Source.AnimateAlongPath(path);
             else
-                context.Source.StartCoroutine(AnimateDirectMove(context.Source, target));
-        }
-
-        private IEnumerator AnimatePath(Character source, List<HexCell> path)
-        {
-            foreach (HexCell cell in path)
-            {
-                Vector3 destination = cell.transform.position;
-                Transform t = source.transform;
-
-                while (Vector3.Distance(t.position, destination) > arrivalThreshold)
-                {
-                    t.position = Vector3.MoveTowards(t.position, destination, moveSpeed * Time.deltaTime);
-                    yield return null;
-                }
-
-                t.position = destination;
-            }
-        }
-
-        private IEnumerator AnimateDirectMove(Character source, HexCell target)
-        {
-            Vector3 destination = target.transform.position;
-            Transform t = source.transform;
-
-            while (Vector3.Distance(t.position, destination) > arrivalThreshold)
-            {
-                t.position = Vector3.MoveTowards(t.position, destination, moveSpeed * Time.deltaTime);
-                yield return null;
-            }
-
-            t.position = destination;
+                context.Source.AnimateToCell(target);
         }
     }
 }
