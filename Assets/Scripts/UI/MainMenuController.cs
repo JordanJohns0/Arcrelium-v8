@@ -12,7 +12,7 @@ namespace UI
 {
     public class MainMenuController : MonoBehaviour
     {
-        public const string Version = "v0.0.6";
+        [SerializeField] private string version = "v0.1.1";
 
         private Transform mainContent;
         private Transform lobbyContent;
@@ -277,7 +277,7 @@ namespace UI
             var versionObj = new GameObject("VersionLabel", typeof(TextMeshProUGUI));
             versionObj.transform.SetParent(canvasGo.transform, false);
             var versionText = versionObj.GetComponent<TextMeshProUGUI>();
-            versionText.text = Version;
+            versionText.text = version;
             versionText.fontSize = 18;
             versionText.color = new Color(0.8f, 0.8f, 0.8f, 0.8f);
             versionText.alignment = TextAlignmentOptions.TopRight;
