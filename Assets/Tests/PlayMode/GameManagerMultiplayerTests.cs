@@ -23,77 +23,26 @@ namespace Tests.PlayMode
         private Character player;
         private Character enemy;
         private readonly List<Character> tracked = new List<Character>();
+        private readonly List<ScriptableObject> trackedSops = new List<ScriptableObject>();
 
-        private static readonly FieldInfo deckField = typeof(Character).GetField("deck", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly FieldInfo cellsField = typeof(HexGridManager).GetField("cells", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        private static HexCell CreateCell(int q, int r)
-        {
-            var go = new GameObject($"Cell {q},{r}");
-            var cell = go.AddComponent<HexCell>();
-            cell.Initialize(new HexCoordinates(q, r));
-            return cell;
-        }
-
-        private static Character CreateCharacter(int ownerId, int q, int r, int teamId)
-        {
-            var cell = CreateCell(q, r);
-            var go = new GameObject($"Character {ownerId}");
-            var character = go.AddComponent<Character>();
-
-            var deck = new Deck();
-            deckField.SetValue(character, deck);
-
-            character.Initialize(ownerId, cell, 0, teamId);
-            return character;
-        }
-
-        private static HexGridManager CreateGrid(int radius)
-        {
-            var gridGo = new GameObject("TestGrid");
-            var grid = gridGo.AddComponent<HexGridManager>();
-
-            var cells = (Dictionary<HexCoordinates, HexCell>)cellsField.GetValue(grid);
-
-            for (int q = -radius; q <= radius; q++)
-            {
-                int r1 = Mathf.Max(-radius, -q - radius);
-                int r2 = Mathf.Min(radius, -q + radius);
-                for (int r = r1; r <= r2; r++)
-                {
-                    var coords = new HexCoordinates(q, r);
-                    var cell = CreateCell(q, r);
-                    cell.transform.SetParent(gridGo.transform);
-                    cells[coords] = cell;
-                }
-            }
-
-            return grid;
-        }
-
-        private static CardData MakeCard(string name, TargetType targetType, int cost, CardEffectSO effect)
-        {
-            var data = ScriptableObject.CreateInstance<CardData>();
-            data.CardName = name;
-            data.TargetType = targetType;
-            data.Cost = cost;
-            data.Effect = effect;
-            return data;
-        }
-
-        private static CardData SelfCard(string name, int cost = 0)
+        private CardData SelfCard(string name, int cost = 0)
         {
             var effect = ScriptableObject.CreateInstance<GainBlockEffect>();
             effect.Amount = CardValue.MakeConstant(1);
-            return MakeCard(name, TargetType.Self, cost, effect);
+            trackedSops.Add(effect);
+            var data = TestHelper.MakeCard(name, TargetType.Self, cost, effect);
+            trackedSops.Add(data);
+            return data;
         }
 
-        private static CardData AttackCard(string name, int damage)
+        private CardData AttackCard(string name, int damage)
         {
             var effect = ScriptableObject.CreateInstance<AttackEffect>();
             effect.Damage = CardValue.MakeConstant(damage);
-            var data = MakeCard(name, TargetType.EnemyCharacter, 0, effect);
+            trackedSops.Add(effect);
+            var data = TestHelper.MakeCard(name, TargetType.EnemyCharacter, 0, effect);
             data.Range = 5;
+            trackedSops.Add(data);
             return data;
         }
 
@@ -115,7 +64,7 @@ namespace Tests.PlayMode
             var arGo = new GameObject("ActionResolver");
             actionResolver = arGo.AddComponent<ActionResolver>();
 
-            grid = CreateGrid(2);
+            grid = TestHelper.CreateTestGrid(2);
 
             typeof(TurnManager).GetField("actionResolver", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(turnManager, actionResolver);
@@ -126,8 +75,9 @@ namespace Tests.PlayMode
                 .SetValue(manager, grid);
             typeof(GameManager).GetField("turnManager", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(manager, turnManager);
-            var playerPrefab = CreateCharacter(0, 0, 0, 0);
-            var enemyPrefab = CreateCharacter(100, 0, 0, 1);
+
+            var playerPrefab = TestHelper.CreateCharacter(0, 0, 0, 0);
+            var enemyPrefab = TestHelper.CreateCharacter(100, 0, 0, 1);
             tracked.Add(playerPrefab);
             tracked.Add(enemyPrefab);
             typeof(GameManager).GetField("playerCharacterPrefab", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -138,8 +88,8 @@ namespace Tests.PlayMode
 
         private void SetUpPlayersAndStartMatch()
         {
-            player = CreateCharacter(0, 0, 0, 0);
-            enemy = CreateCharacter(1, 1, 0, 1);
+            player = TestHelper.CreateCharacter(0, 0, 0, 0);
+            enemy = TestHelper.CreateCharacter(1, 1, 0, 1);
             tracked.Add(player);
             tracked.Add(enemy);
             manager.activeCharacters.AddRange(new[] { player, enemy });
@@ -158,6 +108,9 @@ namespace Tests.PlayMode
         [TearDown]
         public void TearDown()
         {
+            GameState.ActiveMode = GameMode.SinglePlayer;
+            GameState.LocalPlayerId = 0;
+            GameState.CurrentLevel = 1;
             GameManager.PlayerIdLookup = null;
 
             foreach (var c in tracked)
@@ -179,14 +132,20 @@ namespace Tests.PlayMode
                 Object.DestroyImmediate(grid.gameObject);
             if (NetworkManager.Instance != null)
                 Object.DestroyImmediate(NetworkManager.Instance.gameObject);
+
+            foreach (var so in trackedSops)
+            {
+                if (so != null)
+                    Object.DestroyImmediate(so);
+            }
+            trackedSops.Clear();
         }
 
         [Test]
         public void HandlePlayCardRequest_ValidPlay_RemovesCardFromHand()
         {
             SetUpPlayersAndStartMatch();
-            var card = new CardInstance(SelfCard("Defend"));
-            player.Hand.AddCard(card);
+            player.Hand.AddCard(new CardInstance(SelfCard("Defend")));
 
             manager.HandlePlayCardRequest(123ul, new PlayCardRequest { cardHandIndex = 0 });
 
@@ -198,8 +157,7 @@ namespace Tests.PlayMode
         public void HandlePlayCardRequest_OutOfRangeIndex_Rejected()
         {
             SetUpPlayersAndStartMatch();
-            var card = new CardInstance(SelfCard("Defend"));
-            player.Hand.AddCard(card);
+            player.Hand.AddCard(new CardInstance(SelfCard("Defend")));
 
             manager.HandlePlayCardRequest(123ul, new PlayCardRequest { cardHandIndex = 5 });
 
@@ -212,8 +170,7 @@ namespace Tests.PlayMode
             SetUpPlayersAndStartMatch();
             GameManager.PlayerIdLookup = id => 1;
 
-            var card = new CardInstance(SelfCard("Defend"));
-            enemy.Hand.AddCard(card);
+            enemy.Hand.AddCard(new CardInstance(SelfCard("Defend")));
 
             manager.HandlePlayCardRequest(123ul, new PlayCardRequest { cardHandIndex = 0 });
 
@@ -226,8 +183,7 @@ namespace Tests.PlayMode
             SetUpPlayersAndStartMatch();
             GameManager.PlayerIdLookup = id => -1;
 
-            var card = new CardInstance(SelfCard("Defend"));
-            player.Hand.AddCard(card);
+            player.Hand.AddCard(new CardInstance(SelfCard("Defend")));
 
             manager.HandlePlayCardRequest(123ul, new PlayCardRequest { cardHandIndex = 0 });
 
@@ -238,10 +194,8 @@ namespace Tests.PlayMode
         public void HandlePlayCardRequest_WithCostCards_PaysCost()
         {
             SetUpPlayersAndStartMatch();
-            var toPlay = new CardInstance(SelfCard("Slash", cost: 1));
-            var costCard = new CardInstance(SelfCard("Defend"));
-            player.Hand.AddCard(toPlay);
-            player.Hand.AddCard(costCard);
+            player.Hand.AddCard(new CardInstance(SelfCard("Slash", cost: 1)));
+            player.Hand.AddCard(new CardInstance(SelfCard("Defend")));
 
             manager.HandlePlayCardRequest(123ul, new PlayCardRequest
             {
@@ -257,10 +211,8 @@ namespace Tests.PlayMode
         public void HandlePlayCardRequest_CostIndexEqualToPlayedCard_Skipped()
         {
             SetUpPlayersAndStartMatch();
-            var toPlay = new CardInstance(SelfCard("Slash", cost: 1));
-            var costCard = new CardInstance(SelfCard("Defend"));
-            player.Hand.AddCard(toPlay);
-            player.Hand.AddCard(costCard);
+            player.Hand.AddCard(new CardInstance(SelfCard("Slash", cost: 1)));
+            player.Hand.AddCard(new CardInstance(SelfCard("Defend")));
 
             manager.HandlePlayCardRequest(123ul, new PlayCardRequest
             {
@@ -304,10 +256,10 @@ namespace Tests.PlayMode
             Assert.IsTrue(passed);
             Assert.IsTrue(turnManager.Busy);
 
-            yield return new WaitForSeconds(1.5f);
+            yield return TestHelper.WaitUntilOrTimeout(() => !turnManager.Busy);
+            Assert.IsFalse(turnManager.Busy, "Turn transition did not finish in time");
 
             Assert.AreEqual(enemy, turnManager.ActiveCharacter);
-            Assert.IsFalse(turnManager.Busy);
         }
 
         [Test]
@@ -328,7 +280,7 @@ namespace Tests.PlayMode
         [Test]
         public void HandleGameStateReceived_RebuildsBoardFromSync()
         {
-            var old = CreateCharacter(0, 0, 1, 0);
+            var old = TestHelper.CreateCharacter(0, 0, 1, 0);
             tracked.Add(old);
             manager.activeCharacters.Add(old);
 

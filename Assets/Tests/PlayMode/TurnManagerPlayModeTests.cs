@@ -1,12 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Cards;
 using Characters;
-using HexGrid;
 using Game;
 
 namespace Tests.PlayMode
@@ -19,29 +16,6 @@ namespace Tests.PlayMode
         private Character player;
         private Character enemy;
 
-        private static readonly FieldInfo deckField = typeof(Character).GetField("deck", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        private static HexCell CreateCell(int q, int r)
-        {
-            var go = new GameObject($"Cell {q},{r}");
-            var cell = go.AddComponent<HexCell>();
-            cell.Initialize(new HexCoordinates(q, r));
-            return cell;
-        }
-
-        private static Character CreateCharacter(int ownerId, int q, int r)
-        {
-            var cell = CreateCell(q, r);
-            var go = new GameObject($"Character {ownerId}");
-            var character = go.AddComponent<Character>();
-
-            var deck = new Deck();
-            deckField.SetValue(character, deck);
-
-            character.Initialize(ownerId, cell, 0);
-            return character;
-        }
-
         [SetUp]
         public void SetUp()
         {
@@ -51,11 +25,11 @@ namespace Tests.PlayMode
             var arGo = new GameObject("ActionResolver");
             actionResolver = arGo.AddComponent<ActionResolver>();
 
-            typeof(TurnManager).GetField("actionResolver", BindingFlags.NonPublic | BindingFlags.Instance)
+            typeof(TurnManager).GetField("actionResolver", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 .SetValue(turnManager, actionResolver);
 
-            player = CreateCharacter(0, 0, 0);
-            enemy = CreateCharacter(1, 1, 0);
+            player = TestHelper.CreateCharacter(0, 0, 0);
+            enemy = TestHelper.CreateCharacter(1, 1, 0);
         }
 
         [TearDown]
@@ -81,7 +55,8 @@ namespace Tests.PlayMode
             turnManager.OnTurnStarted += (c) => turnStarted.Add(c);
 
             turnManager.Pass();
-            yield return new WaitForSeconds(2f);
+            yield return TestHelper.WaitUntilOrTimeout(() => !turnManager.Busy);
+            Assert.IsFalse(turnManager.Busy, "Turn transition did not finish in time");
 
             Assert.AreEqual(1, turnStarted.Count);
             Assert.AreEqual(player, turnStarted[0]);
@@ -97,7 +72,8 @@ namespace Tests.PlayMode
             turnManager.OnTurnStarted += (c) => turnCount++;
 
             turnManager.Pass();
-            yield return new WaitForSeconds(2f);
+            yield return TestHelper.WaitUntilOrTimeout(() => !turnManager.Busy);
+            Assert.IsFalse(turnManager.Busy, "Turn transition did not finish in time");
 
             Assert.GreaterOrEqual(turnCount, 1);
             Assert.AreEqual(player, turnManager.ActiveCharacter);
@@ -113,7 +89,8 @@ namespace Tests.PlayMode
 
             turnManager.StartMatch();
             turnManager.Pass();
-            yield return new WaitForSeconds(2f);
+            yield return TestHelper.WaitUntilOrTimeout(() => !turnManager.Busy);
+            Assert.IsFalse(turnManager.Busy, "Turn transition did not finish in time");
 
             Assert.AreEqual(2, turnStarted.Count);
             Assert.AreEqual(player, turnStarted[0]);

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -36,16 +37,6 @@ namespace Tests
 
             character.Initialize(ownerId, cell, 0, teamId);
             return character;
-        }
-
-        public static CardData MakeCard(string name, TargetType targetType = TargetType.Self, int cost = 0, CardEffectSO effect = null)
-        {
-            var data = ScriptableObject.CreateInstance<CardData>();
-            data.CardName = name;
-            data.TargetType = targetType;
-            data.Cost = cost;
-            data.Effect = effect;
-            return data;
         }
 
         public static HexGridManager CreateTestGrid(int radius)
@@ -92,6 +83,30 @@ namespace Tests
 
             character.Initialize(ownerId, cell, 0);
             return character;
+        }
+
+        public static CardData MakeCard(string name, TargetType targetType = TargetType.Self, int cost = 0, CardEffectSO effect = null)
+        {
+            var data = ScriptableObject.CreateInstance<CardData>();
+            data.CardName = name;
+            data.TargetType = targetType;
+            data.Cost = cost;
+            data.Effect = effect;
+            return data;
+        }
+
+        /// <summary>
+        /// Yields until the condition is true or the timeout elapses. Uses
+        /// Time.realtimeSinceStartup so it works in both edit- and play-mode tests.
+        /// Callers should assert the condition after this returns.
+        /// </summary>
+        public static IEnumerator WaitUntilOrTimeout(System.Func<bool> condition, float timeout = 3f)
+        {
+            float start = Time.realtimeSinceStartup;
+            while (!condition() && Time.realtimeSinceStartup - start < timeout)
+            {
+                yield return null;
+            }
         }
     }
 }

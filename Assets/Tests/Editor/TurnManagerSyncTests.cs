@@ -16,6 +16,7 @@ namespace Tests
         private ActionResolver actionResolver;
         private Character player;
         private Character enemy;
+        private readonly List<ScriptableObject> trackedSops = new List<ScriptableObject>();
 
         [SetUp]
         public void SetUp()
@@ -42,6 +43,12 @@ namespace Tests
             Object.DestroyImmediate(player.gameObject);
             Object.DestroyImmediate(enemy.CurrentCell.gameObject);
             Object.DestroyImmediate(enemy.gameObject);
+            foreach (var so in trackedSops)
+            {
+                if (so != null)
+                    Object.DestroyImmediate(so);
+            }
+            trackedSops.Clear();
         }
 
         [Test]
@@ -95,7 +102,9 @@ namespace Tests
         [Test]
         public void SetTurn_DoesNotDrawCards()
         {
-            player.Deck.SetStartingCards(new List<CardData> { TestHelper.MakeCard("Slash") });
+            var slash = TestHelper.MakeCard("Slash");
+            trackedSops.Add(slash);
+            player.Deck.SetStartingCards(new List<CardData> { slash });
             player.Deck.Shuffle();
 
             turnManager.SetTurnOrder(new List<Character> { player, enemy });

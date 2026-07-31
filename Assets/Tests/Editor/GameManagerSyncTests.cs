@@ -16,6 +16,7 @@ namespace Tests
         private TurnManager turnManager;
         private ActionResolver actionResolver;
         private readonly List<Character> characters = new List<Character>();
+        private readonly List<ScriptableObject> trackedSops = new List<ScriptableObject>();
 
         [SetUp]
         public void SetUp()
@@ -49,6 +50,19 @@ namespace Tests
             Object.DestroyImmediate(turnManager.gameObject);
             Object.DestroyImmediate(actionResolver.gameObject);
             Object.DestroyImmediate(manager.gameObject);
+            foreach (var so in trackedSops)
+            {
+                if (so != null)
+                    Object.DestroyImmediate(so);
+            }
+            trackedSops.Clear();
+        }
+
+        private CardData MakeTrackedCard(string name)
+        {
+            var data = TestHelper.MakeCard(name);
+            trackedSops.Add(data);
+            return data;
         }
 
         private Character MakeCharacter(int ownerId, int teamId, string name, int q, int r)
@@ -68,8 +82,8 @@ namespace Tests
             MakeCharacter(1, 0, "Bob", 1, -2);
             MakeCharacter(100, 1, "Enemy", 2, 0);
 
-            player.Hand.AddCard(new CardInstance(TestHelper.MakeCard("Slash")));
-            player.Hand.AddCard(new CardInstance(TestHelper.MakeCard("Defend")));
+            player.Hand.AddCard(new CardInstance(MakeTrackedCard("Slash")));
+            player.Hand.AddCard(new CardInstance(MakeTrackedCard("Defend")));
 
             turnManager.SetTurnOrder(new List<Character>(manager.activeCharacters));
             turnManager.SetTurn(1);

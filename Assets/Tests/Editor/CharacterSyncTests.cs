@@ -10,6 +10,14 @@ namespace Tests
     public class CharacterSyncTests
     {
         private Character character;
+        private readonly List<ScriptableObject> trackedSops = new List<ScriptableObject>();
+
+        private CardData MakeCard(string name)
+        {
+            var data = TestHelper.MakeCard(name);
+            trackedSops.Add(data);
+            return data;
+        }
 
         [SetUp]
         public void SetUp()
@@ -17,8 +25,8 @@ namespace Tests
             character = TestHelper.CreateCharacter(0, 0, 0);
             character.Deck.SetStartingCards(new List<CardData>
             {
-                TestHelper.MakeCard("Slash"),
-                TestHelper.MakeCard("Defend")
+                MakeCard("Slash"),
+                MakeCard("Defend")
             });
             character.Deck.Shuffle();
         }
@@ -28,12 +36,18 @@ namespace Tests
         {
             Object.DestroyImmediate(character.CurrentCell.gameObject);
             Object.DestroyImmediate(character.gameObject);
+            foreach (var so in trackedSops)
+            {
+                if (so != null)
+                    Object.DestroyImmediate(so);
+            }
+            trackedSops.Clear();
         }
 
         [Test]
         public void RebuildHand_ReplacesExistingHand()
         {
-            character.Hand.AddCard(new CardInstance(TestHelper.MakeCard("Old")));
+            character.Hand.AddCard(new CardInstance(MakeCard("Old")));
 
             character.RebuildHand(new[] { "Slash", "Defend" });
 
@@ -45,7 +59,7 @@ namespace Tests
         [Test]
         public void RebuildHand_SkipsUnknownNames()
         {
-            character.Hand.AddCard(new CardInstance(TestHelper.MakeCard("Old")));
+            character.Hand.AddCard(new CardInstance(MakeCard("Old")));
 
             character.RebuildHand(new[] { "Slash", "NotARealCard" });
 
@@ -56,7 +70,7 @@ namespace Tests
         [Test]
         public void RebuildHand_Null_EmptiesHand()
         {
-            character.Hand.AddCard(new CardInstance(TestHelper.MakeCard("Slash")));
+            character.Hand.AddCard(new CardInstance(MakeCard("Slash")));
 
             character.RebuildHand(null);
 
@@ -66,7 +80,7 @@ namespace Tests
         [Test]
         public void RebuildHand_EmptyArray_EmptiesHand()
         {
-            character.Hand.AddCard(new CardInstance(TestHelper.MakeCard("Slash")));
+            character.Hand.AddCard(new CardInstance(MakeCard("Slash")));
 
             character.RebuildHand(new string[0]);
 

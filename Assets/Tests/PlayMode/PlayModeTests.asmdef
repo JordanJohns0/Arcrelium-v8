@@ -6,7 +6,8 @@
         "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Arcrelium.Game"
+        "Arcrelium.Game",
+        "TestShared"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
