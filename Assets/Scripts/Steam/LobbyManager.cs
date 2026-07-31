@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using Steamworks;
 using Steamworks.Data;
 using UnityEngine;
-    public class LobbyManager : MonoBehaviour
+
+public class LobbyManager : MonoBehaviour
     {
         private static LobbyManager instance;
 
@@ -14,6 +15,7 @@ using UnityEngine;
         public static event Action<Lobby> OnLobbyJoined;
         public static event Action OnLobbyLeft;
         public static event Action<List<Lobby>> OnLobbyListReceived;
+        public static event Action OnMembersChanged;
 
         public static LobbyManager Instance
         {
@@ -38,6 +40,31 @@ using UnityEngine;
             instance = this;
         }
 
+        private void OnEnable()
+        {
+            Debug.Log("[LobbyManager] OnEnable - subscribing to lobby events");
+            SteamMatchmaking.OnLobbyMemberJoined += HandleMemberJoined;
+            SteamMatchmaking.OnLobbyMemberLeave += HandleMemberLeft;
+        }
+
+        private void OnDisable()
+        {
+            SteamMatchmaking.OnLobbyMemberJoined -= HandleMemberJoined;
+            SteamMatchmaking.OnLobbyMemberLeave -= HandleMemberLeft;
+        }
+
+        private void HandleMemberJoined(Lobby lobby, Friend friend)
+        {
+            Debug.Log($"[LobbyManager] Member joined: {friend.Name} ({friend.Id}) — lobby now has {lobby.MemberCount} members");
+            OnMembersChanged?.Invoke();
+        }
+
+        private void HandleMemberLeft(Lobby lobby, Friend friend)
+        {
+            Debug.Log($"[LobbyManager] Member left: {friend.Name} ({friend.Id})");
+            OnMembersChanged?.Invoke();
+        }
+
         public async void CreateLobby(int maxMembers = 4)
         {
             var result = await SteamMatchmaking.CreateLobbyAsync(maxMembers);
@@ -46,6 +73,8 @@ using UnityEngine;
                 CurrentLobby = result.Value;
                 IsHost = true;
                 CurrentLobby?.SetData("name", $"{SteamClient.Name}'s Game");
+                CurrentLobby?.SetData("HostSteamId", SteamClient.SteamId.ToString());
+                CurrentLobby?.SetPublic();
                 CurrentLobby?.SetJoinable(true);
                 Debug.Log($"[LobbyManager] Lobby created: {CurrentLobby?.Id}");
                 OnLobbyCreated?.Invoke(result.Value);

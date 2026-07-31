@@ -34,7 +34,7 @@ public class SteamManager : MonoBehaviour
 
             try
             {
-                SteamClient.Init(480);
+                SteamClient.Init(2308170, asyncCallbacks: true);
                 IsInitialized = true;
                 SteamId = SteamClient.SteamId;
                 Debug.Log($"[SteamManager] Initialized. SteamId: {SteamId}");

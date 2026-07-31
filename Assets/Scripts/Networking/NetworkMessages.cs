@@ -7,6 +7,7 @@ namespace Networking
         GameStateSync,
         PlayCardRequest,
         PassRequest,
+        StartGame,
         ChatMessage
     }
 

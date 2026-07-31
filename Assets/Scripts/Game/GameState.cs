@@ -5,6 +5,7 @@ namespace Game
     public static class GameState
     {
         public static int CurrentLevel { get; set; } = 1;
+        public static GameMode ActiveMode { get; set; } = GameMode.SinglePlayer;
 
         public static void LoadNextLevel()
         {

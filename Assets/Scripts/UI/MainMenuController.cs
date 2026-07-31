@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -15,8 +16,11 @@ namespace UI
         private Transform lobbyContent;
         private Transform lobbyListContent;
         private TMP_Text statusText;
+        private TMP_Text currentLobbyLabel;
         private GameObject startMatchBtn;
         private readonly List<Lobby> foundLobbies = new List<Lobby>();
+
+        private bool lobbyEventsSubscribed;
 
         private void Awake()
         {
@@ -25,9 +29,44 @@ namespace UI
             SubscribeLobbyEvents();
         }
 
+        private void OnEnable()
+        {
+            if (lobbyEventsSubscribed) return;
+            lobbyEventsSubscribed = true;
+            SteamMatchmaking.OnLobbyMemberJoined += HandleSteamMemberJoined;
+            SteamMatchmaking.OnLobbyMemberLeave += HandleSteamMemberLeft;
+            SteamMatchmaking.OnLobbyEntered += HandleSteamLobbyEntered;
+            Debug.Log("[MainMenu] Subscribed to SteamMatchmaking events directly");
+        }
+
+        private void OnDisable()
+        {
+            SteamMatchmaking.OnLobbyMemberJoined -= HandleSteamMemberJoined;
+            SteamMatchmaking.OnLobbyMemberLeave -= HandleSteamMemberLeft;
+            SteamMatchmaking.OnLobbyEntered -= HandleSteamLobbyEntered;
+        }
+
         private void OnDestroy()
         {
             UnsubscribeLobbyEvents();
+        }
+
+        private void HandleSteamMemberJoined(Lobby lobby, Friend friend)
+        {
+            Debug.Log($"[MainMenu] SteamMemberJoined: {friend.Name}, lobby={lobby.Id}");
+            UpdateCurrentLobbyLabel();
+        }
+
+        private void HandleSteamMemberLeft(Lobby lobby, Friend friend)
+        {
+            Debug.Log($"[MainMenu] SteamMemberLeft: {friend.Name}");
+            UpdateCurrentLobbyLabel();
+        }
+
+        private void HandleSteamLobbyEntered(Lobby lobby)
+        {
+            Debug.Log($"[MainMenu] SteamLobbyEntered: id={lobby.Id}, memberCount={lobby.MemberCount}, owner={lobby.Owner.Id}");
+            UpdateCurrentLobbyLabel();
         }
 
         private void SubscribeLobbyEvents()
@@ -35,6 +74,8 @@ namespace UI
             LobbyManager.OnLobbyCreated += HandleLobbyCreated;
             LobbyManager.OnLobbyJoined += HandleLobbyJoined;
             LobbyManager.OnLobbyListReceived += HandleLobbyListReceived;
+            LobbyManager.OnMembersChanged += HandleMembersChanged;
+            Networking.NetworkManager.OnStartGameReceived += HandleStartGameReceived;
         }
 
         private void UnsubscribeLobbyEvents()
@@ -42,12 +83,29 @@ namespace UI
             LobbyManager.OnLobbyCreated -= HandleLobbyCreated;
             LobbyManager.OnLobbyJoined -= HandleLobbyJoined;
             LobbyManager.OnLobbyListReceived -= HandleLobbyListReceived;
+            LobbyManager.OnMembersChanged -= HandleMembersChanged;
+            Networking.NetworkManager.OnStartGameReceived -= HandleStartGameReceived;
+        }
+
+        private void HandleMembersChanged()
+        {
+            UpdateCurrentLobbyLabel();
+        }
+
+        private void HandleStartGameReceived()
+        {
+            Debug.Log("[MainMenu] Received StartGame, starting as client");
+            Game.GameState.ActiveMode = Game.GameMode.Client;
+            Networking.NetworkManager.Instance.StartClient(LobbyManager.Instance.CurrentLobby.Value.Owner.Id);
+            GameState.Restart();
         }
 
         private void HandleLobbyCreated(Lobby lobby)
         {
+            ShowLobbyPanel();
             statusText.text = "Waiting for players...";
             startMatchBtn.gameObject.SetActive(true);
+            UpdateCurrentLobbyLabel();
         }
 
         private void HandleLobbyJoined(Lobby lobby)
@@ -55,6 +113,19 @@ namespace UI
             ShowLobbyPanel();
             statusText.text = "Joined lobby — waiting for host to start...";
             startMatchBtn.gameObject.SetActive(false);
+            UpdateCurrentLobbyLabel();
+        }
+
+        private void UpdateCurrentLobbyLabel()
+        {
+            if (!LobbyManager.Instance.CurrentLobby.HasValue) return;
+            var lobby = LobbyManager.Instance.CurrentLobby.Value;
+            lobby.Refresh();
+            string name = lobby.GetData("name") ?? $"Lobby {lobby.Id}";
+            int memberCount = lobby.MemberCount;
+            currentLobbyLabel.text = $"{name} ({memberCount}/{lobby.MaxMembers} players)";
+            currentLobbyLabel.gameObject.SetActive(true);
+            Debug.Log($"[MainMenu] Updated lobby label: {name} ({memberCount}/{lobby.MaxMembers})");
         }
 
         private void HandleLobbyListReceived(List<Lobby> lobbies)
@@ -141,6 +212,11 @@ namespace UI
             statusText = CreateLabel(lobbyContent, "");
             statusText.fontSize = 22;
             statusText.gameObject.SetActive(false);
+
+            currentLobbyLabel = CreateLabel(lobbyContent, "");
+            currentLobbyLabel.fontSize = 18;
+            currentLobbyLabel.color = new Color(0.4f, 0.8f, 0.4f);
+            currentLobbyLabel.gameObject.SetActive(false);
 
             CreateButton(lobbyContent, "Host Game", HostGame);
             CreateButton(lobbyContent, "Refresh Lobbies", RefreshLobbies);
@@ -274,7 +350,7 @@ namespace UI
                 return;
             }
 
-            foreach (var lobby in foundLobbies)
+            foreach (var lobby in foundLobbies.Take(5))
             {
                 string name = lobby.GetData("name") ?? $"Lobby {lobby.Id}";
                 int members = lobby.MemberCount;
@@ -295,17 +371,21 @@ namespace UI
         {
             LobbyManager.Instance.LeaveLobby();
             statusText.gameObject.SetActive(false);
+            currentLobbyLabel.gameObject.SetActive(false);
             startMatchBtn.gameObject.SetActive(false);
         }
 
         private static void StartGame()
         {
+            Game.GameState.ActiveMode = Game.GameMode.SinglePlayer;
             GameState.Restart();
         }
 
         private void StartMatch()
         {
+            Game.GameState.ActiveMode = Game.GameMode.Host;
             Networking.NetworkManager.Instance.StartHost();
+            Networking.NetworkManager.Instance.SendStartGame();
             GameState.Restart();
         }
 

@@ -38,7 +38,8 @@ namespace Game
 
         private void Start()
         {
-            switch (mode)
+            GameMode currentMode = GameState.ActiveMode;
+            switch (currentMode)
             {
                 case GameMode.SinglePlayer:
                 case GameMode.Host:
@@ -50,6 +51,7 @@ namespace Game
 
                 case GameMode.Client:
                     grid.GenerateGrid();
+                    Networking.NetworkManager.OnGameStateReceived += HandleGameStateReceived;
                     break;
             }
 
@@ -178,5 +180,31 @@ namespace Game
         public ActionResolver ActionResolver => actionResolver;
         public TurnManager TurnManager => turnManager;
         public HexGridManager Grid => grid;
+
+        private void HandleGameStateReceived(Networking.GameStateSync state)
+        {
+            foreach (var cs in state.characterStates)
+            {
+                var coords = new HexCoordinates(cs.q, cs.r);
+                if (!grid.TryGetCell(coords, out HexCell cell)) continue;
+
+                Character existing = cell.Occupant;
+                if (existing == null)
+                {
+                    Character prefab = cs.ownerPlayerId == 0 ? playerCharacterPrefab : enemyCharacterPrefab;
+                    if (prefab == null) continue;
+                    existing = Instantiate(prefab);
+                    existing.Initialize(cs.ownerPlayerId, cell);
+                    existing.OnDefeated += HandleCharacterDefeated;
+                    activeCharacters.Add(existing);
+                }
+
+                existing.Stats.MaxHealth = cs.maxHp;
+                existing.Stats.CurrentHealth = cs.currentHp;
+                existing.Stats.Armor = cs.armor;
+            }
+
+            turnManager.SetTurnOrder(new List<Character>(activeCharacters));
+        }
     }
 }
