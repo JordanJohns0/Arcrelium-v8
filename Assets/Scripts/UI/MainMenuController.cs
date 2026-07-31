@@ -12,6 +12,8 @@ namespace UI
 {
     public class MainMenuController : MonoBehaviour
     {
+        public const string Version = "v0.0.5";
+
         private Transform mainContent;
         private Transform lobbyContent;
         private Transform lobbyListContent;
@@ -115,6 +117,7 @@ namespace UI
 
         private void HandleLobbyCreated(Lobby lobby)
         {
+            Networking.NetworkManager.Instance.StartHost();
             ShowLobbyPanel();
             statusText.text = "Waiting for players...";
             statusText.gameObject.SetActive(true);
@@ -125,6 +128,7 @@ namespace UI
 
         private void HandleLobbyJoined(Lobby lobby)
         {
+            Networking.NetworkManager.Instance.StartClient(lobby.Owner.Id);
             ShowLobbyPanel();
             statusText.text = "Joined lobby — waiting for host to start...";
             statusText.gameObject.SetActive(true);
@@ -265,6 +269,20 @@ namespace UI
 
             leaveLobbyBtn = CreateButton(lobbyContent, "Leave Lobby", LeaveLobby);
             leaveLobbyBtn.gameObject.SetActive(false);
+
+            var versionObj = new GameObject("VersionLabel", typeof(TextMeshProUGUI));
+            versionObj.transform.SetParent(canvasGo.transform, false);
+            var versionText = versionObj.GetComponent<TextMeshProUGUI>();
+            versionText.text = Version;
+            versionText.fontSize = 18;
+            versionText.color = new Color(0.8f, 0.8f, 0.8f, 0.8f);
+            versionText.alignment = TextAlignmentOptions.TopRight;
+            var versionRt = versionText.rectTransform;
+            versionRt.anchorMin = new Vector2(1f, 1f);
+            versionRt.anchorMax = new Vector2(1f, 1f);
+            versionRt.pivot = new Vector2(1f, 1f);
+            versionRt.anchoredPosition = new Vector2(-16f, -8f);
+            versionRt.sizeDelta = new Vector2(200f, 30f);
 
             EnsureEventSystem();
         }
