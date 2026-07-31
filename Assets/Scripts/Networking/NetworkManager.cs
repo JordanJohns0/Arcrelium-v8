@@ -18,6 +18,9 @@ namespace Networking
         public static event Action<ulong> OnPassRequestReceived;
         public static event Action OnStartGameReceived;
         public static event Action OnRequestInitialStateReceived;
+        public static event Action<ulong, ReadyRequest> OnReadyRequestReceived;
+        public static event Action<ReadyStateSync> OnReadyStateReceived;
+        public static event Action OnLoadNextLevelReceived;
 
         public static NetworkManager Instance
         {
@@ -92,6 +95,24 @@ namespace Networking
         {
             Debug.Log("[NetworkManager] Sending RequestInitialState to host");
             SendToHost(MessageType.RequestInitialState, "{}");
+        }
+
+        public void SendReadyRequest(bool ready)
+        {
+            string json = JsonUtility.ToJson(new ReadyRequest { ready = ready });
+            SendToHost(MessageType.ReadyRequest, json);
+        }
+
+        public void BroadcastReadyState(ReadyStateSync state)
+        {
+            if (!IsHost) return;
+            string json = JsonUtility.ToJson(state);
+            SendToAllClients(MessageType.ReadyStateSync, json);
+        }
+
+        public void SendLoadNextLevel()
+        {
+            SendToAllClients(MessageType.LoadNextLevel, "{}");
         }
 
         private void SendToHost(MessageType type, string json)
@@ -177,6 +198,20 @@ namespace Networking
 
                 case MessageType.RequestInitialState:
                     OnRequestInitialStateReceived?.Invoke();
+                    break;
+
+                case MessageType.ReadyRequest:
+                    var readyRequest = JsonUtility.FromJson<ReadyRequest>(json);
+                    OnReadyRequestReceived?.Invoke(sender.Value, readyRequest);
+                    break;
+
+                case MessageType.ReadyStateSync:
+                    var readySync = JsonUtility.FromJson<ReadyStateSync>(json);
+                    OnReadyStateReceived?.Invoke(readySync);
+                    break;
+
+                case MessageType.LoadNextLevel:
+                    OnLoadNextLevelReceived?.Invoke();
                     break;
             }
         }

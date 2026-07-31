@@ -133,8 +133,9 @@ namespace Characters
 
         public void SetName(string name)
         {
-            if (!string.IsNullOrEmpty(name))
-                stats.CharacterName = name;
+            if (string.IsNullOrEmpty(name)) return;
+            stats.CharacterName = name;
+            stats.NotifyChanged();
         }
 
         /// <summary>
@@ -160,6 +161,7 @@ namespace Characters
             PlayerColor = color;
             if (renderers.Count == 0) renderers.AddRange(GetComponentsInChildren<Renderer>());
             ApplyColor(color);
+            stats.NotifyChanged();
         }
 
         private void ApplyColor(Color color)

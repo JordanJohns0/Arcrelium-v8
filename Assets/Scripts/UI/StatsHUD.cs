@@ -230,6 +230,7 @@ namespace UI
                 entry.nameLabel.fontSize = 30;
                 entry.nameLabel.verticalAlignment = VerticalAlignmentOptions.Bottom;
                 entry.nameLabel.alignment = isAlly ? TextAlignmentOptions.Left : TextAlignmentOptions.Right;
+                entry.nameLabel.color = character.PlayerColor ?? Color.white;
                 var nameRt = entry.nameLabel.rectTransform;
                 if (isAlly)
                 {
@@ -280,9 +281,16 @@ namespace UI
             {
                 if (kv.Key == null || kv.Key.Stats != stats) continue;
                 UpdateEntryLabels(kv.Value, stats);
+                UpdateEntryNameColor(kv.Value, kv.Key);
                 UpdateBars(kv.Value, stats, kv.Key.Team == Team.Ally);
                 break;
             }
+        }
+
+        private static void UpdateEntryNameColor(StatEntry entry, Character character)
+        {
+            if (entry.nameLabel != null)
+                entry.nameLabel.color = character.PlayerColor ?? Color.white;
         }
 
         private void CreateSegments(StatEntry entry, int maxHealth, bool isAlly, float nameWidth)

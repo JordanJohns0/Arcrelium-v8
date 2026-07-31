@@ -20,6 +20,11 @@ namespace Characters
 
         public event Action<CharacterStats> OnStatsChanged;
 
+        public void NotifyChanged()
+        {
+            OnStatsChanged?.Invoke(this);
+        }
+
         public void Initialize()
         {
             CurrentHealth = MaxHealth;

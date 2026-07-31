@@ -18,14 +18,6 @@ namespace Game
     {
         private const int EnemyOwnerPlayerId = 100;
 
-        private static readonly Color[] PlayerColors =
-        {
-            new Color(0.20f, 0.55f, 0.90f),
-            new Color(0.25f, 0.80f, 0.35f),
-            new Color(0.95f, 0.70f, 0.15f),
-            new Color(0.70f, 0.40f, 0.90f)
-        };
-
         private static readonly Color EnemyColor = new Color(0.85f, 0.30f, 0.25f);
 
         private static readonly HexCoordinates[] MultiplayerAllySpawns =
@@ -67,9 +59,11 @@ namespace Game
         internal static Func<ulong, int> PlayerIdLookup;
 
         private VictoryScreen victoryScreen;
+        private bool victoryAchieved;
 
         private void Start()
         {
+            victoryAchieved = false;
             GameMode currentMode = GameState.ActiveMode;
             switch (currentMode)
             {
@@ -95,6 +89,7 @@ namespace Game
                     GameState.LocalPlayerId = ComputeLocalPlayerId();
                     grid.GenerateGrid();
                     Networking.NetworkManager.OnGameStateReceived += HandleGameStateReceived;
+                    Networking.NetworkManager.OnLoadNextLevelReceived += HandleLoadNextLevelReceived;
                     Networking.NetworkManager.Instance.SendRequestInitialState();
                     break;
             }
@@ -105,6 +100,7 @@ namespace Game
         private void OnDestroy()
         {
             Networking.NetworkManager.OnGameStateReceived -= HandleGameStateReceived;
+            Networking.NetworkManager.OnLoadNextLevelReceived -= HandleLoadNextLevelReceived;
             Networking.NetworkManager.OnRequestInitialStateReceived -= HandleRequestInitialState;
             Networking.NetworkManager.OnPlayCardRequestReceived -= HandlePlayCardRequest;
             Networking.NetworkManager.OnPassRequestReceived -= HandlePassRequest;
@@ -113,6 +109,14 @@ namespace Game
                 turnManager.OnActionResolved -= HandleActionResolved;
                 turnManager.OnTurnStarted -= HandleTurnStartedBroadcast;
             }
+        }
+
+        private void HandleLoadNextLevelReceived()
+        {
+            Debug.Log("[GameManager] Received LoadNextLevel from host");
+            if (LobbyManager.Instance.CurrentLobby.HasValue)
+                Networking.NetworkManager.Instance.StartClient(LobbyManager.Instance.CurrentLobby.Value.Owner.Id);
+            GameState.LoadNextLevel();
         }
 
         private void SubscribeHostLogic()
@@ -220,7 +224,7 @@ namespace Game
                 Character player = Instantiate(playerCharacterPrefab);
                 player.Initialize(i, cell, teamId: 0);
                 player.SetName(members[i].Name);
-                player.SetPlayerColor(PlayerColors[i % PlayerColors.Length]);
+                player.SetPlayerColor(PlayerPalette.GetColor(i));
                 player.OnDefeated += HandleCharacterDefeated;
                 activeCharacters.Add(player);
             }
@@ -234,7 +238,7 @@ namespace Game
             Character player = Instantiate(playerCharacterPrefab);
             player.Initialize(0, playerCell, teamId: 0);
             player.SetName(SteamClient.IsValid ? SteamClient.Name : null);
-            player.SetPlayerColor(PlayerColors[0]);
+            player.SetPlayerColor(PlayerPalette.GetColor(0));
             player.OnDefeated += HandleCharacterDefeated;
             activeCharacters.Add(player);
         }
@@ -295,7 +299,8 @@ namespace Game
         {
             var sync = new Networking.GameStateSync
             {
-                currentTurnIndex = turnManager.CurrentTurnIndex
+                currentTurnIndex = turnManager.CurrentTurnIndex,
+                victory = victoryAchieved
             };
 
             foreach (var c in activeCharacters)
@@ -417,6 +422,9 @@ namespace Game
 
         private void ShowVictory()
         {
+            victoryAchieved = true;
+            BroadcastGameState();
+
             if (victoryScreen == null)
             {
                 var obj = new GameObject("VictoryScreen", typeof(VictoryScreen));
@@ -431,40 +439,46 @@ namespace Game
 
         internal void HandleGameStateReceived(Networking.GameStateSync state)
         {
-            if (state == null || state.characterStates.Count == 0) return;
+            if (state == null) return;
 
-            foreach (var c in activeCharacters)
+            if (state.characterStates.Count > 0)
             {
-                if (c == null) continue;
-                c.CurrentCell?.ClearOccupant();
-                Destroy(c.gameObject);
+                foreach (var c in activeCharacters)
+                {
+                    if (c == null) continue;
+                    c.CurrentCell?.ClearOccupant();
+                    Destroy(c.gameObject);
+                }
+                activeCharacters.Clear();
+
+                foreach (var cs in state.characterStates)
+                {
+                    if (!cs.isAlive) continue;
+                    var coords = new HexCoordinates(cs.q, cs.r);
+                    if (!grid.TryGetCell(coords, out HexCell cell)) continue;
+
+                    Character prefab = cs.teamId == 0 ? playerCharacterPrefab : enemyCharacterPrefab;
+                    if (prefab == null) continue;
+
+                    Character character = Instantiate(prefab);
+                    character.Initialize(cs.ownerPlayerId, cell, teamId: cs.teamId);
+                    character.SetName(cs.name);
+                    character.SetPlayerColor(new Color(cs.colorR, cs.colorG, cs.colorB));
+                    character.RebuildHand(cs.handCardNames);
+                    character.OnDefeated += HandleCharacterDefeated;
+                    activeCharacters.Add(character);
+
+                    character.Stats.MaxHealth = cs.maxHp;
+                    character.Stats.CurrentHealth = cs.currentHp;
+                    character.Stats.Armor = cs.armor;
+                }
+
+                turnManager.SetTurnOrder(new List<Character>(activeCharacters));
+                turnManager.SetTurn(state.currentTurnIndex);
             }
-            activeCharacters.Clear();
 
-            foreach (var cs in state.characterStates)
-            {
-                if (!cs.isAlive) continue;
-                var coords = new HexCoordinates(cs.q, cs.r);
-                if (!grid.TryGetCell(coords, out HexCell cell)) continue;
-
-                Character prefab = cs.teamId == 0 ? playerCharacterPrefab : enemyCharacterPrefab;
-                if (prefab == null) continue;
-
-                Character character = Instantiate(prefab);
-                character.Initialize(cs.ownerPlayerId, cell, teamId: cs.teamId);
-                character.SetName(cs.name);
-                character.SetPlayerColor(new Color(cs.colorR, cs.colorG, cs.colorB));
-                character.RebuildHand(cs.handCardNames);
-                character.OnDefeated += HandleCharacterDefeated;
-                activeCharacters.Add(character);
-
-                character.Stats.MaxHealth = cs.maxHp;
-                character.Stats.CurrentHealth = cs.currentHp;
-                character.Stats.Armor = cs.armor;
-            }
-
-            turnManager.SetTurnOrder(new List<Character>(activeCharacters));
-            turnManager.SetTurn(state.currentTurnIndex);
+            if (state.victory)
+                ShowVictory();
         }
     }
 }

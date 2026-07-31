@@ -17,7 +17,13 @@ namespace UI
         private Transform lobbyListContent;
         private TMP_Text statusText;
         private TMP_Text currentLobbyLabel;
+        private GameObject hostGameBtn;
+        private GameObject refreshLobbiesBtn;
+        private GameObject backBtn;
+        private Transform readyListContent;
+        private GameObject readyToggleBtn;
         private GameObject startMatchBtn;
+        private GameObject leaveLobbyBtn;
         private readonly List<Lobby> foundLobbies = new List<Lobby>();
 
         private bool lobbyEventsSubscribed;
@@ -28,6 +34,7 @@ namespace UI
             _ = SteamManager.Instance;
             _ = Networking.NetworkManager.Instance;
             _ = LobbyManager.Instance;
+            _ = Networking.ReadyTracker.Instance;
             SubscribeLobbyEvents();
         }
 
@@ -78,6 +85,7 @@ namespace UI
             LobbyManager.OnLobbyListReceived += HandleLobbyListReceived;
             LobbyManager.OnMembersChanged += HandleMembersChanged;
             Networking.NetworkManager.OnStartGameReceived += HandleStartGameReceived;
+            Networking.ReadyTracker.OnReadyStateChanged += RefreshReadyUI;
         }
 
         private void UnsubscribeLobbyEvents()
@@ -87,11 +95,13 @@ namespace UI
             LobbyManager.OnLobbyListReceived -= HandleLobbyListReceived;
             LobbyManager.OnMembersChanged -= HandleMembersChanged;
             Networking.NetworkManager.OnStartGameReceived -= HandleStartGameReceived;
+            Networking.ReadyTracker.OnReadyStateChanged -= RefreshReadyUI;
         }
 
         private void HandleMembersChanged()
         {
             UpdateCurrentLobbyLabel();
+            RefreshReadyUI();
         }
 
         private void HandleStartGameReceived()
@@ -99,6 +109,7 @@ namespace UI
             Debug.Log("[MainMenu] Received StartGame, starting as client");
             Game.GameState.ActiveMode = Game.GameMode.Client;
             Networking.NetworkManager.Instance.StartClient(LobbyManager.Instance.CurrentLobby.Value.Owner.Id);
+            Networking.ReadyTracker.Instance.Reset();
             GameState.Restart();
         }
 
@@ -106,16 +117,20 @@ namespace UI
         {
             ShowLobbyPanel();
             statusText.text = "Waiting for players...";
-            startMatchBtn.gameObject.SetActive(true);
+            statusText.gameObject.SetActive(true);
+            Networking.ReadyTracker.Instance.Reset();
             UpdateCurrentLobbyLabel();
+            RefreshReadyUI();
         }
 
         private void HandleLobbyJoined(Lobby lobby)
         {
             ShowLobbyPanel();
             statusText.text = "Joined lobby — waiting for host to start...";
-            startMatchBtn.gameObject.SetActive(false);
+            statusText.gameObject.SetActive(true);
+            Networking.ReadyTracker.Instance.Reset();
             UpdateCurrentLobbyLabel();
+            RefreshReadyUI();
         }
 
         private void UpdateCurrentLobbyLabel()
@@ -215,13 +230,9 @@ namespace UI
             statusText.fontSize = 22;
             statusText.gameObject.SetActive(false);
 
-            currentLobbyLabel = CreateLabel(lobbyContent, "");
-            currentLobbyLabel.fontSize = 18;
-            currentLobbyLabel.color = new Color(0.4f, 0.8f, 0.4f);
-            currentLobbyLabel.gameObject.SetActive(false);
-
-            CreateButton(lobbyContent, "Host Game", HostGame);
-            CreateButton(lobbyContent, "Refresh Lobbies", RefreshLobbies);
+            // Browse panel: host/search/join another lobby
+            hostGameBtn = CreateButton(lobbyContent, "Host Game", HostGame);
+            refreshLobbiesBtn = CreateButton(lobbyContent, "Refresh Lobbies", RefreshLobbies);
 
             lobbyListContent = new GameObject("LobbyList", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
             lobbyListContent.SetParent(lobbyContent, false);
@@ -230,11 +241,30 @@ namespace UI
             var listLayout = lobbyListContent.GetComponent<VerticalLayoutGroup>();
             listLayout.spacing = 4;
 
+            backBtn = CreateButton(lobbyContent, "Back", ShowMainPanel);
+
+            // In-lobby room: no lobby browsing, just the member ready list
+            currentLobbyLabel = CreateLabel(lobbyContent, "");
+            currentLobbyLabel.fontSize = 18;
+            currentLobbyLabel.color = new Color(0.4f, 0.8f, 0.4f);
+            currentLobbyLabel.gameObject.SetActive(false);
+
+            readyListContent = new GameObject("ReadyList", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
+            readyListContent.SetParent(lobbyContent, false);
+            var readyRt = readyListContent.GetComponent<RectTransform>();
+            readyRt.sizeDelta = new Vector2(450, 200);
+            var readyLayout = readyListContent.GetComponent<VerticalLayoutGroup>();
+            readyLayout.spacing = 4;
+            readyListContent.gameObject.SetActive(false);
+
+            readyToggleBtn = CreateButton(lobbyContent, "Ready Up", ToggleReady);
+            readyToggleBtn.gameObject.SetActive(false);
+
             startMatchBtn = CreateButton(lobbyContent, "Start Match", StartMatch);
             startMatchBtn.gameObject.SetActive(false);
 
-            CreateButton(lobbyContent, "Leave Lobby", LeaveLobby);
-            CreateButton(lobbyContent, "Back", ShowMainPanel);
+            leaveLobbyBtn = CreateButton(lobbyContent, "Leave Lobby", LeaveLobby);
+            leaveLobbyBtn.gameObject.SetActive(false);
 
             EnsureEventSystem();
         }
@@ -316,6 +346,16 @@ namespace UI
             mainContent.gameObject.SetActive(false);
             lobbyContent.gameObject.SetActive(true);
             statusText.gameObject.SetActive(false);
+            currentLobbyLabel.gameObject.SetActive(false);
+            readyListContent.gameObject.SetActive(false);
+            readyToggleBtn.gameObject.SetActive(false);
+            startMatchBtn.gameObject.SetActive(false);
+
+            hostGameBtn.SetActive(true);
+            refreshLobbiesBtn.SetActive(true);
+            lobbyListContent.gameObject.SetActive(true);
+            backBtn.SetActive(true);
+            leaveLobbyBtn.SetActive(false);
             RefreshLobbies();
         }
 
@@ -323,6 +363,17 @@ namespace UI
         {
             mainContent.gameObject.SetActive(false);
             lobbyContent.gameObject.SetActive(true);
+            statusText.gameObject.SetActive(true);
+            currentLobbyLabel.gameObject.SetActive(true);
+            readyListContent.gameObject.SetActive(true);
+            readyToggleBtn.gameObject.SetActive(true);
+            startMatchBtn.gameObject.SetActive(true);
+
+            hostGameBtn.SetActive(false);
+            refreshLobbiesBtn.SetActive(false);
+            lobbyListContent.gameObject.SetActive(false);
+            backBtn.SetActive(false);
+            leaveLobbyBtn.SetActive(true);
         }
 
         private void HostGame()
@@ -372,9 +423,8 @@ namespace UI
         private void LeaveLobby()
         {
             LobbyManager.Instance.LeaveLobby();
-            statusText.gameObject.SetActive(false);
-            currentLobbyLabel.gameObject.SetActive(false);
-            startMatchBtn.gameObject.SetActive(false);
+            Networking.ReadyTracker.Instance.Reset();
+            ShowMultiplayerPanel();
         }
 
         private static void StartGame()
@@ -385,10 +435,57 @@ namespace UI
 
         private void StartMatch()
         {
+            if (!Networking.ReadyTracker.Instance.AllReady) return;
             Game.GameState.ActiveMode = Game.GameMode.Host;
             Networking.NetworkManager.Instance.StartHost();
             Networking.NetworkManager.Instance.SendStartGame();
+            Networking.ReadyTracker.Instance.Reset();
             GameState.Restart();
+        }
+
+        private void ToggleReady()
+        {
+            int idx = GetLocalPlayerIndex();
+            if (idx < 0) return;
+            Networking.ReadyTracker.Instance.SetLocalReady(!Networking.ReadyTracker.Instance.IsReady(idx));
+        }
+
+        private static int GetLocalPlayerIndex()
+        {
+            var lobby = LobbyManager.Instance.CurrentLobby;
+            if (!lobby.HasValue) return -1;
+            return GameState.GetPlayerIndex(lobby.Value, SteamClient.SteamId);
+        }
+
+        private void RefreshReadyUI()
+        {
+            if (readyListContent == null) return;
+
+            foreach (Transform child in readyListContent)
+                Destroy(child.gameObject);
+
+            foreach (var p in Networking.ReadyTracker.Instance.GetPlayers())
+            {
+                var lbl = CreateLabel(readyListContent, $"{p.name} — {(p.ready ? "Ready" : "Not ready")}");
+                lbl.fontSize = 20;
+                lbl.color = new Color(p.colorR, p.colorG, p.colorB, 1f);
+            }
+
+            int localIdx = GetLocalPlayerIndex();
+            bool localReady = localIdx >= 0 && Networking.ReadyTracker.Instance.IsReady(localIdx);
+            if (readyToggleBtn != null)
+            {
+                var text = readyToggleBtn.GetComponentInChildren<TextMeshProUGUI>();
+                if (text != null) text.text = localReady ? "Cancel Ready" : "Ready Up";
+            }
+
+            if (startMatchBtn != null)
+            {
+                bool isHost = LobbyManager.Instance.IsHost;
+                startMatchBtn.SetActive(isHost);
+                var btn = startMatchBtn.GetComponent<Button>();
+                if (btn != null) btn.interactable = Networking.ReadyTracker.Instance.AllReady;
+            }
         }
 
         private static void QuitGame()

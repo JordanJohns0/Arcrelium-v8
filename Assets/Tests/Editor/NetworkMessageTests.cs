@@ -16,7 +16,8 @@ namespace Tests
             var sync = new GameStateSync
             {
                 currentTurnIndex = 3,
-                activeCharacterId = 7
+                activeCharacterId = 7,
+                victory = true
             };
             sync.characterStates.Add(new CharacterState
             {
@@ -42,6 +43,7 @@ namespace Tests
             Assert.AreEqual(1, decoded.characterStates.Count);
             Assert.AreEqual(3, decoded.currentTurnIndex);
             Assert.AreEqual(7, decoded.activeCharacterId);
+            Assert.IsTrue(decoded.victory);
 
             var d = decoded.characterStates[0];
             Assert.AreEqual(42, d.characterId);
@@ -210,6 +212,123 @@ namespace Tests
             finally
             {
                 NetworkManager.OnRequestInitialStateReceived -= handler;
+            }
+
+            Assert.IsTrue(fired);
+        }
+
+        [Test]
+        public void ReadyRequest_RoundTrips()
+        {
+            string json = JsonUtility.ToJson(new ReadyRequest { ready = true });
+            var decoded = JsonUtility.FromJson<ReadyRequest>(json);
+
+            Assert.IsTrue(decoded.ready);
+        }
+
+        [Test]
+        public void ReadyStateSync_RoundTripsPlayers()
+        {
+            var sync = new ReadyStateSync();
+            sync.players.Add(new PlayerReadyState
+            {
+                playerIndex = 1,
+                name = "Alice",
+                ready = true,
+                colorR = 0.2f,
+                colorG = 0.5f,
+                colorB = 0.9f
+            });
+            sync.players.Add(new PlayerReadyState
+            {
+                playerIndex = 0,
+                name = "Bob",
+                ready = false,
+                colorR = 1f,
+                colorG = 1f,
+                colorB = 1f
+            });
+
+            string json = JsonUtility.ToJson(sync);
+            var decoded = JsonUtility.FromJson<ReadyStateSync>(json);
+
+            Assert.AreEqual(2, decoded.players.Count);
+            Assert.AreEqual(1, decoded.players[0].playerIndex);
+            Assert.AreEqual("Alice", decoded.players[0].name);
+            Assert.IsTrue(decoded.players[0].ready);
+            Assert.AreEqual(0.2f, decoded.players[0].colorR, 0.0001f);
+            Assert.AreEqual(0.5f, decoded.players[0].colorG, 0.0001f);
+            Assert.AreEqual(0.9f, decoded.players[0].colorB, 0.0001f);
+
+            Assert.AreEqual(0, decoded.players[1].playerIndex);
+            Assert.AreEqual("Bob", decoded.players[1].name);
+            Assert.IsFalse(decoded.players[1].ready);
+            Assert.AreEqual(1f, decoded.players[1].colorR, 0.0001f);
+            Assert.AreEqual(1f, decoded.players[1].colorG, 0.0001f);
+            Assert.AreEqual(1f, decoded.players[1].colorB, 0.0001f);
+        }
+
+        [Test]
+        public void HandleMessage_ReadyRequest_RaisesEventWithSenderAndPayload()
+        {
+            string json = JsonUtility.ToJson(new ReadyRequest { ready = true });
+
+            ulong sender = 0;
+            ReadyRequest received = null;
+            Action<ulong, ReadyRequest> handler = (s, r) => { sender = s; received = r; };
+            NetworkManager.OnReadyRequestReceived += handler;
+            try
+            {
+                NetworkManager.HandleMessage((SteamId)123ul, MessageType.ReadyRequest, json);
+            }
+            finally
+            {
+                NetworkManager.OnReadyRequestReceived -= handler;
+            }
+
+            Assert.AreEqual(123ul, sender);
+            Assert.IsNotNull(received);
+            Assert.IsTrue(received.ready);
+        }
+
+        [Test]
+        public void HandleMessage_ReadyStateSync_RaisesEvent()
+        {
+            var sync = new ReadyStateSync();
+            sync.players.Add(new PlayerReadyState { playerIndex = 0, name = "Bob", ready = true });
+            string json = JsonUtility.ToJson(sync);
+
+            ReadyStateSync received = null;
+            Action<ReadyStateSync> handler = (s) => received = s;
+            NetworkManager.OnReadyStateReceived += handler;
+            try
+            {
+                NetworkManager.HandleMessage((SteamId)0ul, MessageType.ReadyStateSync, json);
+            }
+            finally
+            {
+                NetworkManager.OnReadyStateReceived -= handler;
+            }
+
+            Assert.IsNotNull(received);
+            Assert.AreEqual(1, received.players.Count);
+            Assert.AreEqual("Bob", received.players[0].name);
+            Assert.IsTrue(received.players[0].ready);
+        }
+
+        [Test]
+        public void HandleMessage_LoadNextLevel_RaisesEvent()
+        {
+            bool fired = false;
+            Action handler = () => fired = true;
+            NetworkManager.OnLoadNextLevelReceived += handler;
+            try
+            {
+                NetworkManager.HandleMessage((SteamId)0ul, MessageType.LoadNextLevel, "{}");
+            }
+            finally
+            {
+                NetworkManager.OnLoadNextLevelReceived -= handler;
             }
 
             Assert.IsTrue(fired);

@@ -91,6 +91,7 @@ namespace Tests
             var sync = manager.BuildGameStateSync();
 
             Assert.AreEqual(1, sync.currentTurnIndex);
+            Assert.IsFalse(sync.victory);
             Assert.AreEqual(3, sync.characterStates.Count);
 
             var p = sync.characterStates[0];

@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Cards;
 using Characters;
+using Object = UnityEngine.Object;
 
 namespace Tests
 {
@@ -158,6 +160,60 @@ namespace Tests
             character.SetPlayerColor(Color.red);
             Assert.IsTrue(character.PlayerColor.HasValue);
             Assert.AreEqual(Color.red, character.PlayerColor.Value);
+        }
+
+        [Test]
+        public void SetName_FiresOnStatsChanged()
+        {
+            bool fired = false;
+            Action<CharacterStats> handler = (s) => fired = true;
+            character.Stats.OnStatsChanged += handler;
+            try
+            {
+                character.SetName("Bob");
+            }
+            finally
+            {
+                character.Stats.OnStatsChanged -= handler;
+            }
+
+            Assert.IsTrue(fired);
+        }
+
+        [Test]
+        public void SetName_Null_DoesNotFireOnStatsChanged()
+        {
+            bool fired = false;
+            Action<CharacterStats> handler = (s) => fired = true;
+            character.Stats.OnStatsChanged += handler;
+            try
+            {
+                character.SetName(null);
+            }
+            finally
+            {
+                character.Stats.OnStatsChanged -= handler;
+            }
+
+            Assert.IsFalse(fired);
+        }
+
+        [Test]
+        public void SetPlayerColor_FiresOnStatsChanged()
+        {
+            bool fired = false;
+            Action<CharacterStats> handler = (s) => fired = true;
+            character.Stats.OnStatsChanged += handler;
+            try
+            {
+                character.SetPlayerColor(Color.blue);
+            }
+            finally
+            {
+                character.Stats.OnStatsChanged -= handler;
+            }
+
+            Assert.IsTrue(fired);
         }
     }
 }
