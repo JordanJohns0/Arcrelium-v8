@@ -17,7 +17,6 @@ namespace UI
         [Header("References")]
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private HandView handView;
-        [SerializeField] private int humanPlayerId = 0;
 
         private static bool IsClient => Networking.NetworkManager.Instance != null
             && !Networking.NetworkManager.Instance.IsHost
@@ -32,6 +31,7 @@ namespace UI
         private SelectionState state = SelectionState.Idle;
         private CardInstance pendingCard;
         private readonly List<CardInstance> pendingCostCards = new List<CardInstance>();
+        private bool requestPending;
 
         [Header("Board Highlighting")]
         [SerializeField] private HexGridManager grid;
@@ -66,8 +66,9 @@ namespace UI
         private void HandleTurnStarted(Character character)
         {
             if (character == null) return;
+            requestPending = false;
 
-            if (character.OwnerPlayerId != humanPlayerId)
+            if (character.OwnerPlayerId != GameState.LocalPlayerId)
             {
                 if (promptText != null) promptText.text = $"{character.Stats.CharacterName}'s turn...";
                 return;
@@ -80,9 +81,13 @@ namespace UI
         private void HandlePassClicked()
         {
             if (turnManager.Busy) return;
+            if (requestPending) return;
             if (state != SelectionState.Idle) ResetSelection();
             if (IsClient)
+            {
+                requestPending = true;
                 NetworkManager.Instance.SendPassRequest();
+            }
             else
                 turnManager.Pass();
         }
@@ -90,6 +95,7 @@ namespace UI
         private void HandleCardClicked(CardInstance card)
         {
             if (turnManager.Busy) return;
+            if (requestPending) return;
 
             switch (state)
             {
@@ -200,13 +206,18 @@ namespace UI
         {
             if (IsClient)
             {
+                Character source = turnManager.ActiveCharacter;
+                IReadOnlyList<CardInstance> handCards = source != null ? source.Hand.Cards : null;
                 NetworkManager.Instance.SendPlayCardRequest(new PlayCardRequest
                 {
-                    cardInstanceId = pendingCard.Id,
-                    targetQ = targetCell?.Coordinates.Q,
-                    targetR = targetCell?.Coordinates.R,
-                    targetCharacterId = targetCharacter != null ? targetCharacter.GetInstanceID() : null
+                    cardHandIndex = FindCardIndex(handCards, pendingCard),
+                    costCardHandIndices = FindCardIndices(handCards, pendingCostCards),
+                    hasBoardTarget = targetCell != null,
+                    targetQ = targetCell != null ? targetCell.Coordinates.Q : 0,
+                    targetR = targetCell != null ? targetCell.Coordinates.R : 0,
+                    targetOwnerPlayerId = targetCharacter != null ? targetCharacter.OwnerPlayerId : -1
                 });
+                requestPending = true;
                 ResetSelection();
                 return;
             }
@@ -226,6 +237,25 @@ namespace UI
             }
 
             ResetSelection();
+        }
+
+        private static int FindCardIndex(IReadOnlyList<CardInstance> cards, CardInstance card)
+        {
+            if (cards == null || card == null) return -1;
+            for (int i = 0; i < cards.Count; i++)
+            {
+                if (cards[i] == card) return i;
+            }
+            return -1;
+        }
+
+        private static List<int> FindCardIndices(IReadOnlyList<CardInstance> cards, IReadOnlyCollection<CardInstance> targets)
+        {
+            var indices = new List<int>();
+            if (cards == null || targets == null) return indices;
+            foreach (CardInstance target in targets)
+                indices.Add(FindCardIndex(cards, target));
+            return indices;
         }
 
         private static bool RequiresBoardTarget(CardData card)
@@ -283,11 +313,11 @@ namespace UI
                     return cell.IsWalkable;
                 case TargetType.EnemyCharacter:
                     return cell.Occupant != null
-                        && cell.Occupant.OwnerPlayerId != source.OwnerPlayerId
+                        && cell.Occupant.Team != source.Team
                         && cell.Occupant.Stats.IsAlive;
                 case TargetType.AllyCharacter:
                     return cell.Occupant != null
-                        && cell.Occupant.OwnerPlayerId == source.OwnerPlayerId
+                        && cell.Occupant.Team == source.Team
                         && cell.Occupant.Stats.IsAlive;
                 case TargetType.AnyCharacter:
                     return cell.Occupant != null && cell.Occupant.Stats.IsAlive;

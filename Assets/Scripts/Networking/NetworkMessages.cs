@@ -8,7 +8,8 @@ namespace Networking
         PlayCardRequest,
         PassRequest,
         StartGame,
-        ChatMessage
+        ChatMessage,
+        RequestInitialState
     }
 
     [System.Serializable]
@@ -24,22 +25,29 @@ namespace Networking
     {
         public int characterId;
         public int ownerPlayerId;
+        public int teamId;
         public int q;
         public int r;
         public int currentHp;
         public int maxHp;
         public int armor;
         public bool isAlive;
+        public string name;
+        public float colorR;
+        public float colorG;
+        public float colorB;
+        public string[] handCardNames;
     }
 
     [System.Serializable]
     public class PlayCardRequest
     {
-        public int cardInstanceId;
-        public List<int> costCardIds = new List<int>();
-        public int? targetQ;
-        public int? targetR;
-        public int? targetCharacterId;
+        public int cardHandIndex = -1;
+        public List<int> costCardHandIndices = new List<int>();
+        public bool hasBoardTarget;
+        public int targetQ;
+        public int targetR;
+        public int targetOwnerPlayerId = -1;
     }
 
     [System.Serializable]

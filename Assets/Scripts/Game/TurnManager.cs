@@ -40,6 +40,7 @@ namespace Game
         public Character ActiveCharacter => turnOrder.Count > 0 ? turnOrder[currentIndex] : null;
         public TurnPhase CurrentPhase { get; private set; } = TurnPhase.Act;
         public bool Busy => turnCoroutine != null;
+        public int CurrentTurnIndex => currentIndex;
 
         public event System.Action<Character> OnTurnStarted;
         public event System.Action<Character> OnTurnEnded;
@@ -50,6 +51,16 @@ namespace Game
         {
             turnOrder = characters;
             currentIndex = 0;
+        }
+
+        /// <summary>
+        /// Host-driven turn sync for clients: advances to the given index and notifies the UI.
+        /// </summary>
+        public void SetTurn(int index)
+        {
+            if (turnOrder.Count == 0) { currentIndex = 0; return; }
+            currentIndex = ((index % turnOrder.Count) + turnOrder.Count) % turnOrder.Count;
+            OnTurnStarted?.Invoke(ActiveCharacter);
         }
 
         public void StartMatch()

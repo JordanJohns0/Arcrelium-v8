@@ -38,6 +38,7 @@ public class LobbyManager : MonoBehaviour
                 return;
             }
             instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
         private void OnEnable()

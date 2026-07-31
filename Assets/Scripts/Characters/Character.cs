@@ -26,7 +26,9 @@ namespace Characters
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
         public int OwnerPlayerId { get; private set; }
-        public Team Team => OwnerPlayerId == 0 ? Team.Ally : Team.Enemy;
+        public int TeamId { get; private set; }
+        public Team Team => TeamId == 0 ? Team.Ally : Team.Enemy;
+        public Color? PlayerColor { get; private set; }
 
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
@@ -34,14 +36,15 @@ namespace Characters
         public static event Action<Character> OnCharacterCreated;
         public static event Action<Character> OnCharacterDestroyed;
 
-        private Renderer[] renderers;
+        private readonly List<Renderer> renderers = new List<Renderer>();
         private readonly List<(Renderer renderer, Color originalColor)> originalColors = new List<(Renderer, Color)>();
         private static readonly int colorID = Shader.PropertyToID("_Color");
         private static readonly int baseColorID = Shader.PropertyToID("_BaseColor");
 
-        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1)
+        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1)
         {
             OwnerPlayerId = ownerPlayerId;
+            TeamId = teamId >= 0 ? teamId : (ownerPlayerId == 0 ? 0 : 1);
             stats.Initialize();
             Hand = new Hand();
 
@@ -119,7 +122,8 @@ namespace Characters
         {
             CurrentCell?.ClearOccupant();
             OnDefeated?.Invoke(this);
-            Destroy(gameObject);
+            if (Application.isPlaying)
+                Destroy(gameObject);
         }
 
         private void OnDestroy()
@@ -127,15 +131,59 @@ namespace Characters
             OnCharacterDestroyed?.Invoke(this);
         }
 
+        public void SetName(string name)
+        {
+            if (!string.IsNullOrEmpty(name))
+                stats.CharacterName = name;
+        }
+
+        /// <summary>
+        /// Replaces the hand with freshly created cards matching the given names,
+        /// preserving the Hand instance so bound UI refreshes in place.
+        /// </summary>
+        public void RebuildHand(string[] cardNames)
+        {
+            foreach (CardInstance card in new List<CardInstance>(Hand.Cards))
+                Hand.RemoveCard(card);
+
+            if (cardNames == null || deck == null) return;
+            foreach (string name in cardNames)
+            {
+                CardData data = deck.GetCardDataByName(name);
+                if (data != null)
+                    Hand.AddCard(new CardInstance(data));
+            }
+        }
+
+        public void SetPlayerColor(Color color)
+        {
+            PlayerColor = color;
+            if (renderers.Count == 0) renderers.AddRange(GetComponentsInChildren<Renderer>());
+            ApplyColor(color);
+        }
+
+        private void ApplyColor(Color color)
+        {
+            foreach (Renderer r in renderers)
+            {
+                if (r == null) continue;
+                MaterialPropertyBlock block = new MaterialPropertyBlock();
+                r.GetPropertyBlock(block);
+                block.SetColor(colorID, color);
+                block.SetColor(baseColorID, color);
+                r.SetPropertyBlock(block);
+            }
+        }
+
         public void SetHighlighted(Color highlightColor)
         {
             ClearHighlight();
-            if (renderers == null) renderers = GetComponentsInChildren<Renderer>();
+            if (renderers.Count == 0) renderers.AddRange(GetComponentsInChildren<Renderer>());
 
             foreach (Renderer r in renderers)
             {
                 if (r == null) continue;
-                Color original = r.material.color;
+                Color original = PlayerColor ?? r.material.color;
                 originalColors.Add((r, original));
 
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
@@ -153,8 +201,9 @@ namespace Characters
                 if (entry.renderer == null) continue;
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
                 entry.renderer.GetPropertyBlock(block);
-                block.SetColor(colorID, entry.originalColor);
-                block.SetColor(baseColorID, entry.originalColor);
+                Color restore = PlayerColor ?? entry.originalColor;
+                block.SetColor(colorID, restore);
+                block.SetColor(baseColorID, restore);
                 entry.renderer.SetPropertyBlock(block);
             }
             originalColors.Clear();

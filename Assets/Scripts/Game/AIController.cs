@@ -12,7 +12,6 @@ namespace Game
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionResolver actionResolver;
         [SerializeField] private HexGridManager grid;
-        [SerializeField] private int humanPlayerId = 0;
         [SerializeField] private float aiDelay = 0.4f;
 
         private void OnEnable()
@@ -28,7 +27,8 @@ namespace Game
         private void HandleTurnStarted(Character character)
         {
             if (character == null) return;
-            if (character.OwnerPlayerId == humanPlayerId) return;
+            if (GameState.ActiveMode == GameMode.Client) return;
+            if (character.Team == Team.Ally) return;
 
             StartCoroutine(PlayAITurn(character));
         }
@@ -122,8 +122,8 @@ namespace Game
                 if (!cell.Occupant.Stats.IsAlive) continue;
                 if (cell.Occupant == source) continue;
 
-                bool isEnemy = cell.Occupant.OwnerPlayerId != source.OwnerPlayerId;
-                bool isAlly = cell.Occupant.OwnerPlayerId == source.OwnerPlayerId;
+                bool isEnemy = cell.Occupant.Team != source.Team;
+                bool isAlly = cell.Occupant.Team == source.Team;
 
                 if (card.TargetType == TargetType.EnemyCharacter && !isEnemy) continue;
                 if (card.TargetType == TargetType.AllyCharacter && !isAlly) continue;

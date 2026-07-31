@@ -25,7 +25,9 @@ namespace UI
         private void Awake()
         {
             CreateUI();
-            var _ = SteamManager.Instance;
+            _ = SteamManager.Instance;
+            _ = Networking.NetworkManager.Instance;
+            _ = LobbyManager.Instance;
             SubscribeLobbyEvents();
         }
 

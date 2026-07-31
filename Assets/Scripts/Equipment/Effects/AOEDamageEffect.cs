@@ -22,7 +22,7 @@ namespace Equipment.Effects
             {
                 if (cell.Occupant == null) continue;
                 if (cell.Occupant == context.Source) continue;
-                if (cell.Occupant.OwnerPlayerId == context.Source.OwnerPlayerId) continue;
+                if (cell.Occupant.Team == context.Source.Team) continue;
 
                 cell.Occupant.TakeDamage(Damage);
             }

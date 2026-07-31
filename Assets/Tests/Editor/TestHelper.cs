@@ -22,6 +22,11 @@ namespace Tests
 
         public static Character CreateCharacter(int ownerId, int q, int r)
         {
+            return CreateCharacter(ownerId, q, r, -1);
+        }
+
+        public static Character CreateCharacter(int ownerId, int q, int r, int teamId)
+        {
             var cell = CreateCell(q, r);
             var go = new GameObject($"Character {ownerId}");
             var character = go.AddComponent<Character>();
@@ -29,8 +34,18 @@ namespace Tests
             var deck = new Deck();
             deckField.SetValue(character, deck);
 
-            character.Initialize(ownerId, cell, 0);
+            character.Initialize(ownerId, cell, 0, teamId);
             return character;
+        }
+
+        public static CardData MakeCard(string name, TargetType targetType = TargetType.Self, int cost = 0, CardEffectSO effect = null)
+        {
+            var data = ScriptableObject.CreateInstance<CardData>();
+            data.CardName = name;
+            data.TargetType = targetType;
+            data.Cost = cost;
+            data.Effect = effect;
+            return data;
         }
 
         public static HexGridManager CreateTestGrid(int radius)

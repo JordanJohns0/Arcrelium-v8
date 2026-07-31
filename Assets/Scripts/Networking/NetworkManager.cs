@@ -17,6 +17,7 @@ namespace Networking
         public static event Action<ulong, PlayCardRequest> OnPlayCardRequestReceived;
         public static event Action<ulong> OnPassRequestReceived;
         public static event Action OnStartGameReceived;
+        public static event Action OnRequestInitialStateReceived;
 
         public static NetworkManager Instance
         {
@@ -39,6 +40,7 @@ namespace Networking
                 return;
             }
             instance = this;
+            DontDestroyOnLoad(gameObject);
             SteamNetworking.OnP2PSessionRequest = OnP2PSessionRequest;
         }
 
@@ -84,6 +86,12 @@ namespace Networking
         {
             Debug.Log("[NetworkManager] Sending StartGame to all clients");
             SendToAllClients(MessageType.StartGame, "{}");
+        }
+
+        public void SendRequestInitialState()
+        {
+            Debug.Log("[NetworkManager] Sending RequestInitialState to host");
+            SendToHost(MessageType.RequestInitialState, "{}");
         }
 
         private void SendToHost(MessageType type, string json)
@@ -145,7 +153,7 @@ namespace Networking
             }
         }
 
-        private void HandleMessage(SteamId sender, MessageType type, string json)
+        internal static void HandleMessage(SteamId sender, MessageType type, string json)
         {
             switch (type)
             {
@@ -165,6 +173,10 @@ namespace Networking
 
                 case MessageType.StartGame:
                     OnStartGameReceived?.Invoke();
+                    break;
+
+                case MessageType.RequestInitialState:
+                    OnRequestInitialStateReceived?.Invoke();
                     break;
             }
         }

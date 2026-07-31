@@ -65,6 +65,18 @@ namespace Cards
             discardPile.Add(card);
         }
 
+        /// <summary>
+        /// Looks up a starting card by name so clients can rebuild synced hands.
+        /// </summary>
+        public CardData GetCardDataByName(string cardName)
+        {
+            foreach (CardData data in startingCards)
+            {
+                if (data != null && data.CardName == cardName) return data;
+            }
+            return null;
+        }
+
         private void ReshuffleDiscardIntoDraw()
         {
             if (discardPile.Count == 0) return;
