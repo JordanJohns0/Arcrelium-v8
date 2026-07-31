@@ -34,30 +34,32 @@ namespace Cards.Effects
         public override void Execute(CardContext context)
         {
             HexCell target = context.TargetCell;
+            if (target == null) return;
 
+            List<HexCell> path = null;
             if (context.Grid != null)
             {
-                List<HexCell> path = context.Grid.FindPath(
+                path = context.Grid.FindPath(
                     context.Source.CurrentCell.Coordinates,
                     target.Coordinates,
                     context.EffectiveRange);
-
-                if (path != null && path.Count > 0)
-                {
-                    context.Source.StartCoroutine(AnimatePath(context.Source, path));
-                    return;
-                }
             }
 
-            context.Source.StartCoroutine(AnimateDirectMove(context.Source, target));
+            // Authoritative position updates immediately so a state broadcast right
+            // after PlayCard already reflects the final destination. The coroutine
+            // below is purely cosmetic.
+            context.Source.SetCellOnly(target);
+
+            if (path != null && path.Count > 0)
+                context.Source.StartCoroutine(AnimatePath(context.Source, path));
+            else
+                context.Source.StartCoroutine(AnimateDirectMove(context.Source, target));
         }
 
         private IEnumerator AnimatePath(Character source, List<HexCell> path)
         {
             foreach (HexCell cell in path)
             {
-                source.SetCellOnly(cell);
-
                 Vector3 destination = cell.transform.position;
                 Transform t = source.transform;
 
@@ -73,8 +75,6 @@ namespace Cards.Effects
 
         private IEnumerator AnimateDirectMove(Character source, HexCell target)
         {
-            source.SetCellOnly(target);
-
             Vector3 destination = target.transform.position;
             Transform t = source.transform;
 

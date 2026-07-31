@@ -175,5 +175,45 @@ namespace Tests
             resolver.PlayCard(source, card, targetCharacter: null);
             Assert.IsTrue(source.Hand.Contains(card));
         }
+
+        [Test]
+        public void PlayCard_EnemyTargetCard_RejectsAllyTarget()
+        {
+            var ally = TestHelper.CreateCharacter(2, 2, 0, teamId: 0);
+            try
+            {
+                source.Hand.AddCard(new CardInstance(attackCardData));
+                var card = source.Hand.Cards[0];
+
+                bool played = resolver.PlayCard(source, card, targetCharacter: ally);
+
+                Assert.IsFalse(played);
+                Assert.IsTrue(source.Hand.Contains(card));
+            }
+            finally
+            {
+                Object.DestroyImmediate(ally.CurrentCell.gameObject);
+                Object.DestroyImmediate(ally.gameObject);
+            }
+        }
+
+        [Test]
+        public void PlayCard_AllyTargetCard_RejectsEnemyTarget()
+        {
+            var allyTargetCardData = ScriptableObject.CreateInstance<CardData>();
+            allyTargetCardData.CardName = "Buff";
+            allyTargetCardData.TargetType = TargetType.AllyCharacter;
+            allyTargetCardData.Range = 5;
+            allyTargetCardData.Cost = 0;
+            allyTargetCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+
+            source.Hand.AddCard(new CardInstance(allyTargetCardData));
+            var card = source.Hand.Cards[0];
+
+            bool played = resolver.PlayCard(source, card, targetCharacter: target);
+
+            Assert.IsFalse(played);
+            Assert.IsTrue(source.Hand.Contains(card));
+        }
     }
 }

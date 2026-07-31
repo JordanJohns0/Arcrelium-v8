@@ -35,6 +35,7 @@ namespace Networking
         public int currentHp;
         public int maxHp;
         public int armor;
+        public int block;
         public bool isAlive;
         public string name;
         public float colorR;

@@ -42,7 +42,7 @@ namespace Game
 
             costCards ??= new List<CardInstance>();
             if (!IsCostValid(source, card, costCards)) return false;
-            if (!IsTargetValid(card.Data, targetCell, targetCharacter)) return false;
+            if (!IsTargetValid(source, card.Data, targetCell, targetCharacter)) return false;
 
             var context = new CardContext
             {
@@ -91,7 +91,7 @@ namespace Game
             return true;
         }
 
-        private static bool IsTargetValid(CardData card, HexCell targetCell, Character targetCharacter)
+        private static bool IsTargetValid(Character source, CardData card, HexCell targetCell, Character targetCharacter)
         {
             switch (card.TargetType)
             {
@@ -101,9 +101,15 @@ namespace Game
                 case TargetType.HexCell:
                     return targetCell != null;
                 case TargetType.EnemyCharacter:
+                    return targetCharacter != null
+                        && targetCharacter.Stats.IsAlive
+                        && targetCharacter.Team != source.Team;
                 case TargetType.AllyCharacter:
+                    return targetCharacter != null
+                        && targetCharacter.Stats.IsAlive
+                        && targetCharacter.Team == source.Team;
                 case TargetType.AnyCharacter:
-                    return targetCharacter != null;
+                    return targetCharacter != null && targetCharacter.Stats.IsAlive;
                 default:
                     return false;
             }

@@ -2,13 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using Characters;
 using Cards;
+using Game;
 
 namespace UI
 {
     /// <summary>
-    /// Displays the hand of whichever character is currently bound to it (normally the active
-    /// turn's character). Rebuilds its CardView children whenever the underlying Hand changes
-    /// (card drawn, played, discarded) or a new character is bound in.
+    /// Displays the hand of whichever character is currently bound to it (normally the local
+    /// player's character, so it stays visible while waiting for other players). Rebuilds its
+    /// CardView children whenever the underlying Hand changes (card drawn, played, discarded)
+    /// or a new character is bound in.
     /// Put this on a panel with a HorizontalLayoutGroup (or similar) as cardContainer.
     /// </summary>
     public class HandView : MonoBehaviour
@@ -20,6 +22,22 @@ namespace UI
         private readonly List<CardView> spawnedViews = new List<CardView>();
 
         public event System.Action<CardInstance> OnCardClicked;
+
+        private void OnEnable()
+        {
+            Character.OnCharacterCreated += HandleCharacterCreated;
+        }
+
+        private void OnDisable()
+        {
+            Character.OnCharacterCreated -= HandleCharacterCreated;
+        }
+
+        private void HandleCharacterCreated(Character character)
+        {
+            if (character.OwnerPlayerId == GameState.LocalPlayerId)
+                SetCharacter(character);
+        }
 
         /// <summary>Switch which character's hand this view is showing (e.g. on turn change).</summary>
         public void SetCharacter(Character character)

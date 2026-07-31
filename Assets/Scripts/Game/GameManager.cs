@@ -324,6 +324,7 @@ namespace Game
                     currentHp = c.Stats.CurrentHealth,
                     maxHp = c.Stats.MaxHealth,
                     armor = c.Stats.Armor,
+                    block = c.Stats.Block,
                     isAlive = c.Stats.IsAlive,
                     name = c.Stats.CharacterName,
                     colorR = color.r,
@@ -443,6 +444,14 @@ namespace Game
 
             if (state.characterStates.Count > 0)
             {
+                var oldPositions = new Dictionary<int, Vector3>();
+                foreach (var c in activeCharacters)
+                {
+                    if (c == null) continue;
+                    if (!oldPositions.ContainsKey(c.OwnerPlayerId))
+                        oldPositions[c.OwnerPlayerId] = c.transform.position;
+                }
+
                 foreach (var c in activeCharacters)
                 {
                     if (c == null) continue;
@@ -466,11 +475,15 @@ namespace Game
                     character.SetPlayerColor(new Color(cs.colorR, cs.colorG, cs.colorB));
                     character.RebuildHand(cs.handCardNames);
                     character.OnDefeated += HandleCharacterDefeated;
+                    ApplySyncedStats(character, cs);
                     activeCharacters.Add(character);
 
-                    character.Stats.MaxHealth = cs.maxHp;
-                    character.Stats.CurrentHealth = cs.currentHp;
-                    character.Stats.Armor = cs.armor;
+                    if (oldPositions.TryGetValue(cs.ownerPlayerId, out Vector3 oldPos)
+                        && Vector3.Distance(oldPos, cell.transform.position) > 0.01f)
+                    {
+                        character.transform.position = oldPos;
+                        StartCoroutine(AnimateToCell(character, oldPos, cell));
+                    }
                 }
 
                 turnManager.SetTurnOrder(new List<Character>(activeCharacters));
@@ -479,6 +492,33 @@ namespace Game
 
             if (state.victory)
                 ShowVictory();
+        }
+
+        private static void ApplySyncedStats(Character character, Networking.CharacterState cs)
+        {
+            if (character.Stats == null) return;
+            character.Stats.MaxHealth = cs.maxHp;
+            character.Stats.CurrentHealth = cs.currentHp;
+            character.Stats.Armor = cs.armor;
+            character.Stats.Block = cs.block;
+            character.Stats.NotifyChanged();
+        }
+
+        private System.Collections.IEnumerator AnimateToCell(Character character, Vector3 start, HexCell target)
+        {
+            const float moveSpeed = 8f;
+            const float arrivalThreshold = 0.05f;
+            Transform t = character.transform;
+            t.position = start;
+            Vector3 destination = target.transform.position;
+
+            while (Vector3.Distance(t.position, destination) > arrivalThreshold)
+            {
+                t.position = Vector3.MoveTowards(t.position, destination, moveSpeed * Time.deltaTime);
+                yield return null;
+            }
+
+            t.position = destination;
         }
     }
 }

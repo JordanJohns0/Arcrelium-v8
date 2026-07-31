@@ -199,7 +199,29 @@ namespace UI
                 return;
             }
 
+            if (!IsValidCharacterTarget(pendingCard.Data, turnManager.ActiveCharacter, character))
+            {
+                if (promptText != null) promptText.text = "That character isn't a valid target for this card.";
+                return;
+            }
+
             SubmitPlay(targetCharacter: character);
+        }
+
+        private static bool IsValidCharacterTarget(CardData card, Character source, Character target)
+        {
+            if (target == null || !target.Stats.IsAlive) return false;
+            switch (card.TargetType)
+            {
+                case TargetType.EnemyCharacter:
+                    return target.Team != source.Team;
+                case TargetType.AllyCharacter:
+                    return target.Team == source.Team;
+                case TargetType.AnyCharacter:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private void SubmitPlay(HexCell targetCell = null, Character targetCharacter = null)

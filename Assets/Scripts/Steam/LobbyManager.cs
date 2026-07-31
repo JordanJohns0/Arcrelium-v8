@@ -71,14 +71,13 @@ public class LobbyManager : MonoBehaviour
         }
 
         /// <summary>
-        /// Friend accepted an invite from someone already in a lobby.
+        /// An invite was received. Do NOT auto-join: Steam shows the invite in the overlay
+        /// and only once the player actually clicks "Play game" there does Steam fire
+        /// OnGameLobbyJoinRequested, which is where we join.
         /// </summary>
-        private void HandleLobbyInvite(Lobby lobby, SteamId inviter)
+        private void HandleLobbyInvite(Friend friend, Lobby lobby)
         {
-            Debug.Log($"[LobbyManager] Invite received from {inviter} for lobby {lobby.Id}");
-            if (CurrentLobby.HasValue && CurrentLobby.Value.Id != lobby.Id)
-                LeaveLobby();
-            JoinLobby(lobby);
+            Debug.Log($"[LobbyManager] Invite received from {friend.Name} ({friend.Id}) for lobby {lobby.Id} — waiting for the player to accept in the overlay.");
         }
 
         /// <summary>
@@ -103,6 +102,7 @@ public class LobbyManager : MonoBehaviour
                 CurrentLobby?.SetData("HostSteamId", SteamClient.SteamId.ToString());
                 CurrentLobby?.SetPublic();
                 CurrentLobby?.SetJoinable(true);
+                SteamFriends.SetRichPresence("connect", result.Value.Id.ToString());
                 Debug.Log($"[LobbyManager] Lobby created: {CurrentLobby?.Id}");
                 OnLobbyCreated?.Invoke(result.Value);
             }
@@ -145,6 +145,7 @@ var result = await SteamMatchmaking.LobbyList.RequestAsync();
                 CurrentLobby?.Leave();
                 CurrentLobby = null;
                 IsHost = false;
+                SteamFriends.ClearRichPresence();
                 OnLobbyLeft?.Invoke();
             }
         }

@@ -29,6 +29,7 @@ namespace Tests
                 currentHp = 5,
                 maxHp = 10,
                 armor = 2,
+                block = 3,
                 isAlive = true,
                 name = "Alice",
                 colorR = 0.2f,
@@ -54,6 +55,7 @@ namespace Tests
             Assert.AreEqual(5, d.currentHp);
             Assert.AreEqual(10, d.maxHp);
             Assert.AreEqual(2, d.armor);
+            Assert.AreEqual(3, d.block);
             Assert.IsTrue(d.isAlive);
             Assert.AreEqual("Alice", d.name);
             Assert.AreEqual(0.2f, d.colorR, 0.0001f);

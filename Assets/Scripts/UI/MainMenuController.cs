@@ -12,7 +12,7 @@ namespace UI
 {
     public class MainMenuController : MonoBehaviour
     {
-        public const string Version = "v0.0.5";
+        public const string Version = "v0.0.6";
 
         private Transform mainContent;
         private Transform lobbyContent;
