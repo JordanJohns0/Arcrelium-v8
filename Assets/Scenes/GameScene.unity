@@ -2261,7 +2261,6 @@ MonoBehaviour:
   turnManager: {fileID: 531838723}
   actionResolver: {fileID: 531838724}
   grid: {fileID: 396940646}
-  humanPlayerId: 0
   aiDelay: 0.4
 --- !u!1 &540449548
 GameObject:
@@ -2451,7 +2450,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &578493898
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4386,7 +4385,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UI.TurnFlowUIController
   turnManager: {fileID: 531838723}
   handView: {fileID: 511087453}
-  humanPlayerId: 0
   passButton: {fileID: 184778960}
   cancelButton: {fileID: 2101950852}
   promptText: {fileID: 372808868}
@@ -4653,7 +4651,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1457910962
 RectTransform:
   m_ObjectHideFlags: 0

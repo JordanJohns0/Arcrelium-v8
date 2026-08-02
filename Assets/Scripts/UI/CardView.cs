@@ -57,7 +57,8 @@ namespace UI
         /// <summary>Dim/disable the card when it can't legally be picked right now (e.g. it IS the card being played, so it can't also pay its own cost).</summary>
         public void SetInteractable(bool interactable)
         {
-            button.interactable = interactable;
+            if (button == null) button = GetComponent<Button>();
+            if (button != null) button.interactable = interactable;
         }
     }
 }

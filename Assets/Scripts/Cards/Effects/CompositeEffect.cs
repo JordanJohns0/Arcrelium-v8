@@ -8,7 +8,7 @@ namespace Cards.Effects
     /// and they all execute in order when this card is played.
     /// Example: "Deal 2 damage, gain 3 block" = AttackEffect(2) + GainBlockEffect(3).
     /// </summary>
-    [CreateAssetMenu(fileName = "CompositeEffect", menuName = "/Effects/Composite")]
+    [CreateAssetMenu(fileName = "CompositeEffect", menuName = "Arcrelium/Effects/Composite")]
     public class CompositeEffect : CardEffectSO
     {
         [Tooltip("Effects to execute in order when this card is played.")]

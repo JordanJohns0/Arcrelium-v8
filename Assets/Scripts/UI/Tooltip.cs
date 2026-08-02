@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using Equipment;
+using Cards;
 
 namespace UI
 {
@@ -134,7 +135,7 @@ namespace UI
                 for (int i = 0; i < data.Cards.Count; i++)
                 {
                     var card = data.Cards[i];
-                    sb.Append($"<b>{card.CardName}</b>\n{card.Description}");
+                    sb.Append($"<b>{card.CardName}</b> - Cost: {card.Cost}\n{card.Description}");
                     if (i < data.Cards.Count - 1) sb.Append("\n\n");
                 }
                 tip.cardsText.text = sb.ToString();
@@ -144,6 +145,25 @@ namespace UI
                 tip.cardsHeader.gameObject.SetActive(false);
                 tip.cardsText.text = "";
             }
+
+            tip.panel.anchoredPosition = screenPosition + new Vector2(15, -10);
+            tip.canvasRoot.SetActive(true);
+        }
+
+        /// <summary>
+        /// Shows a card the same way cards appear inside equipment tooltips: bold name with
+        /// its inline cost, description beneath. Used by right-clicking deck list entries.
+        /// </summary>
+        public static void ShowCard(CardData card, Vector2 screenPosition)
+        {
+            if (card == null) return;
+            var tip = GetOrCreate();
+            if (tip == null || tip.canvasRoot == null) return;
+
+            tip.headerText.text = $"{card.CardName} - Cost: {card.Cost}";
+            tip.descriptionText.text = card.Description;
+            tip.cardsHeader.gameObject.SetActive(false);
+            tip.cardsText.text = "";
 
             tip.panel.anchoredPosition = screenPosition + new Vector2(15, -10);
             tip.canvasRoot.SetActive(true);

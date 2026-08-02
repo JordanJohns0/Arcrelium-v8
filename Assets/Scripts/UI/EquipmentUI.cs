@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Equipment;
 using Characters;
+using Cards;
 
 namespace UI
 {
@@ -36,9 +37,23 @@ namespace UI
         [SerializeField] private Transform inventoryPanel;
         [SerializeField] private InventorySlotUI inventorySlotPrefab;
 
+        [Header("Deck List")]
+        [Tooltip("Width of the deck list column shown to the left of the equipment slots.")]
+        [SerializeField] private float deckListWidth = 360f;
+        [Tooltip("Width of the equipment slots column. Used to size the deck list column.")]
+        [SerializeField] private float equipmentSlotsWidth = 600f;
+
         private readonly List<InventorySlotUI> spawnedInventorySlots = new List<InventorySlotUI>();
         private EquipmentManager cachedEquipmentManager;
         private EquipmentSlotType? currentFilter;
+        private DeckListUI deckList;
+
+        /// <summary>
+        /// When set, this UI edits a fixed loadout (the pre-match / victory selection)
+        /// instead of a live EquipmentManager. Slots populate from and write into the
+        /// loadout, and inventory is the persistent player inventory.
+        /// </summary>
+        private EquipmentLoadout editLoadout;
 
         private void OnEnable()
         {
@@ -72,6 +87,8 @@ namespace UI
 
         private void InitializeSlots()
         {
+            EnsureDeckList();
+
             headSlot.Setup(EquipmentSlotType.Head, 0, this);
             chestSlot.Setup(EquipmentSlotType.Chest, 0, this);
             feetSlot.Setup(EquipmentSlotType.Feet, 0, this);
@@ -86,6 +103,19 @@ namespace UI
 
         private void PopulateFromEquipmentManager()
         {
+            if (editLoadout != null)
+            {
+                SetSlotData(headSlot, editLoadout.Head);
+                SetSlotData(chestSlot, editLoadout.Chest);
+                SetSlotData(feetSlot, editLoadout.Feet);
+                SetSlotData(leftHandSlot, editLoadout.LeftHand);
+                SetSlotData(rightHandSlot, editLoadout.RightHand);
+                SetSlotData(trinket1Slot, editLoadout.Trinket1);
+                SetSlotData(trinket2Slot, editLoadout.Trinket2);
+                SetSlotData(trinket3Slot, editLoadout.Trinket3);
+                return;
+            }
+
             if (cachedEquipmentManager == null) return;
 
             SetSlotFromManager(headSlot, EquipmentSlotType.Head, 0);
@@ -98,6 +128,115 @@ namespace UI
             SetSlotFromManager(trinket3Slot, EquipmentSlotType.Trinket, 2);
         }
 
+        private static void SetSlotData(EquipmentSlotUI slotUI, EquipmentData data)
+        {
+            if (slotUI != null) slotUI.SetEquipment(data);
+        }
+
+        /// <summary>
+        /// Replaces the inventory this UI operates on (used by the loadout screen to point
+        /// at the runtime player inventory instead of the Inspector starter asset).
+        /// </summary>
+        public void SetInventory(PlayerInventory newInventory)
+        {
+            if (inventory == newInventory) return;
+            if (inventory != null)
+                inventory.OnInventoryChanged -= RefreshInventory;
+            inventory = newInventory;
+            if (inventory != null)
+                inventory.OnInventoryChanged += RefreshInventory;
+        }
+
+        /// <summary>
+        /// Switches this UI into loadout-editing mode. While set, equipping/unequipping
+        /// writes into the given loadout instead of a live EquipmentManager.
+        /// </summary>
+        public void SetEditLoadout(EquipmentLoadout loadout)
+        {
+            editLoadout = loadout;
+            cachedEquipmentManager = null;
+        }
+
+        /// <summary>
+        /// Re-initializes slots and inventory from the current edit target. Call after
+        /// SetInventory / SetEditLoadout have been set up.
+        /// </summary>
+        public void Refresh()
+        {
+            InitializeSlots();
+            RefreshInventory();
+        }
+
+        /// <summary>
+        /// Creates the deck list column (once) and lays it out to the left of the
+        /// equipment slots, narrowing the right-side panels so nothing overlaps.
+        /// </summary>
+        private void EnsureDeckList()
+        {
+            if (deckList == null)
+            {
+                Transform existing = transform.Find("Deck List");
+                deckList = existing != null ? existing.GetComponent<DeckListUI>() : null;
+            }
+
+            if (deckList == null)
+            {
+                var go = new GameObject("Deck List", typeof(RectTransform), typeof(DeckListUI));
+                go.transform.SetParent(transform, false);
+                deckList = go.GetComponent<DeckListUI>();
+            }
+
+            LayoutForDeckList();
+        }
+
+        private void LayoutForDeckList()
+        {
+            var deckRect = (RectTransform)deckList.transform;
+            deckRect.anchorMin = new Vector2(0, 0);
+            deckRect.anchorMax = new Vector2(0, 1);
+            deckRect.pivot = new Vector2(0, 0.5f);
+            deckRect.anchoredPosition = Vector2.zero;
+            deckRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, deckListWidth);
+
+            Transform equipmentSlots = transform.Find("Equipment Slots");
+            if (equipmentSlots != null)
+            {
+                ((RectTransform)equipmentSlots).anchoredPosition =
+                    new Vector2(deckListWidth, 0);
+            }
+
+            // Push the right-edge columns over so the new left column fits without overlap.
+            float rectWidth = ((RectTransform)transform).rect.width;
+            float leftTotal = deckListWidth + equipmentSlotsWidth + 12f;
+            float rightWidth = Mathf.Max(300f, rectWidth - 62f - leftTotal);
+
+            NarrowRightPanel("Inventory Slots", rightWidth);
+            NarrowRightPanel("Filter Buttons", rightWidth);
+        }
+
+        private void NarrowRightPanel(string childName, float width)
+        {
+            Transform child = transform.Find(childName);
+            if (child == null) return;
+            var rt = (RectTransform)child;
+            if (rt.rect.width <= width + 1f) return;
+            rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+        }
+
+        private void RefreshDeckList()
+        {
+            if (deckList == null) EnsureDeckList();
+            if (deckList == null) return;
+
+            List<CardData> cards = null;
+            if (editLoadout != null)
+                cards = editLoadout.GetAllCards();
+            else if (cachedEquipmentManager != null)
+                cards = cachedEquipmentManager.GetAllCards();
+
+            deckList.Refresh(cards);
+        }
+
         private void SetSlotFromManager(EquipmentSlotUI slotUI, EquipmentSlotType type, int index)
         {
             EquipmentInstance instance = cachedEquipmentManager.GetEquipped(type, index);
@@ -108,10 +247,25 @@ namespace UI
         {
             if (data == null) return;
             if (data.SlotType != slotType) return;
-            if (cachedEquipmentManager == null) return;
 
             EquipmentSlotUI targetSlot = GetSlot(slotType, slotIndex);
             if (targetSlot == null) return;
+
+            if (editLoadout != null)
+            {
+                if (targetSlot.CurrentEquipment != null)
+                {
+                    editLoadout.Set(slotType, slotIndex, null);
+                    if (inventory != null) inventory.Unlock(targetSlot.CurrentEquipment);
+                }
+                editLoadout.Set(slotType, slotIndex, data);
+                targetSlot.SetEquipment(data);
+                if (inventory != null) inventory.Remove(data);
+                RefreshInventory();
+                return;
+            }
+
+            if (cachedEquipmentManager == null) return;
 
             // Unequip existing item if slot is occupied
             if (targetSlot.CurrentEquipment != null)
@@ -126,20 +280,34 @@ namespace UI
                 targetSlot.SetEquipment(data);
                 inventory.Remove(data);
             }
+            RefreshInventory();
         }
 
         public void TryUnequip(EquipmentSlotUI slot)
         {
             if (slot == null || slot.CurrentEquipment == null) return;
+
+            if (editLoadout != null)
+            {
+                editLoadout.Set(slot.SlotType, slot.SlotIndex, null);
+                if (inventory != null) inventory.Unlock(slot.CurrentEquipment);
+                slot.Clear();
+                RefreshInventory();
+                return;
+            }
+
             if (cachedEquipmentManager == null) return;
 
             cachedEquipmentManager.Unequip(slot.SlotType, slot.SlotIndex);
             inventory.Unlock(slot.CurrentEquipment);
             slot.Clear();
+            RefreshInventory();
         }
 
         private void RefreshInventory()
         {
+            RefreshDeckList();
+
             foreach (InventorySlotUI slot in spawnedInventorySlots)
             {
                 if (slot != null) Destroy(slot.gameObject);
@@ -150,6 +318,8 @@ namespace UI
 
             foreach (EquipmentData data in inventory.UnlockedEquipment)
             {
+                if (IsEquipped(data)) continue;
+
                 InventorySlotUI slot = Instantiate(inventorySlotPrefab, inventoryPanel);
                 slot.Setup(data, canvas);
                 spawnedInventorySlots.Add(slot);
@@ -157,6 +327,43 @@ namespace UI
                 bool visible = currentFilter == null || data.SlotType == currentFilter.Value;
                 slot.SetVisible(visible);
             }
+        }
+
+        private bool IsEquipped(EquipmentData data)
+        {
+            if (data == null) return false;
+
+            if (editLoadout != null)
+            {
+                return editLoadout.Get(EquipmentSlotType.Head, 0) == data
+                    || editLoadout.Get(EquipmentSlotType.Chest, 0) == data
+                    || editLoadout.Get(EquipmentSlotType.Feet, 0) == data
+                    || editLoadout.Get(EquipmentSlotType.Hand, 0) == data
+                    || editLoadout.Get(EquipmentSlotType.Hand, 1) == data
+                    || editLoadout.Get(EquipmentSlotType.Trinket, 0) == data
+                    || editLoadout.Get(EquipmentSlotType.Trinket, 1) == data
+                    || editLoadout.Get(EquipmentSlotType.Trinket, 2) == data;
+            }
+
+            if (cachedEquipmentManager != null)
+            {
+                if (HasEquipped(cachedEquipmentManager.GetEquippedInSlot(EquipmentSlotType.Head), data)) return true;
+                if (HasEquipped(cachedEquipmentManager.GetEquippedInSlot(EquipmentSlotType.Chest), data)) return true;
+                if (HasEquipped(cachedEquipmentManager.GetEquippedInSlot(EquipmentSlotType.Feet), data)) return true;
+                if (HasEquipped(cachedEquipmentManager.GetEquippedInSlot(EquipmentSlotType.Hand), data)) return true;
+                if (HasEquipped(cachedEquipmentManager.GetEquippedInSlot(EquipmentSlotType.Trinket), data)) return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasEquipped(IReadOnlyList<EquipmentInstance> slots, EquipmentData data)
+        {
+            foreach (var slot in slots)
+            {
+                if (slot != null && slot.Data == data) return true;
+            }
+            return false;
         }
 
         public void SetFilter(EquipmentSlotType? slotType)

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Equipment.EquipmentData
   EquipmentName: Healing Trinket
   Description: At the start of your turn, heal 1 health.
-  Icon: {fileID: 0}
+  Icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
   SlotType: 4
   Cards:
   - {fileID: 11400000, guid: 659542e4b3057604dbc89bc43a30f90b, type: 2}

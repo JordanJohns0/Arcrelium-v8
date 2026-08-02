@@ -8,7 +8,7 @@ namespace Equipment.Effects
     /// Deals damage to every enemy adjacent to the owner each time they move to a new cell.
     /// Fires per movement step, so running in circles around an enemy pings multiple times.
     /// </summary>
-    [CreateAssetMenu(fileName = "MoveStepDamageEffect", menuName = "/Equipment Effects/Move Step Damage")]
+    [CreateAssetMenu(fileName = "MoveStepDamageEffect", menuName = "Arcrelium/Equipment Effects/Move Step Damage")]
     public class MoveStepDamageEffect : EquipmentEffect
     {
         public int Damage = 1;

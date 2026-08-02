@@ -7,7 +7,7 @@ namespace Equipment.Effects
     /// Increases the effective range of movement cards by a flat amount.
     /// Fires on OnBeforeCardPlay so the bonus is applied before range validation.
     /// </summary>
-    [CreateAssetMenu(fileName = "MovementRangeBoostEffect", menuName = "/Equipment Effects/Movement Range Boost")]
+    [CreateAssetMenu(fileName = "MovementRangeBoostEffect", menuName = "Arcrelium/Equipment Effects/Movement Range Boost")]
     public class MovementRangeBoostEffect : EquipmentEffect
     {
         public int BonusRange = 1;

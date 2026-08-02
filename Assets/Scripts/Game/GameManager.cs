@@ -4,6 +4,7 @@ using UnityEngine;
 using HexGrid;
 using Characters;
 using Cards;
+using Equipment;
 using UI;
 using Steamworks;
 using Steamworks.Data;
@@ -65,8 +66,17 @@ namespace Game
         /// </summary>
         internal static Func<ulong, int> PlayerIdLookup;
 
-        private VictoryScreen victoryScreen;
+        private LoadoutScreen loadoutScreen;
         private bool victoryAchieved;
+
+        /// <summary>
+        /// Loadouts collected from every player during the loadout phase. The host starts
+        /// the level once this matches the number of lobby members.
+        /// </summary>
+        private readonly Dictionary<int, EquipmentLoadout> receivedLoadouts = new Dictionary<int, EquipmentLoadout>();
+
+        /// <summary>Number of loadouts the host must collect before starting the level.</summary>
+        internal int ExpectedLoadoutCount = 1;
 
         private void Start()
         {
@@ -77,31 +87,26 @@ namespace Game
                 case GameMode.SinglePlayer:
                     GameState.LocalPlayerId = 0;
                     SubscribeHostLogic();
-                    if (playerCharacterPrefab != null && enemyCharacterPrefab != null)
-                        StartCoroutine(SetupDynamicMatchDeferred());
-                    else
-                        SetupMatch();
                     break;
 
                 case GameMode.Host:
                     GameState.LocalPlayerId = ComputeLocalPlayerId();
                     SubscribeHostLogic();
-                    if (playerCharacterPrefab != null && enemyCharacterPrefab != null)
-                        StartCoroutine(SetupDynamicMatchDeferred());
-                    else
-                        SetupMatch();
                     break;
 
                 case GameMode.Client:
                     GameState.LocalPlayerId = ComputeLocalPlayerId();
-                    grid.GenerateGrid();
-                    Networking.NetworkManager.OnGameStateReceived += HandleGameStateReceived;
-                    Networking.NetworkManager.OnLoadNextLevelReceived += HandleLoadNextLevelReceived;
-                    Networking.NetworkManager.Instance.SendRequestInitialState();
                     break;
             }
 
             PauseMenu.GetOrCreate(inputActions);
+
+            if (GameState.ShowLoadoutScreen)
+            {
+                ShowLoadoutScreen(null);
+                return;
+            }
+            BeginMatch();
         }
 
         private void OnDestroy()
@@ -111,6 +116,7 @@ namespace Game
             Networking.NetworkManager.OnRequestInitialStateReceived -= HandleRequestInitialState;
             Networking.NetworkManager.OnPlayCardRequestReceived -= HandlePlayCardRequest;
             Networking.NetworkManager.OnPassRequestReceived -= HandlePassRequest;
+            Networking.NetworkManager.OnLoadoutSyncReceived -= HandleLoadoutSyncReceived;
             LobbyManager.OnLobbyMemberLeft -= HandleLobbyMemberLeft;
             if (turnManager != null)
             {
@@ -132,6 +138,7 @@ namespace Game
             Networking.NetworkManager.OnRequestInitialStateReceived += HandleRequestInitialState;
             Networking.NetworkManager.OnPlayCardRequestReceived += HandlePlayCardRequest;
             Networking.NetworkManager.OnPassRequestReceived += HandlePassRequest;
+            Networking.NetworkManager.OnLoadoutSyncReceived += HandleLoadoutSyncReceived;
             LobbyManager.OnLobbyMemberLeft += HandleLobbyMemberLeft;
             if (turnManager != null)
             {
@@ -156,6 +163,166 @@ namespace Game
                 BroadcastGameState();
         }
 
+        /// <summary>
+        /// Starts the actual match: builds the board, spawns characters (applying each
+        /// player's confirmed loadout), and begins turns. Skipped while the loadout screen
+        /// is up.
+        /// </summary>
+        private void BeginMatch()
+        {
+            GameState.ShowLoadoutScreen = false;
+            switch (GameState.ActiveMode)
+            {
+                case GameMode.SinglePlayer:
+                    if (playerCharacterPrefab != null && enemyCharacterPrefab != null)
+                        StartCoroutine(SetupDynamicMatchDeferred());
+                    else
+                        SetupMatch();
+                    break;
+
+                case GameMode.Host:
+                    if (playerCharacterPrefab != null && enemyCharacterPrefab != null)
+                        StartCoroutine(SetupDynamicMatchDeferred());
+                    else
+                        SetupMatch();
+                    break;
+
+                case GameMode.Client:
+                    BeginClientSync();
+                    break;
+            }
+        }
+
+        /// <summary>Client-side match entry: generate the board and start syncing.</summary>
+        private void BeginClientSync()
+        {
+            grid.GenerateGrid();
+            Networking.NetworkManager.OnGameStateReceived += HandleGameStateReceived;
+            Networking.NetworkManager.OnLoadNextLevelReceived += HandleLoadNextLevelReceived;
+            Networking.NetworkManager.Instance.SendRequestInitialState();
+        }
+
+        private void ShowLoadoutScreen(EquipmentData reward)
+        {
+            var lobby = LobbyManager.Instance.CurrentLobby;
+            ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
+
+            var obj = new GameObject("LoadoutScreen", typeof(LoadoutScreen));
+            loadoutScreen = obj.GetComponent<LoadoutScreen>();
+            loadoutScreen.Show(reward, OnLoadoutConfirmed);
+        }
+
+        private static int CountExpectedLoadouts(Lobby lobby)
+        {
+            int max = -1;
+            foreach (var member in lobby.Members)
+                max = Mathf.Max(max, GameState.GetPlayerIndex(lobby, member.Id));
+            return max + 1;
+        }
+
+        private void OnLoadoutConfirmed()
+        {
+            var localInventory = PlayerInventoryProvider.GetLocal();
+
+            if (GameState.ActiveMode == GameMode.SinglePlayer)
+            {
+                GameState.MatchLoadouts[0] = localInventory.Loadout;
+                Debug.Log($"[GameManager] Single-player committed loadout={string.Join(",", localInventory.Loadout.ToNames())}");
+                DestroyLoadoutScreen();
+                StartLevelAfterLoadout();
+                return;
+            }
+
+            if (LobbyManager.Instance.IsHost)
+            {
+                AddReceivedLoadout(GameState.LocalPlayerId, localInventory.Loadout);
+                TryStartAfterLoadouts();
+            }
+            else if (!victoryAchieved)
+            {
+                BeginClientSync();
+            }
+        }
+
+        private void HandleLoadoutSyncReceived(ulong senderSteamId, Networking.LoadoutSync sync)
+        {
+            if (GameState.ActiveMode != GameMode.Host) return;
+
+            var lobby = LobbyManager.Instance.CurrentLobby;
+            if (!lobby.HasValue) return;
+
+            int playerId = GameState.GetPlayerIndex(lobby.Value, senderSteamId);
+            if (playerId < 0) return;
+
+            var library = GameDataLibrary.Instance;
+            AddReceivedLoadout(playerId, EquipmentLoadout.FromNames(sync?.loadoutNames, library));
+            Debug.Log($"[GameManager] Received loadout for player {playerId} ({receivedLoadouts.Count}/{ExpectedLoadoutCount})");
+
+            TryStartAfterLoadouts();
+        }
+
+        internal void AddReceivedLoadout(int playerId, EquipmentLoadout loadout)
+        {
+            receivedLoadouts[playerId] = loadout;
+        }
+
+        internal bool AllLoadoutsReceived()
+        {
+            return receivedLoadouts.Count >= ExpectedLoadoutCount;
+        }
+
+        /// <summary>
+        /// Copies the collected loadouts into the persistent match state so they survive
+        /// the scene reload into the next level and are applied during match setup.
+        /// </summary>
+        internal void CommitLoadoutsToMatchState()
+        {
+            GameState.MatchLoadouts.Clear();
+            foreach (var kv in receivedLoadouts)
+                GameState.MatchLoadouts[kv.Key] = kv.Value;
+        }
+
+        internal void TryStartAfterLoadouts()
+        {
+            if (GameState.ActiveMode != GameMode.Host) return;
+            if (!AllLoadoutsReceived()) return;
+
+            CommitLoadoutsToMatchState();
+            DestroyLoadoutScreen();
+            StartLevelAfterLoadout();
+        }
+
+        private void StartLevelAfterLoadout()
+        {
+            GameState.ShowLoadoutScreen = false;
+
+            if (victoryAchieved)
+            {
+                if (GameState.ActiveMode != GameMode.SinglePlayer && Networking.NetworkManager.Instance.IsHost)
+                {
+                    Networking.NetworkManager.Instance.SendLoadNextLevel();
+                    Networking.ReadyTracker.Instance.Reset();
+                }
+                GameState.LoadNextLevel();
+                return;
+            }
+
+            BeginMatch();
+        }
+
+        private void DestroyLoadoutScreen()
+        {
+            if (loadoutScreen == null) return;
+            var screen = loadoutScreen;
+            loadoutScreen = null;
+            screen.Close();
+        }
+
+        private static EquipmentLoadout GetMatchLoadout(int playerId)
+        {
+            return GameState.MatchLoadouts.TryGetValue(playerId, out var loadout) ? loadout : null;
+        }
+
         public void SetupMatch()
         {
             grid.GenerateGrid();
@@ -171,10 +338,12 @@ namespace Game
                 }
 
                 Character character = Instantiate(spawn.characterPrefab);
-                character.Initialize(spawn.ownerPlayerId, cell);
+                character.Initialize(spawn.ownerPlayerId, cell, loadout: GetMatchLoadout(spawn.ownerPlayerId));
                 character.OnDefeated += HandleCharacterDefeated;
                 activeCharacters.Add(character);
             }
+
+            GameState.MatchLoadouts.Clear();
 
             turnManager.SetTurnOrder(new List<Character>(activeCharacters));
             turnManager.StartMatch();
@@ -208,6 +377,7 @@ namespace Game
             }
 
             turnManager.SetTurnOrder(new List<Character>(activeCharacters));
+            GameState.MatchLoadouts.Clear();
             turnManager.StartMatch();
         }
 
@@ -235,7 +405,7 @@ namespace Game
                 if (!grid.TryGetCell(coords, out HexCell cell)) continue;
 
                 Character player = Instantiate(playerCharacterPrefab);
-                player.Initialize(i, cell, teamId: 0);
+                player.Initialize(i, cell, teamId: 0, loadout: GetMatchLoadout(i));
                 player.SetName(members[i].Name);
                 player.SetPlayerColor(PlayerPalette.GetColor(i));
                 player.OnDefeated += HandleCharacterDefeated;
@@ -249,7 +419,7 @@ namespace Game
             if (!grid.TryGetCell(playerCoords, out HexCell playerCell)) return;
 
             Character player = Instantiate(playerCharacterPrefab);
-            player.Initialize(0, playerCell, teamId: 0);
+            player.Initialize(0, playerCell, teamId: 0, loadout: GetMatchLoadout(0));
             player.SetName(SteamClient.IsValid ? SteamClient.Name : null);
             player.SetPlayerColor(PlayerPalette.GetColor(0));
             player.OnDefeated += HandleCharacterDefeated;
@@ -481,12 +651,20 @@ namespace Game
             victoryAchieved = true;
             BroadcastGameState();
 
-            if (victoryScreen == null)
+            // Each machine rolls its own reward from the shared pool, so players never
+            // see each other's inventories. Unlocks persist across sessions.
+            EquipmentData reward = null;
+            var inventory = PlayerInventoryProvider.GetLocal();
+            var pool = Equipment.RewardPool.Main;
+            if (pool != null)
+                reward = pool.RollUnlocked(inventory);
+            if (reward != null)
             {
-                var obj = new GameObject("VictoryScreen", typeof(VictoryScreen));
-                victoryScreen = obj.GetComponent<VictoryScreen>();
+                inventory.Unlock(reward);
+                PlayerInventoryProvider.Save(PlayerInventoryProvider.LocalPlayerKey, inventory);
             }
-            victoryScreen.Show();
+
+            ShowLoadoutScreen(reward);
         }
 
         public ActionResolver ActionResolver => actionResolver;
@@ -496,6 +674,9 @@ namespace Game
         internal void HandleGameStateReceived(Networking.GameStateSync state)
         {
             if (state == null) return;
+
+            if (loadoutScreen != null && state.characterStates.Count > 0)
+                DestroyLoadoutScreen();
 
             if (state.characterStates.Count > 0)
             {
@@ -525,7 +706,10 @@ namespace Game
                     if (prefab == null) continue;
 
                     Character character = Instantiate(prefab);
-                    character.Initialize(cs.ownerPlayerId, cell, teamId: cs.teamId);
+                    character.Initialize(cs.ownerPlayerId, cell, teamId: cs.teamId,
+                        loadout: cs.ownerPlayerId == GameState.LocalPlayerId
+                            ? PlayerInventoryProvider.GetLocal().Loadout
+                            : null);
                     character.SetName(cs.name);
                     character.SetPlayerColor(new Color(cs.colorR, cs.colorG, cs.colorB));
                     character.RebuildHand(cs.handCardNames);

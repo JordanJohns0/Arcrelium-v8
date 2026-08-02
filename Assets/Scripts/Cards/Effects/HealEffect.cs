@@ -6,7 +6,7 @@ namespace Cards.Effects
     /// Heal the source character. Does not require a target.
     /// Amount can be a constant or derived from a stat.
     /// </summary>
-    [CreateAssetMenu(fileName = "HealEffect", menuName = "/Effects/Heal")]
+    [CreateAssetMenu(fileName = "HealEffect", menuName = "Arcrelium/Effects/Heal")]
     public class HealEffect : CardEffectSO
     {
         public CardValue Amount = CardValue.MakeConstant(2);

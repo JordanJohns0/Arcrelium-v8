@@ -6,7 +6,7 @@ namespace Equipment.Effects
     /// <summary>
     /// Deals damage to all enemies within range of the equipment owner.
     /// </summary>
-    [CreateAssetMenu(fileName = "AOEDamageEffect", menuName = "/Equipment Effects/AOE Damage")]
+    [CreateAssetMenu(fileName = "AOEDamageEffect", menuName = "Arcrelium/Equipment Effects/AOE Damage")]
     public class AOEDamageEffect : EquipmentEffect
     {
         public int Damage = 1;

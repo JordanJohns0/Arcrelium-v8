@@ -20,17 +20,20 @@ namespace UI
 
         private Character boundCharacter;
         private readonly List<CardView> spawnedViews = new List<CardView>();
+        private bool handSubscribed;
 
         public event System.Action<CardInstance> OnCardClicked;
 
         private void OnEnable()
         {
             Character.OnCharacterCreated += HandleCharacterCreated;
+            SubscribeToHand();
         }
 
         private void OnDisable()
         {
             Character.OnCharacterCreated -= HandleCharacterCreated;
+            UnsubscribeFromHand();
         }
 
         private void HandleCharacterCreated(Character character)
@@ -42,19 +45,24 @@ namespace UI
         /// <summary>Switch which character's hand this view is showing (e.g. on turn change).</summary>
         public void SetCharacter(Character character)
         {
-            if (boundCharacter != null)
-            {
-                boundCharacter.Hand.OnHandChanged -= Refresh;
-            }
-
+            UnsubscribeFromHand();
             boundCharacter = character;
-
-            if (boundCharacter != null)
-            {
-                boundCharacter.Hand.OnHandChanged += Refresh;
-            }
-
+            SubscribeToHand();
             Refresh();
+        }
+
+        private void SubscribeToHand()
+        {
+            if (boundCharacter == null || handSubscribed) return;
+            boundCharacter.Hand.OnHandChanged += Refresh;
+            handSubscribed = true;
+        }
+
+        private void UnsubscribeFromHand()
+        {
+            if (boundCharacter == null || !handSubscribed) return;
+            boundCharacter.Hand.OnHandChanged -= Refresh;
+            handSubscribed = false;
         }
 
         public void Refresh()
@@ -86,6 +94,7 @@ namespace UI
         {
             foreach (CardView view in spawnedViews)
             {
+                if (view == null) continue;
                 bool isHighlighted = highlighted != null && Contains(highlighted, view.Instance);
                 view.SetSelected(isHighlighted);
                 view.SetInteractable(view.Instance != nonInteractable);
@@ -96,6 +105,7 @@ namespace UI
         {
             foreach (CardView view in spawnedViews)
             {
+                if (view == null) continue;
                 view.SetSelected(false);
                 view.SetInteractable(true);
             }
@@ -112,10 +122,7 @@ namespace UI
 
         private void OnDestroy()
         {
-            if (boundCharacter != null)
-            {
-                boundCharacter.Hand.OnHandChanged -= Refresh;
-            }
+            UnsubscribeFromHand();
         }
     }
 }

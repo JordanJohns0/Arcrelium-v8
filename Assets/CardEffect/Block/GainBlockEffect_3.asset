@@ -12,4 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64c224bf24e0ddc469ac922d632dbae5, type: 3}
   m_Name: GainBlockEffect_3
   m_EditorClassIdentifier: Assembly-CSharp::Cards.Effects.GainBlockEffect
-  Amount: 3
+  Amount:
+    Type: 0
+    Constant: 3

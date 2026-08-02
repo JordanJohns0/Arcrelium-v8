@@ -5,7 +5,7 @@ namespace Equipment.Effects
     /// <summary>
     /// Draws extra cards for the equipment owner.
     /// </summary>
-    [CreateAssetMenu(fileName = "DrawCardsEffect", menuName = "/Equipment Effects/Draw Cards")]
+    [CreateAssetMenu(fileName = "DrawCardsEffect", menuName = "Arcrelium/Equipment Effects/Draw Cards")]
     public class DrawCardsEffect : EquipmentEffect
     {
         public int Amount = 1;

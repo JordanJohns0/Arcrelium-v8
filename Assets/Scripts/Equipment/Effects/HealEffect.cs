@@ -6,7 +6,7 @@ namespace Equipment.Effects
     /// <summary>
     /// Heals the equipment owner by a flat amount.
     /// </summary>
-    [CreateAssetMenu(fileName = "HealEffect", menuName = "/Equipment Effects/Heal")]
+    [CreateAssetMenu(fileName = "HealEffect", menuName = "Arcrelium/Equipment Effects/Heal")]
     public class HealEffect : EquipmentEffect
     {
         public int Amount = 1;

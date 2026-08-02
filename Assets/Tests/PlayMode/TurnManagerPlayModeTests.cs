@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Cards;
 using Characters;
 using Game;
 
@@ -15,6 +16,7 @@ namespace Tests.PlayMode
         private ActionResolver actionResolver;
         private Character player;
         private Character enemy;
+        private readonly List<ScriptableObject> trackedSops = new List<ScriptableObject>();
 
         [SetUp]
         public void SetUp()
@@ -41,6 +43,13 @@ namespace Tests.PlayMode
             Object.DestroyImmediate(player.gameObject);
             Object.DestroyImmediate(enemy.CurrentCell.gameObject);
             Object.DestroyImmediate(enemy.gameObject);
+
+            foreach (var so in trackedSops)
+            {
+                if (so != null)
+                    Object.DestroyImmediate(so);
+            }
+            trackedSops.Clear();
         }
 
         [UnityTest]
@@ -95,6 +104,68 @@ namespace Tests.PlayMode
             Assert.AreEqual(2, turnStarted.Count);
             Assert.AreEqual(player, turnStarted[0]);
             Assert.AreEqual(enemy, turnStarted[1]);
+        }
+
+        [Test]
+        public void TurnStart_DrawsUpToMaxHandSize()
+        {
+            SetMaxHandSize(player, 3);
+            GiveDeckCards(player, 8);
+
+            turnManager.SetTurnOrder(new List<Character> { player, enemy });
+            turnManager.StartMatch();
+
+            Assert.AreEqual(3, player.Hand.Cards.Count);
+        }
+
+        [Test]
+        public void TurnStart_StopsWhenDeckRunsOut()
+        {
+            SetMaxHandSize(player, 5);
+            GiveDeckCards(player, 2);
+
+            turnManager.SetTurnOrder(new List<Character> { player, enemy });
+            turnManager.StartMatch();
+
+            Assert.AreEqual(2, player.Hand.Cards.Count);
+        }
+
+        [UnityTest]
+        public IEnumerator Pass_EndOfTurn_DiscardsHand()
+        {
+            GiveDeckCards(player, 8);
+
+            turnManager.SetTurnOrder(new List<Character> { player, enemy });
+            turnManager.StartMatch();
+            Assert.AreEqual(player.Hand.MaxCapacity, player.Hand.Cards.Count);
+
+            turnManager.Pass();
+            yield return TestHelper.WaitUntilOrTimeout(() => !turnManager.Busy);
+            Assert.IsFalse(turnManager.Busy, "Turn transition did not finish in time");
+
+            Assert.AreEqual(0, player.Hand.Cards.Count);
+            Assert.AreEqual(player.Hand.MaxCapacity, player.Deck.DiscardPile.Count);
+        }
+
+        private static void SetMaxHandSize(Character character, int value)
+        {
+            typeof(Character).GetField("maxHandSize",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .SetValue(character, value);
+            character.Hand.MaxCapacity = value;
+        }
+
+        private void GiveDeckCards(Character character, int count)
+        {
+            var cards = new List<CardData>();
+            for (int i = 0; i < count; i++)
+            {
+                var data = TestHelper.MakeCard($"Test{i}");
+                trackedSops.Add(data);
+                cards.Add(data);
+            }
+            character.Deck.SetStartingCards(cards);
+            character.Deck.Shuffle();
         }
     }
 }

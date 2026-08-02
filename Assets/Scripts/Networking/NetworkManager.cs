@@ -21,6 +21,7 @@ namespace Networking
         public static event Action<ulong, ReadyRequest> OnReadyRequestReceived;
         public static event Action<ReadyStateSync> OnReadyStateReceived;
         public static event Action OnLoadNextLevelReceived;
+        public static event Action<ulong, LoadoutSync> OnLoadoutSyncReceived;
 
         public static NetworkManager Instance
         {
@@ -113,6 +114,12 @@ namespace Networking
         public void SendLoadNextLevel()
         {
             SendToAllClients(MessageType.LoadNextLevel, "{}");
+        }
+
+        public void SendLoadoutSync(LoadoutSync loadout)
+        {
+            string json = JsonUtility.ToJson(loadout);
+            SendToHost(MessageType.LoadoutSync, json);
         }
 
         private void SendToHost(MessageType type, string json)
@@ -212,6 +219,11 @@ namespace Networking
 
                 case MessageType.LoadNextLevel:
                     OnLoadNextLevelReceived?.Invoke();
+                    break;
+
+                case MessageType.LoadoutSync:
+                    var loadoutSync = JsonUtility.FromJson<LoadoutSync>(json);
+                    OnLoadoutSyncReceived?.Invoke(sender.Value, loadoutSync);
                     break;
             }
         }

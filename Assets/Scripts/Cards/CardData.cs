@@ -7,7 +7,7 @@ namespace Cards
     /// Deliberately generic right now — Effect + TargetType + Range cover most action types
     /// (move, attack, ability). Add fields here as your design needs grow.
     /// </summary>
-    [CreateAssetMenu(fileName = "NewCard", menuName = "/Card")]
+    [CreateAssetMenu(fileName = "NewCard", menuName = "Arcrelium/Card")]
     public class CardData : ScriptableObject
     {
         public string CardName = "New Card";

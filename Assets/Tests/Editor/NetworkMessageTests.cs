@@ -335,5 +335,51 @@ namespace Tests
 
             Assert.IsTrue(fired);
         }
+
+        [Test]
+        public void LoadoutSync_RoundTripsNames()
+        {
+            var sync = new LoadoutSync
+            {
+                playerIndex = 1,
+                loadoutNames = new[] { "Helm", "Plate", "Boots", "Sword", "Shield", "Ring 1", "Ring 2", "Amulet" }
+            };
+
+            string json = JsonUtility.ToJson(sync);
+            var decoded = JsonUtility.FromJson<LoadoutSync>(json);
+
+            Assert.AreEqual(1, decoded.playerIndex);
+            Assert.AreEqual(8, decoded.loadoutNames.Length);
+            Assert.AreEqual("Helm", decoded.loadoutNames[0]);
+            Assert.AreEqual("Amulet", decoded.loadoutNames[7]);
+        }
+
+        [Test]
+        public void HandleMessage_LoadoutSync_RaisesEventWithSenderAndPayload()
+        {
+            string json = JsonUtility.ToJson(new LoadoutSync
+            {
+                playerIndex = 2,
+                loadoutNames = new[] { "Helm", "", "", "", "", "", "", "" }
+            });
+
+            ulong sender = 0;
+            LoadoutSync received = null;
+            Action<ulong, LoadoutSync> handler = (s, sync) => { sender = s; received = sync; };
+            NetworkManager.OnLoadoutSyncReceived += handler;
+            try
+            {
+                NetworkManager.HandleMessage((SteamId)456ul, MessageType.LoadoutSync, json);
+            }
+            finally
+            {
+                NetworkManager.OnLoadoutSyncReceived -= handler;
+            }
+
+            Assert.AreEqual(456ul, sender);
+            Assert.IsNotNull(received);
+            Assert.AreEqual(2, received.playerIndex);
+            Assert.AreEqual("Helm", received.loadoutNames[0]);
+        }
     }
 }

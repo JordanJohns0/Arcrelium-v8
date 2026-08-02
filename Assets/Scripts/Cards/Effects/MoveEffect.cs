@@ -5,7 +5,7 @@ using HexGrid;
 
 namespace Cards.Effects
 {
-    [CreateAssetMenu(fileName = "MoveEffect", menuName = "/Effects/Move")]
+    [CreateAssetMenu(fileName = "MoveEffect", menuName = "Arcrelium/Effects/Move")]
     public class MoveEffect : CardEffectSO
     {
         public override bool CanExecute(CardContext context)

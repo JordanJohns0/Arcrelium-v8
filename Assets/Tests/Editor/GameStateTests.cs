@@ -34,5 +34,28 @@ namespace Tests
         {
             Assert.AreEqual(-1, GameState.GetPlayerIndex(null, 10));
         }
+
+        [TearDown]
+        public void TearDown()
+        {
+            GameState.ShowLoadoutScreen = false;
+            GameState.MatchLoadouts.Clear();
+        }
+
+        [Test]
+        public void ShowLoadoutScreen_DefaultsToFalse()
+        {
+            Assert.IsFalse(GameState.ShowLoadoutScreen);
+        }
+
+        [Test]
+        public void MatchLoadouts_StoresAndClearsPerPlayer()
+        {
+            var loadout = new Equipment.EquipmentLoadout();
+            GameState.MatchLoadouts[0] = loadout;
+            Assert.AreSame(loadout, GameState.MatchLoadouts[0]);
+            GameState.MatchLoadouts.Clear();
+            Assert.IsFalse(GameState.MatchLoadouts.ContainsKey(0));
+        }
     }
 }

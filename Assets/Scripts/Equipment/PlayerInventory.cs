@@ -9,13 +9,17 @@ namespace Equipment
     /// survives scene loads. Create one asset per save slot (right-click > Create >  > Player Inventory).
     /// Populate it in the Inspector or via code (e.g. after earning rewards).
     /// </summary>
-    [CreateAssetMenu(fileName = "PlayerInventory", menuName = "/Player Inventory")]
+    [CreateAssetMenu(fileName = "PlayerInventory", menuName = "Arcrelium/Player Inventory")]
     public class PlayerInventory : ScriptableObject
     {
         [Tooltip("All equipment the player currently owns. Unequipped items sit here.")]
         [SerializeField] private List<EquipmentData> unlockedEquipment = new List<EquipmentData>();
 
+        [Tooltip("The player's currently equipped items, applied to their character at match start.")]
+        [SerializeField] private EquipmentLoadout loadout = new EquipmentLoadout();
+
         public IReadOnlyList<EquipmentData> UnlockedEquipment => unlockedEquipment;
+        public EquipmentLoadout Loadout => loadout;
 
         public event Action OnInventoryChanged;
 

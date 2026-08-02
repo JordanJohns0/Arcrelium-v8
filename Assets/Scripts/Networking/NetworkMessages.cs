@@ -12,7 +12,8 @@ namespace Networking
         RequestInitialState,
         ReadyRequest,
         ReadyStateSync,
-        LoadNextLevel
+        LoadNextLevel,
+        LoadoutSync
     }
 
     [System.Serializable]
@@ -92,5 +93,17 @@ namespace Networking
     {
         public string senderName;
         public string message;
+    }
+
+    /// <summary>
+    /// Client -> host. Sent when the sender confirms their loadout on the loadout screen.
+    /// Contains only the equipped items' names, in fixed slot order (see
+    /// EquipmentLoadout.ToNames) — the host never sees the sender's inventory or rewards.
+    /// </summary>
+    [System.Serializable]
+    public class LoadoutSync
+    {
+        public int playerIndex = -1;
+        public string[] loadoutNames = new string[Equipment.EquipmentLoadout.SlotCount];
     }
 }

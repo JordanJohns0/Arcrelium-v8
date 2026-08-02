@@ -6,7 +6,7 @@ namespace Cards.Effects
     /// Draws cards for the source character when played.
     /// Amount can be a constant or derived from a stat.
     /// </summary>
-    [CreateAssetMenu(fileName = "DrawCardsEffect", menuName = "/Effects/Draw Cards")]
+    [CreateAssetMenu(fileName = "DrawCardsEffect", menuName = "Arcrelium/Effects/Draw Cards")]
     public class DrawCardsEffect : CardEffectSO
     {
         public CardValue Amount = CardValue.MakeConstant(1);

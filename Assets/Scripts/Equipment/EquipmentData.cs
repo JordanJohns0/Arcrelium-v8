@@ -9,7 +9,7 @@ namespace Equipment
     /// Equipment may have cards (added to the character's deck when equipped) and/or triggers
     /// (effects that fire at specific moments during gameplay).
     /// </summary>
-    [CreateAssetMenu(fileName = "NewEquipment", menuName = "/Equipment")]
+    [CreateAssetMenu(fileName = "NewEquipment", menuName = "Arcrelium/Equipment")]
     public class EquipmentData : ScriptableObject
     {
         public string EquipmentName = "New Equipment";

@@ -249,5 +249,93 @@ namespace Tests
             manager.Equip(data);
             Assert.IsNotNull(manager.GetEquipped(EquipmentSlotType.Feet));
         }
+
+        [Test]
+        public void GetLoadout_Empty_WhenNothingEquipped()
+        {
+            var loadout = manager.GetLoadout();
+            Assert.IsNotNull(loadout);
+            Assert.IsTrue(loadout.IsEmpty);
+        }
+
+        [Test]
+        public void GetLoadout_SnapshotsAllFixedSlots()
+        {
+            var head = MakeEquip(EquipmentSlotType.Head, "Helm");
+            var chest = MakeEquip(EquipmentSlotType.Chest, "Plate");
+            var feet = MakeEquip(EquipmentSlotType.Feet, "Boots");
+            var left = MakeEquip(EquipmentSlotType.Hand, "Sword");
+            var right = MakeEquip(EquipmentSlotType.Hand, "Shield");
+            var t1 = MakeEquip(EquipmentSlotType.Trinket, "Ring 1");
+            var t2 = MakeEquip(EquipmentSlotType.Trinket, "Ring 2");
+            var t3 = MakeEquip(EquipmentSlotType.Trinket, "Amulet");
+
+            manager.Equip(head, EquipmentSlotType.Head, 0);
+            manager.Equip(chest, EquipmentSlotType.Chest, 0);
+            manager.Equip(feet, EquipmentSlotType.Feet, 0);
+            manager.Equip(left, EquipmentSlotType.Hand, 0);
+            manager.Equip(right, EquipmentSlotType.Hand, 1);
+            manager.Equip(t1, EquipmentSlotType.Trinket, 0);
+            manager.Equip(t2, EquipmentSlotType.Trinket, 1);
+            manager.Equip(t3, EquipmentSlotType.Trinket, 2);
+
+            var loadout = manager.GetLoadout();
+            Assert.AreEqual(head, loadout.Head);
+            Assert.AreEqual(chest, loadout.Chest);
+            Assert.AreEqual(feet, loadout.Feet);
+            Assert.AreEqual(left, loadout.LeftHand);
+            Assert.AreEqual(right, loadout.RightHand);
+            Assert.AreEqual(t1, loadout.Trinket1);
+            Assert.AreEqual(t2, loadout.Trinket2);
+            Assert.AreEqual(t3, loadout.Trinket3);
+        }
+
+        [Test]
+        public void ApplyLoadout_EquipsEverySlot()
+        {
+            var loadout = new EquipmentLoadout
+            {
+                Head = MakeEquip(EquipmentSlotType.Head, "Helm"),
+                Chest = MakeEquip(EquipmentSlotType.Chest, "Plate"),
+                Feet = MakeEquip(EquipmentSlotType.Feet, "Boots"),
+                LeftHand = MakeEquip(EquipmentSlotType.Hand, "Sword"),
+                RightHand = MakeEquip(EquipmentSlotType.Hand, "Shield"),
+                Trinket1 = MakeEquip(EquipmentSlotType.Trinket, "Ring 1"),
+                Trinket2 = MakeEquip(EquipmentSlotType.Trinket, "Ring 2"),
+                Trinket3 = MakeEquip(EquipmentSlotType.Trinket, "Amulet")
+            };
+
+            manager.ApplyLoadout(loadout);
+
+            Assert.AreEqual("Helm", manager.GetEquipped(EquipmentSlotType.Head).Data.EquipmentName);
+            Assert.AreEqual("Plate", manager.GetEquipped(EquipmentSlotType.Chest).Data.EquipmentName);
+            Assert.AreEqual("Boots", manager.GetEquipped(EquipmentSlotType.Feet).Data.EquipmentName);
+            Assert.AreEqual("Sword", manager.GetEquipped(EquipmentSlotType.Hand, 0).Data.EquipmentName);
+            Assert.AreEqual("Shield", manager.GetEquipped(EquipmentSlotType.Hand, 1).Data.EquipmentName);
+            Assert.AreEqual("Ring 1", manager.GetEquipped(EquipmentSlotType.Trinket, 0).Data.EquipmentName);
+            Assert.AreEqual("Ring 2", manager.GetEquipped(EquipmentSlotType.Trinket, 1).Data.EquipmentName);
+            Assert.AreEqual("Amulet", manager.GetEquipped(EquipmentSlotType.Trinket, 2).Data.EquipmentName);
+        }
+
+        [Test]
+        public void ApplyLoadout_ClearsPreviouslyEquipped()
+        {
+            var head = MakeEquip(EquipmentSlotType.Head, "Old Helm");
+            manager.Equip(head);
+            Assert.IsNotNull(manager.GetEquipped(EquipmentSlotType.Head));
+
+            manager.ApplyLoadout(new EquipmentLoadout());
+            Assert.IsNull(manager.GetEquipped(EquipmentSlotType.Head));
+            Assert.IsTrue(manager.GetLoadout().IsEmpty);
+        }
+
+        [Test]
+        public void ApplyLoadout_Null_ClearsAllSlots()
+        {
+            var head = MakeEquip(EquipmentSlotType.Head, "Helm");
+            manager.Equip(head);
+            manager.ApplyLoadout(null);
+            Assert.IsTrue(manager.GetLoadout().IsEmpty);
+        }
     }
 }

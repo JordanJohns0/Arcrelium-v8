@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Bulwurk
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
   CardName: Bulwurk
-  Description: Gain 4 Block
+  Description: Gain 5 Block
   Artwork: {fileID: 0}
   TargetType: 1
   Range: 0
   Cost: 3
-  Effect: {fileID: 11400000, guid: 70c5a6fcaa522524fbf66a481695b9fe, type: 2}
+  Effect: {fileID: 11400000, guid: 4c73e1f3e5d2e534d87299371beedb85, type: 2}

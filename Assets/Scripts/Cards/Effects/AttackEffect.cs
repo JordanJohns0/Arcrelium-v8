@@ -6,7 +6,7 @@ namespace Cards.Effects
     /// Deal damage to a targeted enemy character within range.
     /// Damage can be a constant or derived from a stat (e.g. your current block).
     /// </summary>
-    [CreateAssetMenu(fileName = "AttackEffect", menuName = "/Effects/Attack")]
+    [CreateAssetMenu(fileName = "AttackEffect", menuName = "Arcrelium/Effects/Attack")]
     public class AttackEffect : CardEffectSO
     {
         public CardValue Damage = CardValue.MakeConstant(1);

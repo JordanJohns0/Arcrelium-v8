@@ -6,7 +6,7 @@ namespace Equipment.Effects
     /// <summary>
     /// Moves the equipment owner to a random valid nearby cell.
     /// </summary>
-    [CreateAssetMenu(fileName = "AutoMoveEffect", menuName = "/Equipment Effects/Auto Move")]
+    [CreateAssetMenu(fileName = "AutoMoveEffect", menuName = "Arcrelium/Equipment Effects/Auto Move")]
     public class AutoMoveEffect : EquipmentEffect
     {
         public int Range = 1;

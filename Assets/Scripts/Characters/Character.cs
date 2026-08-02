@@ -18,11 +18,13 @@ namespace Characters
     public class Character : MonoBehaviour
     {
         [SerializeField] private CharacterStats stats = new CharacterStats();
-        [SerializeField] private Deck deck;
+        [SerializeField] private Deck deck = new Deck();
         [SerializeField] private EquipmentManager equipmentManager;
+        [SerializeField] private int maxHandSize = 5;
 
         public CharacterStats Stats => stats;
         public Deck Deck => deck;
+        public int MaxHandSize => maxHandSize;
         public EquipmentManager Equipment => equipmentManager;
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
@@ -45,17 +47,23 @@ namespace Characters
         private static readonly int colorID = Shader.PropertyToID("_Color");
         private static readonly int baseColorID = Shader.PropertyToID("_BaseColor");
 
-        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1)
+        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1, EquipmentLoadout loadout = null)
         {
             OwnerPlayerId = ownerPlayerId;
             TeamId = teamId >= 0 ? teamId : (ownerPlayerId == 0 ? 0 : 1);
             stats.Initialize();
             Hand = new Hand();
+            Hand.MaxCapacity = maxHandSize;
+            deck ??= new Deck();
 
             PlaceOnCell(startingCell);
 
             if (equipmentManager != null)
+            {
                 equipmentManager.Initialize(this);
+                if (loadout != null)
+                    equipmentManager.ApplyLoadout(loadout);
+            }
 
             if (deck != null)
             {
@@ -66,6 +74,11 @@ namespace Characters
                 deck.SetStartingCards(equipmentCards);
                 deck.Shuffle();
                 DrawCards(startingHandSize);
+                Debug.Log($"[Character] owner={ownerPlayerId} deckBuilt cards={equipmentCards.Count} hand={Hand.Cards.Count}");
+            }
+            else
+            {
+                Debug.LogWarning($"[Character] owner={ownerPlayerId} deck is NULL - no cards built");
             }
 
             OnCharacterCreated?.Invoke(this);
@@ -198,6 +211,23 @@ namespace Characters
             }
         }
 
+        /// <summary>Draws cards until the hand reaches the character's max hand size.</summary>
+        public void DrawToHandLimit()
+        {
+            DrawCards(maxHandSize);
+        }
+
+        /// <summary>Moves every card in the hand to the deck's discard pile.</summary>
+        public void DiscardHand()
+        {
+            if (Hand == null || deck == null) return;
+            foreach (CardInstance card in new List<CardInstance>(Hand.Cards))
+            {
+                deck.Discard(card);
+                Hand.RemoveCard(card);
+            }
+        }
+
         public void TakeDamage(int amount)
         {
             stats.ApplyDamage(amount);
@@ -229,17 +259,25 @@ namespace Characters
 
         /// <summary>
         /// Replaces the hand with freshly created cards matching the given names,
-        /// preserving the Hand instance so bound UI refreshes in place.
+        /// preserving the Hand instance so bound UI refreshes in place. The character's own
+        /// deck is tried first, then the master GameDataLibrary so cards from another
+        /// player's loadout (that this machine never equipped) still resolve.
         /// </summary>
         public void RebuildHand(string[] cardNames)
         {
             foreach (CardInstance card in new List<CardInstance>(Hand.Cards))
                 Hand.RemoveCard(card);
 
-            if (cardNames == null || deck == null) return;
+            if (cardNames == null) return;
             foreach (string name in cardNames)
             {
-                CardData data = deck.GetCardDataByName(name);
+                if (string.IsNullOrEmpty(name)) continue;
+                CardData data = deck != null ? deck.GetCardDataByName(name) : null;
+                if (data == null)
+                {
+                    var library = GameDataLibrary.Instance;
+                    if (library != null) data = library.GetCardByName(name);
+                }
                 if (data != null)
                     Hand.AddCard(new CardInstance(data));
             }

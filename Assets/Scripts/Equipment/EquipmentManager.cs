@@ -107,7 +107,16 @@ namespace Equipment
                         leftHandSlot = instance;
                     break;
                 case EquipmentSlotType.Trinket:
-                    trinketSlots.Add(instance);
+                    if (forcedIndex.HasValue)
+                    {
+                        while (trinketSlots.Count <= forcedIndex.Value)
+                            trinketSlots.Add(null);
+                        trinketSlots[forcedIndex.Value] = instance;
+                    }
+                    else
+                    {
+                        trinketSlots.Add(instance);
+                    }
                     break;
             }
 
@@ -170,7 +179,9 @@ namespace Equipment
                 case EquipmentSlotType.Hand:
                     return index == 0 ? leftHandSlot == null : rightHandSlot == null;
                 case EquipmentSlotType.Trinket:
-                    return trinketSlots.Count < 3;
+                    if (index < 0 || index > 2) return false;
+                    if (trinketSlots.Count <= index) return true;
+                    return trinketSlots[index] == null;
                 default:
                     return false;
             }
@@ -256,6 +267,56 @@ namespace Equipment
                 default:
                     return Array.Empty<EquipmentInstance>();
             }
+        }
+
+        /// <summary>
+        /// Snapshots the currently equipped items into a fixed-slot loadout.
+        /// </summary>
+        public EquipmentLoadout GetLoadout()
+        {
+            var loadout = new EquipmentLoadout
+            {
+                Head = headSlot?.Data,
+                Chest = chestSlot?.Data,
+                Feet = feetSlot?.Data,
+                LeftHand = leftHandSlot?.Data,
+                RightHand = rightHandSlot?.Data
+            };
+
+            loadout.Trinket1 = trinketSlots.Count > 0 && trinketSlots[0] != null ? trinketSlots[0].Data : null;
+            loadout.Trinket2 = trinketSlots.Count > 1 && trinketSlots[1] != null ? trinketSlots[1].Data : null;
+            loadout.Trinket3 = trinketSlots.Count > 2 && trinketSlots[2] != null ? trinketSlots[2].Data : null;
+            return loadout;
+        }
+
+        /// <summary>
+        /// Clears every slot and equips the given loadout's items at their fixed slot
+        /// positions. Used at match start so a character's deck/triggers come from the
+        /// player's chosen loadout rather than the Inspector defaults.
+        /// </summary>
+        public void ApplyLoadout(EquipmentLoadout loadout)
+        {
+            ClearAllSlots();
+            if (loadout == null) return;
+
+            Equip(loadout.Head, EquipmentSlotType.Head, 0);
+            Equip(loadout.Chest, EquipmentSlotType.Chest, 0);
+            Equip(loadout.Feet, EquipmentSlotType.Feet, 0);
+            Equip(loadout.LeftHand, EquipmentSlotType.Hand, 0);
+            Equip(loadout.RightHand, EquipmentSlotType.Hand, 1);
+            Equip(loadout.Trinket1, EquipmentSlotType.Trinket, 0);
+            Equip(loadout.Trinket2, EquipmentSlotType.Trinket, 1);
+            Equip(loadout.Trinket3, EquipmentSlotType.Trinket, 2);
+        }
+
+        private void ClearAllSlots()
+        {
+            headSlot = null;
+            chestSlot = null;
+            feetSlot = null;
+            leftHandSlot = null;
+            rightHandSlot = null;
+            trinketSlots.Clear();
         }
 
         private void HandleTurnStarted(Character turnCharacter)

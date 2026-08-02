@@ -16,11 +16,11 @@ namespace Game
 
     /// <summary>
     /// Drives whose turn it is and enforces the turn structure:
-    ///   1. Turn start — draw 2 cards
+    ///   1. Turn start — draw up to the character's max hand size
     ///   2. Active character plays any number of cards, or ends turn
     ///   3. costs are paid by discarding other cards from hand
     ///   4. card effects resolve immediately
-    ///   5. ending the turn -> advance to the next character
+    ///   5. ending the turn -> discard the hand, advance to the next character
     ///
     /// Each step has a configurable delay so actions are visible to the player.
     /// </summary>
@@ -28,7 +28,6 @@ namespace Game
     {
         [SerializeField] private List<Character> turnOrder = new List<Character>();
         [SerializeField] private ActionResolver actionResolver;
-        [SerializeField] private int cardsDrawnPerTurn = 2;
 
         [Header("Action Timing")]
         [SerializeField] private float actionDelay = 0.5f;
@@ -72,7 +71,7 @@ namespace Game
         private void BeginTurn()
         {
             CurrentPhase = TurnPhase.Act;
-            ActiveCharacter?.DrawCards(cardsDrawnPerTurn);
+            ActiveCharacter?.DrawToHandLimit();
             OnTurnStarted?.Invoke(ActiveCharacter);
         }
 
@@ -106,6 +105,7 @@ namespace Game
             yield return new WaitForSeconds(actionDelay);
 
             CurrentPhase = TurnPhase.End;
+            ActiveCharacter?.DiscardHand();
             OnTurnEnded?.Invoke(ActiveCharacter);
             yield return new WaitForSeconds(turnEndDelay);
 

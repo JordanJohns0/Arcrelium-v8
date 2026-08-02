@@ -13,6 +13,15 @@ MonoBehaviour:
   m_Name: PlayerInventory
   m_EditorClassIdentifier: Assembly-CSharp::Equipment.PlayerInventory
   unlockedEquipment:
-  - {fileID: 11400000, guid: b1e0717c459915f4fbca3907934f2c3f, type: 2}
-  - {fileID: 11400000, guid: b542c6cf5ddb0484780c7b3f6b7ec2f1, type: 2}
-  - {fileID: 11400000, guid: 19f8d7376a42df34993046bc4ea1f9c4, type: 2}
+  - {fileID: 11400000, guid: 27adf8c9266e6d045b520433b21f7e03, type: 2}
+  - {fileID: 11400000, guid: 082b69e6ea8a54d4383f6a4301c01b8a, type: 2}
+  - {fileID: 11400000, guid: 8d10d8b820d0c744ba4b2e19e00715a1, type: 2}
+  loadout:
+    Head: {fileID: 0}
+    Chest: {fileID: 11400000, guid: 27adf8c9266e6d045b520433b21f7e03, type: 2}
+    Feet: {fileID: 11400000, guid: 082b69e6ea8a54d4383f6a4301c01b8a, type: 2}
+    LeftHand: {fileID: 0}
+    RightHand: {fileID: 11400000, guid: 8d10d8b820d0c744ba4b2e19e00715a1, type: 2}
+    Trinket1: {fileID: 0}
+    Trinket2: {fileID: 0}
+    Trinket3: {fileID: 0}

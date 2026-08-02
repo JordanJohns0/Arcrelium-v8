@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Alert
+  m_Name: Inspire
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
-  CardName: Alert
-  Description: Draw a card
+  CardName: Inspire
+  Description: Gain 1 block\nDraw a card
   Artwork: {fileID: 0}
   TargetType: 1
   Range: 0
   Cost: 0
-  Effect: {fileID: 11400000, guid: f08f9f6e55a21e243a8fdf504d998f5a, type: 2}
+  Effect: {fileID: 11400000, guid: 1414dbd31e75d5d4fa8f9e4298d8db75, type: 2}
