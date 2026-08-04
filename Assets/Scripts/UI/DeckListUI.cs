@@ -17,14 +17,60 @@ namespace UI
     /// </summary>
     public class DeckListUI : MonoBehaviour
     {
+        [Header("Prefab")]
+        [SerializeField] private GameObject uiPrefab;
+
+        [Header("Background")]
+        [SerializeField] private Color backgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.85f);
+
+        [Header("Header")]
+        [SerializeField] private string headerLabel = "Deck";
+        [SerializeField] private int headerFontSize = 24;
+        [SerializeField] private Vector2 headerOffset = new Vector2(0, -6);
+        [SerializeField] private float headerHeight = 30f;
+
+        [Header("List")]
+        [SerializeField] private Vector2 listOffsetMin = new Vector2(8, 8);
+        [SerializeField] private Vector2 listOffsetMax = new Vector2(-8, -40);
+        [SerializeField] private float rowSpacing = 4f;
+        [SerializeField] private int listPadding = 4;
+
+        [Header("Rows")]
+        [SerializeField] private Color rowColor = new Color(0.2f, 0.2f, 0.2f, 0.9f);
+        [SerializeField] private float rowHeight = 26f;
+        [SerializeField] private int rowFontSize = 17;
+        [SerializeField] private Color rowTextColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+        [SerializeField] private float rowTextPadding = 8f;
+
         private RectTransform listContent;
         private readonly List<GameObject> rows = new List<GameObject>();
+        private static GameObject staticPrefab;
+
+        private void Awake()
+        {
+            if (staticPrefab == null && uiPrefab != null) staticPrefab = uiPrefab;
+        }
 
         /// <summary>A condensed deck entry: one card plus how many copies are in the deck.</summary>
         public struct DeckEntry
         {
             public CardData Card;
             public int Count;
+        }
+
+        /// <summary>
+        /// Instantiates the deck list from the UI prefab, falling back to a plain GameObject
+        /// if the prefab is missing.
+        /// </summary>
+        public static DeckListUI Create()
+        {
+            var existing = FindAnyObjectByType<DeckListUI>();
+            if (existing != null)
+                return existing;
+            if (staticPrefab != null)
+                return Object.Instantiate(staticPrefab).GetComponent<DeckListUI>();
+            var go = new GameObject("Deck List", typeof(RectTransform), typeof(DeckListUI));
+            return go.GetComponent<DeckListUI>();
         }
 
         /// <summary>
@@ -63,15 +109,15 @@ namespace UI
             if (GetComponent<Image>() == null)
             {
                 var bg = gameObject.AddComponent<Image>();
-                bg.color = new Color(0.1f, 0.1f, 0.1f, 0.85f);
+                bg.color = backgroundColor;
                 bg.raycastTarget = true;
             }
 
             var headerObj = new GameObject("Header", typeof(TextMeshProUGUI));
             headerObj.transform.SetParent(transform, false);
             var header = headerObj.GetComponent<TextMeshProUGUI>();
-            header.text = "Deck";
-            header.fontSize = 24;
+            header.text = headerLabel;
+            header.fontSize = headerFontSize;
             header.fontStyle = FontStyles.Bold;
             header.alignment = TextAlignmentOptions.Center;
             header.color = Color.white;
@@ -79,20 +125,20 @@ namespace UI
             headerRect.anchorMin = new Vector2(0, 1);
             headerRect.anchorMax = new Vector2(1, 1);
             headerRect.pivot = new Vector2(0.5f, 1);
-            headerRect.anchoredPosition = new Vector2(0, -6);
-            headerRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 30);
+            headerRect.anchoredPosition = headerOffset;
+            headerRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, headerHeight);
 
             var listObj = new GameObject("Cards", typeof(RectTransform), typeof(VerticalLayoutGroup));
             listObj.transform.SetParent(transform, false);
             listContent = listObj.GetComponent<RectTransform>();
             listContent.anchorMin = new Vector2(0, 0);
             listContent.anchorMax = new Vector2(1, 1);
-            listContent.offsetMin = new Vector2(8, 8);
-            listContent.offsetMax = new Vector2(-8, -40);
+            listContent.offsetMin = listOffsetMin;
+            listContent.offsetMax = listOffsetMax;
 
             var layout = listObj.GetComponent<VerticalLayoutGroup>();
-            layout.spacing = 4;
-            layout.padding = new RectOffset(4, 4, 4, 4);
+            layout.spacing = rowSpacing;
+            layout.padding = new RectOffset(listPadding, listPadding, listPadding, listPadding);
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
             layout.childControlHeight = false;
@@ -106,25 +152,25 @@ namespace UI
             row.transform.SetParent(listContent, false);
 
             var image = row.GetComponent<Image>();
-            image.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
+            image.color = rowColor;
             image.raycastTarget = true;
 
             var rt = row.GetComponent<RectTransform>();
             rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 0);
-            rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 26);
+            rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, rowHeight);
 
             var textObj = new GameObject("Text", typeof(TextMeshProUGUI));
             textObj.transform.SetParent(row.transform, false);
             var text = textObj.GetComponent<TextMeshProUGUI>();
             text.text = $"{count}x {card.CardName} ({card.Cost})";
-            text.fontSize = 17;
+            text.fontSize = rowFontSize;
             text.alignment = TextAlignmentOptions.Left;
-            text.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+            text.color = rowTextColor;
             var textRect = text.rectTransform;
             textRect.anchorMin = new Vector2(0, 0);
             textRect.anchorMax = new Vector2(1, 1);
-            textRect.offsetMin = new Vector2(8, 0);
-            textRect.offsetMax = new Vector2(-8, 0);
+            textRect.offsetMin = new Vector2(rowTextPadding, 0);
+            textRect.offsetMax = new Vector2(-rowTextPadding, 0);
 
             row.GetComponent<RowClickHandler>().Setup(card);
             return row;

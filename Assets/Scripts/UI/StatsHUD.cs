@@ -13,6 +13,45 @@ namespace UI
         [SerializeField] private Color allyColor = new Color(0.15f, 0.25f, 0.50f, 0.7f);
         [SerializeField] private Color enemyColor = new Color(0.50f, 0.15f, 0.15f, 0.7f);
 
+        [Header("Canvas")]
+        [SerializeField] private int sortingOrder = -1;
+
+        [Header("Panels")]
+        [SerializeField] private int headerFontSize = 18;
+        [SerializeField] private Color scrollBackgroundColor = new Color(0f, 0f, 0f, 0.3f);
+        [SerializeField] private float listSpacing = 50f;
+        [SerializeField] private int listPadding = 4;
+        [SerializeField] private int listPaddingTop = 120;
+
+        [Header("Entries")]
+        [SerializeField] private float nameMinWidth = 60f;
+        [SerializeField] private float nameMaxWidth = 80f;
+        [SerializeField] private float namePadding = 8f;
+        [SerializeField] private int nameFontSize = 30;
+        [SerializeField] private float nameHeight = 25f;
+        [SerializeField] private float nameHorizontalOffset = 4f;
+        [SerializeField] private float nameVerticalOffset = -4f;
+
+        [Header("Segments")]
+        [SerializeField] private Vector2 segmentCellSize = new Vector2(50f, 25f);
+        [SerializeField] private Vector2 segmentSpacing = new Vector2(6f, 6f);
+        [SerializeField] private float segmentRowWidth = 56f;
+        [SerializeField] private float segmentPadding = 4f;
+        [SerializeField] private int segmentEdgePadding = 2;
+        [SerializeField] private int segmentPaddingVertical = 2;
+
+        [Header("Bar Colors")]
+        [SerializeField] private Color hpFillColor = Color.red;
+        [SerializeField] private Color hpEmptyColor = new Color(0f, 0f, 0f, 0.3f);
+        [SerializeField] private Color blockColor = new Color(0.73f, 0.73f, 0.73f, 0.6f);
+        [SerializeField] private float blockPadding = 3f;
+
+        [Header("Rows")]
+        [SerializeField] private float rowWidthMargin = 4f;
+        [SerializeField] private float rowBaseHeight = 6f;
+        [SerializeField] private float rowHeight = 25f;
+        [SerializeField] private float rowSpacing = 6f;
+
         private Canvas canvas;
         private GameObject alliesRoot;
         private GameObject enemiesRoot;
@@ -93,7 +132,7 @@ namespace UI
                 go.transform.SetParent(transform, false);
                 canvas = go.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvas.sortingOrder = -1;
+                canvas.sortingOrder = sortingOrder;
                 go.AddComponent<CanvasScaler>();
             }
         }
@@ -128,7 +167,7 @@ namespace UI
 
             var headerText = header.GetComponent<TextMeshProUGUI>();
             headerText.text = title;
-            headerText.fontSize = 18;
+            headerText.fontSize = headerFontSize;
             headerText.alignment = align == TextAnchor.UpperLeft ? TextAlignmentOptions.Left : TextAlignmentOptions.Right;
             headerText.color = Color.white;
             headerText.fontStyle = FontStyles.Bold;
@@ -141,7 +180,7 @@ namespace UI
             scrollRt.offsetMin = Vector2.zero;
             scrollRt.offsetMax = Vector2.zero;
             var scrollImage = scroll.GetComponent<Image>();
-            scrollImage.color = new Color(0f, 0f, 0f, 0.3f);
+            scrollImage.color = scrollBackgroundColor;
             scrollImage.raycastTarget = false;
             scroll.GetComponent<ScrollRect>().horizontal = false;
 
@@ -166,8 +205,8 @@ namespace UI
             cRt.pivot = new Vector2(0.5f, 1f);
 
             var vlg = content.GetComponent<VerticalLayoutGroup>();
-            vlg.spacing = 50f;
-            vlg.padding = new RectOffset(4, 4, 120, 4);
+            vlg.spacing = listSpacing;
+            vlg.padding = new RectOffset(listPadding, listPadding, listPaddingTop, listPadding);
             vlg.childAlignment = TextAnchor.UpperCenter;
             vlg.childForceExpandWidth = true;
             vlg.childForceExpandHeight = false;
@@ -208,11 +247,11 @@ namespace UI
             entry.bg.color = isAlly ? allyColor : enemyColor;
 
             // Destroy all labels except name
-            float nameWidth = 80f;
+            float nameWidth = nameMaxWidth;
             if (entry.nameLabel != null)
             {
                 entry.nameLabel.raycastTarget = false;
-                nameWidth = Mathf.Max(60f, entry.nameLabel.preferredWidth + 8f);
+                nameWidth = Mathf.Max(nameMinWidth, entry.nameLabel.preferredWidth + namePadding);
                 var labelsParent = entry.nameLabel.transform.parent;
                 if (labelsParent != null)
                 {
@@ -227,7 +266,7 @@ namespace UI
                     Destroy(labelsParent.gameObject);
                 }
 
-                entry.nameLabel.fontSize = 30;
+                entry.nameLabel.fontSize = nameFontSize;
                 entry.nameLabel.verticalAlignment = VerticalAlignmentOptions.Bottom;
                 entry.nameLabel.alignment = isAlly ? TextAlignmentOptions.Left : TextAlignmentOptions.Right;
                 entry.nameLabel.color = character.PlayerColor ?? Color.white;
@@ -237,23 +276,23 @@ namespace UI
                     nameRt.anchorMin = new Vector2(0f, 1f);
                     nameRt.anchorMax = new Vector2(0f, 1f);
                     nameRt.pivot = new Vector2(0f, 1f);
-                    nameRt.anchoredPosition = new Vector2(4f, -4f);
+                    nameRt.anchoredPosition = new Vector2(nameHorizontalOffset, nameVerticalOffset);
                 }
                 else
                 {
                     nameRt.anchorMin = new Vector2(1f, 1f);
                     nameRt.anchorMax = new Vector2(1f, 1f);
                     nameRt.pivot = new Vector2(1f, 1f);
-                    nameRt.anchoredPosition = new Vector2(-4f, -4f);
+                    nameRt.anchoredPosition = new Vector2(-nameHorizontalOffset, nameVerticalOffset);
                 }
-                nameRt.sizeDelta = new Vector2(nameWidth, 25f);
+                nameRt.sizeDelta = new Vector2(nameWidth, nameHeight);
             }
 
             CreateSegments(entry, character.Stats.MaxHealth, isAlly, nameWidth);
 
-            int segmentsPerRow = Mathf.Max(1, Mathf.FloorToInt((target.GetComponent<RectTransform>().rect.width - nameWidth - 4) / 56f));
+            int segmentsPerRow = Mathf.Max(1, Mathf.FloorToInt((target.GetComponent<RectTransform>().rect.width - nameWidth - rowWidthMargin) / segmentRowWidth));
             int rows = Mathf.CeilToInt((float)character.Stats.MaxHealth / segmentsPerRow);
-            float h = 6f + Mathf.Max(25f, rows * 25f + (rows - 1) * 6f);
+            float h = rowBaseHeight + Mathf.Max(rowHeight, rows * rowHeight + (rows - 1) * rowSpacing);
             go.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, h);
 
             UpdateEntryLabels(entry, character.Stats);
@@ -298,11 +337,11 @@ namespace UI
             if (entry.bg == null) return;
 
             var glg = entry.bg.gameObject.AddComponent<GridLayoutGroup>();
-            glg.cellSize = new Vector2(50f, 25f);
-            glg.spacing = new Vector2(6f, 6f);
-            int padLeft = isAlly ? Mathf.RoundToInt(nameWidth) + 4 : 2;
-            int padRight = isAlly ? 2 : Mathf.RoundToInt(nameWidth) + 4;
-            glg.padding = new RectOffset(padLeft, padRight, 2, 2);
+            glg.cellSize = segmentCellSize;
+            glg.spacing = segmentSpacing;
+            int padLeft = isAlly ? Mathf.RoundToInt(nameWidth) + Mathf.RoundToInt(segmentPadding) : segmentEdgePadding;
+            int padRight = isAlly ? segmentEdgePadding : Mathf.RoundToInt(nameWidth) + Mathf.RoundToInt(segmentPadding);
+            glg.padding = new RectOffset(padLeft, padRight, segmentPaddingVertical, segmentPaddingVertical);
             glg.startAxis = GridLayoutGroup.Axis.Horizontal;
             glg.childAlignment = isAlly ? TextAnchor.UpperLeft : TextAnchor.UpperRight;
             glg.constraint = GridLayoutGroup.Constraint.Flexible;
@@ -318,13 +357,13 @@ namespace UI
                 var blockSeg = new GameObject("Block", typeof(Image));
                 blockSeg.transform.SetParent(seg.transform, false);
                 var blockImage = blockSeg.GetComponent<Image>();
-                blockImage.color = new Color(0.73f, 0.73f, 0.73f, 0.6f);
+                blockImage.color = blockColor;
                 blockImage.raycastTarget = false;
                 var blockRt = blockSeg.GetComponent<RectTransform>();
                 blockRt.anchorMin = Vector2.zero;
                 blockRt.anchorMax = Vector2.one;
-                blockRt.offsetMin = new Vector2(-3f, -3f);
-                blockRt.offsetMax = new Vector2(3f, 3f);
+                blockRt.offsetMin = new Vector2(-blockPadding, -blockPadding);
+                blockRt.offsetMax = new Vector2(blockPadding, blockPadding);
                 entry.blockSegments.Add(blockImage);
             }
         }
@@ -335,19 +374,14 @@ namespace UI
             int current = stats.CurrentHealth;
             int block = stats.Block;
 
-            Color fillColor = Color.red;
-            Color emptyColor = new Color(0f, 0f, 0f, 0.3f);
-            Color blockColor = new Color(0.73f, 0.73f, 0.73f, 0.6f);
-            Color noBlock = Color.clear;
-
             for (int i = 0; i < entry.hpSegments.Count; i++)
             {
                 bool hpFilled = isAlly ? i < current : i >= max - current;
-                entry.hpSegments[i].color = hpFilled ? fillColor : emptyColor;
+                entry.hpSegments[i].color = hpFilled ? hpFillColor : hpEmptyColor;
 
                 bool hasBlock = isAlly ? i < block : i >= max - block;
                 if (i < entry.blockSegments.Count)
-                    entry.blockSegments[i].color = hasBlock ? blockColor : noBlock;
+                    entry.blockSegments[i].color = hasBlock ? blockColor : Color.clear;
             }
         }
 

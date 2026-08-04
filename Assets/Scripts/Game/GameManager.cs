@@ -117,11 +117,13 @@ namespace Game
             Networking.NetworkManager.OnPlayCardRequestReceived -= HandlePlayCardRequest;
             Networking.NetworkManager.OnPassRequestReceived -= HandlePassRequest;
             Networking.NetworkManager.OnLoadoutSyncReceived -= HandleLoadoutSyncReceived;
+            Networking.NetworkManager.OnCardPlayedDisplayReceived -= HandleCardPlayedDisplay;
             LobbyManager.OnLobbyMemberLeft -= HandleLobbyMemberLeft;
             if (turnManager != null)
             {
                 turnManager.OnActionResolved -= HandleActionResolved;
                 turnManager.OnTurnStarted -= HandleTurnStartedBroadcast;
+                turnManager.OnCardPlayed -= HandleCardPlayed;
             }
         }
 
@@ -144,6 +146,7 @@ namespace Game
             {
                 turnManager.OnActionResolved += HandleActionResolved;
                 turnManager.OnTurnStarted += HandleTurnStartedBroadcast;
+                turnManager.OnCardPlayed += HandleCardPlayed;
             }
         }
 
@@ -199,6 +202,7 @@ namespace Game
             grid.GenerateGrid();
             Networking.NetworkManager.OnGameStateReceived += HandleGameStateReceived;
             Networking.NetworkManager.OnLoadNextLevelReceived += HandleLoadNextLevelReceived;
+            Networking.NetworkManager.OnCardPlayedDisplayReceived += HandleCardPlayedDisplay;
             Networking.NetworkManager.Instance.SendRequestInitialState();
         }
 
@@ -207,8 +211,7 @@ namespace Game
             var lobby = LobbyManager.Instance.CurrentLobby;
             ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
 
-            var obj = new GameObject("LoadoutScreen", typeof(LoadoutScreen));
-            loadoutScreen = obj.GetComponent<LoadoutScreen>();
+            loadoutScreen = LoadoutScreen.Create();
             loadoutScreen.Show(reward, OnLoadoutConfirmed);
         }
 
@@ -529,6 +532,36 @@ namespace Game
         {
             if (GameState.ActiveMode == GameMode.Host)
                 BroadcastGameState();
+        }
+
+        /// <summary>
+        /// Host-side (and single-player): a card just resolved. Show it locally and, in a
+        /// lobby, broadcast it so every client displays the same card on screen.
+        /// </summary>
+        private void HandleCardPlayed(CardInstance card, Character actor)
+        {
+            if (card == null || card.Data == null) return;
+
+            string actorName = actor != null ? actor.Stats.CharacterName : "";
+            UI.PlayedCardDisplay.Show(card.Data.CardName, actorName);
+
+            if (GameState.ActiveMode != GameMode.Host) return;
+            Networking.NetworkManager.Instance.BroadcastCardPlayed(new Networking.CardPlayedDisplay
+            {
+                cardName = card.Data.CardName,
+                actorName = actorName,
+                actorPlayerId = actor != null ? actor.OwnerPlayerId : -1
+            });
+        }
+
+        /// <summary>
+        /// Client-side: the host announced a card play; show it on screen so this player
+        /// sees what was played even though only the host resolves card actions.
+        /// </summary>
+        private void HandleCardPlayedDisplay(Networking.CardPlayedDisplay display)
+        {
+            if (display == null || string.IsNullOrEmpty(display.cardName)) return;
+            UI.PlayedCardDisplay.Show(display.cardName, display.actorName);
         }
 
         internal void HandlePlayCardRequest(ulong senderSteamId, Networking.PlayCardRequest request)

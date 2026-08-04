@@ -45,6 +45,7 @@ namespace Game
         public event System.Action<Character> OnTurnEnded;
         public event System.Action<Character> OnPlayerPassed;
         public event System.Action OnActionResolved;
+        public event System.Action<CardInstance, Character> OnCardPlayed;
 
         public void SetTurnOrder(List<Character> characters)
         {
@@ -87,6 +88,7 @@ namespace Game
             bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter);
             if (!played) return false;
 
+            OnCardPlayed?.Invoke(card, ActiveCharacter);
             OnActionResolved?.Invoke();
             return true;
         }

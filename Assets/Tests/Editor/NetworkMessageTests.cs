@@ -381,5 +381,51 @@ namespace Tests
             Assert.AreEqual(2, received.playerIndex);
             Assert.AreEqual("Helm", received.loadoutNames[0]);
         }
+
+        [Test]
+        public void CardPlayedDisplay_RoundTrips()
+        {
+            var display = new CardPlayedDisplay
+            {
+                cardName = "Slash",
+                actorName = "Alice",
+                actorPlayerId = 1
+            };
+
+            string json = JsonUtility.ToJson(display);
+            var decoded = JsonUtility.FromJson<CardPlayedDisplay>(json);
+
+            Assert.AreEqual("Slash", decoded.cardName);
+            Assert.AreEqual("Alice", decoded.actorName);
+            Assert.AreEqual(1, decoded.actorPlayerId);
+        }
+
+        [Test]
+        public void HandleMessage_CardPlayedDisplay_RaisesEvent()
+        {
+            string json = JsonUtility.ToJson(new CardPlayedDisplay
+            {
+                cardName = "Slash",
+                actorName = "Bob",
+                actorPlayerId = 0
+            });
+
+            CardPlayedDisplay received = null;
+            Action<CardPlayedDisplay> handler = (d) => received = d;
+            NetworkManager.OnCardPlayedDisplayReceived += handler;
+            try
+            {
+                NetworkManager.HandleMessage((SteamId)123ul, MessageType.CardPlayedDisplay, json);
+            }
+            finally
+            {
+                NetworkManager.OnCardPlayedDisplayReceived -= handler;
+            }
+
+            Assert.IsNotNull(received);
+            Assert.AreEqual("Slash", received.cardName);
+            Assert.AreEqual("Bob", received.actorName);
+            Assert.AreEqual(0, received.actorPlayerId);
+        }
     }
 }

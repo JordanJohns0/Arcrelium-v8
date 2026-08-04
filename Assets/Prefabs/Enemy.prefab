@@ -9,9 +9,21 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1087468177673829988, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: feetEquipment
+      value: 
+      objectReference: {fileID: 11400000, guid: eb56d6b1a99f56f459f4f9ac40cc95cd, type: 2}
+    - target: {fileID: 1087468177673829988, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: chestEquipment
+      value: 
+      objectReference: {fileID: 11400000, guid: ecbafb46ac4be4941a14887f52285701, type: 2}
+    - target: {fileID: 1087468177673829988, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: leftHandEquipment
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 1087468177673829988, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: rightHandEquipment
+      value: 
+      objectReference: {fileID: 11400000, guid: 151b99a4097d9264f9fbcb13f95bd8ea, type: 2}
     - target: {fileID: 7148383819020381768, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

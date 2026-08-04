@@ -93,6 +93,43 @@ namespace Tests
         }
 
         [Test]
+        public void PlayCard_FiresOnCardPlayedWithCardAndActor()
+        {
+            var card = new CardInstance(selfCardData);
+            player.Hand.AddCard(card);
+
+            CardInstance playedCard = null;
+            Character actor = null;
+            turnManager.OnCardPlayed += (c, a) => { playedCard = c; actor = a; };
+
+            turnManager.SetTurnOrder(new List<Character> { player, enemy });
+            turnManager.StartMatch();
+
+            turnManager.PlayCard(card);
+
+            Assert.AreEqual(card, playedCard);
+            Assert.AreEqual(player, actor);
+        }
+
+        [Test]
+        public void PlayCard_FailedPlay_DoesNotFireOnCardPlayed()
+        {
+            var card = new CardInstance(selfCardData);
+            player.Hand.AddCard(card);
+
+            bool fired = false;
+            turnManager.OnCardPlayed += (c, a) => fired = true;
+
+            turnManager.SetTurnOrder(new List<Character> { player, enemy });
+            turnManager.StartMatch();
+
+            player.Hand.RemoveCard(card);
+            turnManager.PlayCard(card);
+
+            Assert.IsFalse(fired);
+        }
+
+        [Test]
         public void Pass_FiresOnPlayerPassed()
         {
             bool fired = false;

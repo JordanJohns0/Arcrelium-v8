@@ -15,6 +15,7 @@ namespace UI
         [SerializeField] private Image iconImage;
         [SerializeField] private TMP_Text nameLabel;
         [SerializeField] private CanvasGroup canvasGroup;
+        [SerializeField] private float dragAlpha = 0.6f;
 
         private Equipment.EquipmentData equipmentData;
         private Transform originalParent;
@@ -68,7 +69,7 @@ namespace UI
             if (canvasGroup != null)
             {
                 canvasGroup.blocksRaycasts = false;
-                canvasGroup.alpha = 0.6f;
+                canvasGroup.alpha = dragAlpha;
             }
             else
             {

@@ -8,13 +8,48 @@ namespace UI
 {
     public class PauseMenu : MonoBehaviour
     {
+        [Header("Prefab")]
+        [SerializeField] private GameObject uiPrefab;
+
+        [Header("Canvas")]
+        [SerializeField] private int sortingOrder = 300;
+        [SerializeField] private Vector2 referenceResolution = new Vector2(1920, 1080);
+
+        [Header("Overlay & Panel")]
+        [SerializeField] private Color overlayColor = new Color(0, 0, 0, 0.6f);
+        [SerializeField] private Vector2 panelSize = new Vector2(350, 350);
+        [SerializeField] private Color panelColor = new Color(0.12f, 0.12f, 0.12f, 1f);
+        [SerializeField] private float panelSpacing = 20f;
+        [SerializeField] private int paddingLeft = 30;
+        [SerializeField] private int paddingRight = 30;
+        [SerializeField] private int paddingTop = 60;
+        [SerializeField] private int paddingBottom = 30;
+
+        [Header("Title")]
+        [SerializeField] private string titleLabel = "Paused";
+        [SerializeField] private int titleFontSize = 40;
+        [SerializeField] private Color titleColor = Color.white;
+        [SerializeField] private Vector2 titleSize = new Vector2(290, 60);
+
+        [Header("Buttons")]
+        [SerializeField] private Vector2 buttonSize = new Vector2(250, 55);
+        [SerializeField] private Color buttonColor = new Color(0.25f, 0.25f, 0.25f, 1f);
+        [SerializeField] private Color buttonHighlightedColor = new Color(0.4f, 0.4f, 0.4f, 1f);
+        [SerializeField] private Color buttonPressedColor = new Color(0.15f, 0.15f, 0.15f, 1f);
+        [SerializeField] private int buttonFontSize = 26;
+        [SerializeField] private Color buttonTextColor = Color.white;
+        [SerializeField] private string resumeLabel = "Resume";
+        [SerializeField] private string mainMenuLabel = "Main Menu";
+
         private InputAction toggleAction;
         private GameObject canvasRoot;
         private bool isVisible;
         private static PauseMenu instance;
+        private static GameObject staticPrefab;
 
         private void Awake()
         {
+            if (staticPrefab == null && uiPrefab != null) staticPrefab = uiPrefab;
             if (instance != null)
             {
                 Destroy(gameObject);
@@ -73,11 +108,11 @@ namespace UI
 
             var canvas = canvasRoot.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 300;
+            canvas.sortingOrder = sortingOrder;
 
             var scaler = canvasRoot.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.referenceResolution = referenceResolution;
 
             var overlay = new GameObject("Overlay", typeof(Image)).GetComponent<RectTransform>();
             overlay.SetParent(canvasRoot.transform, false);
@@ -86,64 +121,64 @@ namespace UI
             overlay.offsetMin = Vector2.zero;
             overlay.offsetMax = Vector2.zero;
             var overlayImage = overlay.GetComponent<Image>();
-            overlayImage.color = new Color(0, 0, 0, 0.6f);
+            overlayImage.color = overlayColor;
 
             var panel = new GameObject("Panel", typeof(Image), typeof(VerticalLayoutGroup)).GetComponent<RectTransform>();
             panel.SetParent(canvasRoot.transform, false);
             panel.anchorMin = new Vector2(0.5f, 0.5f);
             panel.anchorMax = new Vector2(0.5f, 0.5f);
-            panel.sizeDelta = new Vector2(350, 350);
+            panel.sizeDelta = panelSize;
             panel.anchoredPosition = Vector2.zero;
             var panelImage = panel.GetComponent<Image>();
-            panelImage.color = new Color(0.12f, 0.12f, 0.12f, 1);
+            panelImage.color = panelColor;
 
             var layout = panel.GetComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
-            layout.spacing = 20;
-            layout.padding = new RectOffset(30, 30, 60, 30);
+            layout.spacing = panelSpacing;
+            layout.padding = new RectOffset(paddingLeft, paddingRight, paddingTop, paddingBottom);
 
             var titleObj = new GameObject("Title", typeof(TextMeshProUGUI));
             titleObj.transform.SetParent(panel, false);
             var title = titleObj.GetComponent<TextMeshProUGUI>();
-            title.text = "Paused";
-            title.fontSize = 40;
+            title.text = titleLabel;
+            title.fontSize = titleFontSize;
             title.fontStyle = FontStyles.Bold;
-            title.color = Color.white;
+            title.color = titleColor;
             title.alignment = TextAlignmentOptions.Center;
-            title.rectTransform.sizeDelta = new Vector2(290, 60);
+            title.rectTransform.sizeDelta = titleSize;
 
-            CreateButton(panel, "Resume", Hide);
-            CreateButton(panel, "Main Menu", GoToMainMenu);
+            CreateButton(panel, resumeLabel, Hide);
+            CreateButton(panel, mainMenuLabel, GoToMainMenu);
         }
 
-        private static GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        private GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
         {
             var btnObj = new GameObject(label + "Button", typeof(Image), typeof(Button));
             btnObj.transform.SetParent(parent, false);
             var btnRt = btnObj.GetComponent<RectTransform>();
-            btnRt.sizeDelta = new Vector2(250, 55);
+            btnRt.sizeDelta = buttonSize;
 
             var btnImage = btnObj.GetComponent<Image>();
-            btnImage.color = new Color(0.25f, 0.25f, 0.25f, 1);
+            btnImage.color = buttonColor;
 
             var textObj = new GameObject("Text", typeof(TextMeshProUGUI));
             textObj.transform.SetParent(btnObj.transform, false);
             var text = textObj.GetComponent<TextMeshProUGUI>();
             text.text = label;
-            text.fontSize = 26;
-            text.color = Color.white;
+            text.fontSize = buttonFontSize;
+            text.color = buttonTextColor;
             text.alignment = TextAlignmentOptions.Center;
-            text.rectTransform.sizeDelta = new Vector2(250, 55);
+            text.rectTransform.sizeDelta = buttonSize;
 
             var btn = btnObj.GetComponent<Button>();
             btn.targetGraphic = btnImage;
             btn.onClick.AddListener(onClick);
 
             ColorBlock colors = btn.colors;
-            colors.highlightedColor = new Color(0.4f, 0.4f, 0.4f);
-            colors.pressedColor = new Color(0.15f, 0.15f, 0.15f);
+            colors.highlightedColor = buttonHighlightedColor;
+            colors.pressedColor = buttonPressedColor;
             btn.colors = colors;
 
             return btnObj;
@@ -173,9 +208,26 @@ namespace UI
 
         public static PauseMenu GetOrCreate(InputActionAsset actions)
         {
-            if (instance != null) return instance;
-            if (FindAnyObjectByType<PauseMenu>() != null) return instance;
-            new GameObject("PauseMenu", typeof(PauseMenu));
+            if (instance != null)
+            {
+                instance.Initialize(actions);
+                return instance;
+            }
+            var existing = FindAnyObjectByType<PauseMenu>();
+            if (existing != null)
+            {
+                instance = existing;
+                existing.Initialize(actions);
+                return existing;
+            }
+            if (staticPrefab != null)
+            {
+                instance = Object.Instantiate(staticPrefab).GetComponent<PauseMenu>();
+            }
+            else
+            {
+                new GameObject("PauseMenu", typeof(PauseMenu));
+            }
             instance.Initialize(actions);
             return instance;
         }

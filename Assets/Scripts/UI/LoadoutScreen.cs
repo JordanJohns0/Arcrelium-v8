@@ -18,6 +18,65 @@ namespace UI
     /// </summary>
     public class LoadoutScreen : MonoBehaviour
     {
+        [Header("Prefab")]
+        [SerializeField] private GameObject uiPrefab;
+
+        [Header("Canvas")]
+        [SerializeField] private int sortingOrder = 100;
+
+        [Header("Background")]
+        [SerializeField] private Color backgroundTint = new Color(0, 0, 0, 0.55f);
+
+        [Header("Panel")]
+        [SerializeField] private Vector2 panelSize = new Vector2(660, 276);
+        [SerializeField] private Color panelColor = new Color(0.12f, 0.12f, 0.12f, 1f);
+        [SerializeField] private Vector2 panelAnchoredPosition = new Vector2(0, -18);
+        [SerializeField] private float panelSpacing = 6f;
+        [SerializeField] private int panelPaddingLeft = 20;
+        [SerializeField] private int panelPaddingRight = 20;
+        [SerializeField] private int panelPaddingTop = 12;
+        [SerializeField] private int panelPaddingBottom = 12;
+
+        [Header("Title")]
+        [SerializeField] private string defaultTitleText = "Choose Your Loadout";
+        [SerializeField] private int titleFontSize = 26;
+        [SerializeField] private Vector2 titleSize = new Vector2(620, 34);
+
+        [Header("Ready List")]
+        [SerializeField] private Vector2 readyListSize = new Vector2(620, 88);
+        [SerializeField] private float readyListSpacing = 2f;
+        [SerializeField] private int readyRowFontSize = 20;
+
+        [Header("Status")]
+        [SerializeField] private int statusFontSize = 14;
+        [SerializeField] private Color statusColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        [SerializeField] private Vector2 statusSize = new Vector2(620, 18);
+
+        [Header("Labels")]
+        [SerializeField] private Vector2 labelSize = new Vector2(500, 30);
+
+        [Header("Confirm Button")]
+        [SerializeField] private string confirmLabel = "Confirm Loadout";
+        [SerializeField] private Vector2 confirmButtonSize = new Vector2(280, 54);
+        [SerializeField] private Color confirmButtonColor = new Color(0.2f, 0.5f, 0.2f, 1f);
+        [SerializeField] private int confirmButtonFontSize = 22;
+
+        [Header("Reward Popup")]
+        [SerializeField] private Color rewardBlockerColor = new Color(0, 0, 0, 0.7f);
+        [SerializeField] private Vector2 rewardPanelSize = new Vector2(420, 220);
+        [SerializeField] private Color rewardPanelColor = new Color(0.15f, 0.12f, 0.08f, 1f);
+        [SerializeField] private float rewardSpacing = 10f;
+        [SerializeField] private int rewardPadding = 24;
+        [SerializeField] private int rewardPaddingVertical = 20;
+        [SerializeField] private string rewardTitleText = "Victory!";
+        [SerializeField] private int rewardTitleFontSize = 30;
+        [SerializeField] private Vector2 rewardTitleSize = new Vector2(400, 36);
+        [SerializeField] private int rewardFontSize = 26;
+        [SerializeField] private Color rewardColor = new Color(1f, 0.85f, 0.3f, 1f);
+        [SerializeField] private Vector2 rewardLabelSize = new Vector2(400, 70);
+        [SerializeField] private Vector2 okButtonSize = new Vector2(200, 50);
+        [SerializeField] private string okLabel = "Nice!";
+
         private Canvas canvas;
         private TMP_Text titleText;
         private TMP_Text statusText;
@@ -32,9 +91,11 @@ namespace UI
         private bool multiplayer;
         private bool confirmed;
         private System.Action onConfirmed;
+        private static GameObject staticPrefab;
 
         private void Awake()
         {
+            if (staticPrefab == null && uiPrefab != null) staticPrefab = uiPrefab;
             CreateUI();
             Hide();
             _ = Networking.ReadyTracker.Instance;
@@ -48,6 +109,21 @@ namespace UI
         private void OnDisable()
         {
             Networking.ReadyTracker.OnReadyStateChanged -= RefreshReadyUI;
+        }
+
+        /// <summary>
+        /// Instantiates the loadout screen from the UI prefab, falling back to a plain
+        /// GameObject if the prefab is missing, so the screen always exists at runtime.
+        /// </summary>
+        public static LoadoutScreen Create()
+        {
+            var existing = FindAnyObjectByType<LoadoutScreen>();
+            if (existing != null)
+                return existing;
+            if (staticPrefab != null)
+                return Object.Instantiate(staticPrefab).GetComponent<LoadoutScreen>();
+            var obj = new GameObject("LoadoutScreen", typeof(LoadoutScreen));
+            return obj.GetComponent<LoadoutScreen>();
         }
 
         /// <summary>
@@ -83,6 +159,7 @@ namespace UI
                     eq.Refresh();
                 }
             }
+
             if (handPanel != null) handPanel.SetActive(false);
             if (buttonsPanel != null) buttonsPanel.SetActive(false);
 
@@ -148,12 +225,12 @@ namespace UI
             root.transform.SetParent(transform, false);
             canvas = root.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 100;
+            canvas.sortingOrder = sortingOrder;
 
             var bg = new GameObject("Background", typeof(Image));
             bg.transform.SetParent(root.transform, false);
             var bgImage = bg.GetComponent<Image>();
-            bgImage.color = new Color(0, 0, 0, 0.55f);
+            bgImage.color = backgroundTint;
             bgImage.raycastTarget = false;
             var bgRect = bgImage.rectTransform;
             bgRect.anchorMin = Vector2.zero;
@@ -163,50 +240,50 @@ namespace UI
             var panel = new GameObject("Panel", typeof(Image), typeof(VerticalLayoutGroup));
             panel.transform.SetParent(root.transform, false);
             var panelImage = panel.GetComponent<Image>();
-            panelImage.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            panelImage.color = panelColor;
             var panelRect = panel.GetComponent<RectTransform>();
-            panelRect.sizeDelta = new Vector2(660, 276);
+            panelRect.sizeDelta = panelSize;
             panelRect.anchorMin = new Vector2(0.5f, 1f);
             panelRect.anchorMax = new Vector2(0.5f, 1f);
-            panelRect.anchoredPosition = new Vector2(0, -18);
+            panelRect.anchoredPosition = panelAnchoredPosition;
 
             var layout = panel.GetComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
-            layout.spacing = 6;
-            layout.padding = new RectOffset(20, 20, 12, 12);
+            layout.spacing = panelSpacing;
+            layout.padding = new RectOffset(panelPaddingLeft, panelPaddingRight, panelPaddingTop, panelPaddingBottom);
 
             var titleObj = new GameObject("Title", typeof(TextMeshProUGUI));
             titleObj.transform.SetParent(panel.transform, false);
             titleText = titleObj.GetComponent<TextMeshProUGUI>();
-            titleText.text = "Choose Your Loadout";
-            titleText.fontSize = 26;
+            titleText.text = defaultTitleText;
+            titleText.fontSize = titleFontSize;
             titleText.alignment = TextAlignmentOptions.Center;
             titleText.color = Color.white;
-            titleText.rectTransform.sizeDelta = new Vector2(620, 34);
+            titleText.rectTransform.sizeDelta = titleSize;
 
             readyListContent = new GameObject("ReadyList", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
             readyListContent.SetParent(panel.transform, false);
             var readyRt = readyListContent.GetComponent<RectTransform>();
-            readyRt.sizeDelta = new Vector2(620, 88);
+            readyRt.sizeDelta = readyListSize;
             var readyLayout = readyListContent.GetComponent<VerticalLayoutGroup>();
-            readyLayout.spacing = 2;
+            readyLayout.spacing = readyListSpacing;
             readyLayout.childAlignment = TextAnchor.UpperCenter;
 
             var statusObj = new GameObject("Status", typeof(TextMeshProUGUI));
             statusObj.transform.SetParent(panel.transform, false);
             statusText = statusObj.GetComponent<TextMeshProUGUI>();
             statusText.text = "";
-            statusText.fontSize = 14;
+            statusText.fontSize = statusFontSize;
             statusText.alignment = TextAlignmentOptions.Center;
-            statusText.color = new Color(0.8f, 0.8f, 0.8f, 1f);
-            statusText.rectTransform.sizeDelta = new Vector2(620, 18);
+            statusText.color = statusColor;
+            statusText.rectTransform.sizeDelta = statusSize;
 
-            confirmBtn = CreateButton(panel.transform, "Confirm Loadout", ConfirmLoadout);
+            confirmBtn = CreateButton(panel.transform, confirmLabel, ConfirmLoadout);
         }
 
-        private static TMP_Text CreateLabel(Transform parent, string text, int size, Color color)
+        private TMP_Text CreateLabel(Transform parent, string text, int size, Color color)
         {
             var obj = new GameObject("Label", typeof(TextMeshProUGUI));
             obj.transform.SetParent(parent, false);
@@ -215,24 +292,24 @@ namespace UI
             tmp.fontSize = size;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = color;
-            tmp.rectTransform.sizeDelta = new Vector2(500, 30);
+            tmp.rectTransform.sizeDelta = labelSize;
             return tmp;
         }
 
-        private static GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        private GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
         {
             var btnObj = new GameObject(label.Replace(" ", "") + "Button", typeof(Image), typeof(Button));
             btnObj.transform.SetParent(parent, false);
             var btnImage = btnObj.GetComponent<Image>();
-            btnImage.color = new Color(0.2f, 0.5f, 0.2f, 1f);
+            btnImage.color = confirmButtonColor;
             var btnRect = btnObj.GetComponent<RectTransform>();
-            btnRect.sizeDelta = new Vector2(280, 54);
+            btnRect.sizeDelta = confirmButtonSize;
 
             var textObj = new GameObject("Text", typeof(TextMeshProUGUI));
             textObj.transform.SetParent(btnObj.transform, false);
             var text = textObj.GetComponent<TextMeshProUGUI>();
             text.text = label;
-            text.fontSize = 22;
+            text.fontSize = confirmButtonFontSize;
             text.alignment = TextAlignmentOptions.Center;
             text.color = Color.white;
             text.rectTransform.anchorMin = Vector2.zero;
@@ -257,7 +334,7 @@ namespace UI
             foreach (var p in Networking.ReadyTracker.Instance.GetPlayers())
             {
                 CreateLabel(readyListContent, $"{p.name} — {(p.ready ? "Ready" : "Picking")}",
-                    20, new Color(p.colorR, p.colorG, p.colorB, 1f));
+                    readyRowFontSize, new Color(p.colorR, p.colorG, p.colorB, 1f));
             }
         }
 
@@ -273,7 +350,7 @@ namespace UI
             var popup = new GameObject("RewardPopup", typeof(Image));
             popup.transform.SetParent(canvas.transform, false);
             var blocker = popup.GetComponent<Image>();
-            blocker.color = new Color(0, 0, 0, 0.7f);
+            blocker.color = rewardBlockerColor;
             blocker.raycastTarget = true;
             var blockerRect = popup.GetComponent<RectTransform>();
             blockerRect.anchorMin = Vector2.zero;
@@ -283,9 +360,9 @@ namespace UI
             var panel = new GameObject("Panel", typeof(Image), typeof(VerticalLayoutGroup));
             panel.transform.SetParent(popup.transform, false);
             var panelImage = panel.GetComponent<Image>();
-            panelImage.color = new Color(0.15f, 0.12f, 0.08f, 1f);
+            panelImage.color = rewardPanelColor;
             var panelRect = panel.GetComponent<RectTransform>();
-            panelRect.sizeDelta = new Vector2(420, 220);
+            panelRect.sizeDelta = rewardPanelSize;
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.anchoredPosition = Vector2.zero;
@@ -293,29 +370,29 @@ namespace UI
             panelLayout.childAlignment = TextAnchor.UpperCenter;
             panelLayout.childControlWidth = true;
             panelLayout.childControlHeight = true;
-            panelLayout.spacing = 10;
-            panelLayout.padding = new RectOffset(24, 24, 20, 20);
+            panelLayout.spacing = rewardSpacing;
+            panelLayout.padding = new RectOffset(rewardPadding, rewardPadding, rewardPaddingVertical, rewardPaddingVertical);
 
             var titleObj = new GameObject("Title", typeof(TextMeshProUGUI));
             titleObj.transform.SetParent(panel.transform, false);
             var title = titleObj.GetComponent<TextMeshProUGUI>();
-            title.text = "Victory!";
-            title.fontSize = 30;
+            title.text = rewardTitleText;
+            title.fontSize = rewardTitleFontSize;
             title.alignment = TextAlignmentOptions.Center;
             title.color = Color.white;
-            title.rectTransform.sizeDelta = new Vector2(400, 36);
+            title.rectTransform.sizeDelta = rewardTitleSize;
 
             var rewardObj = new GameObject("Reward", typeof(TextMeshProUGUI));
             rewardObj.transform.SetParent(panel.transform, false);
             var rewardLabel = rewardObj.GetComponent<TextMeshProUGUI>();
             rewardLabel.text = $"You unlocked:\n{reward.EquipmentName}";
-            rewardLabel.fontSize = 26;
+            rewardLabel.fontSize = rewardFontSize;
             rewardLabel.alignment = TextAlignmentOptions.Center;
-            rewardLabel.color = new Color(1f, 0.85f, 0.3f, 1f);
-            rewardLabel.rectTransform.sizeDelta = new Vector2(400, 70);
+            rewardLabel.color = rewardColor;
+            rewardLabel.rectTransform.sizeDelta = rewardLabelSize;
 
-            var okObj = CreateButton(panel.transform, "Nice!", () => DismissRewardPopup(popup));
-            okObj.GetComponent<RectTransform>().sizeDelta = new Vector2(200, 50);
+            var okObj = CreateButton(panel.transform, okLabel, () => DismissRewardPopup(popup));
+            okObj.GetComponent<RectTransform>().sizeDelta = okButtonSize;
 
             rewardPopup = popup;
         }

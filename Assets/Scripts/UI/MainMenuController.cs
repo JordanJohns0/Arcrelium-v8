@@ -12,7 +12,56 @@ namespace UI
 {
     public class MainMenuController : MonoBehaviour
     {
+        [Header("Version")]
         [SerializeField] private string version = "v0.1.1";
+
+        [Header("Canvas")]
+        [SerializeField] private int sortingOrder = 100;
+        [SerializeField] private Vector2 referenceResolution = new Vector2(1920, 1080);
+
+        [Header("Background")]
+        [SerializeField] private Color backgroundColor = new Color(0.08f, 0.08f, 0.08f, 1f);
+        [SerializeField] private float panelSpacing = 30f;
+
+        [Header("Content")]
+        [SerializeField] private Vector2 contentSize = new Vector2(500, 600);
+        [SerializeField] private float contentSpacing = 10f;
+
+        [Header("Title")]
+        [SerializeField] private string titleLabel = "Arcrelium";
+        [SerializeField] private int titleFontSize = 64;
+        [SerializeField] private Vector2 titleSize = new Vector2(500, 100);
+        [SerializeField] private Vector2 spacerSize = new Vector2(500, 30);
+
+        [Header("Labels")]
+        [SerializeField] private int labelFontSize = 24;
+        [SerializeField] private Vector2 labelSize = new Vector2(450, 40);
+
+        [Header("Buttons")]
+        [SerializeField] private Vector2 buttonSize = new Vector2(300, 50);
+        [SerializeField] private Color buttonColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+        [SerializeField] private Color buttonHighlightedColor = new Color(0.35f, 0.35f, 0.35f, 1f);
+        [SerializeField] private Color buttonPressedColor = new Color(0.15f, 0.15f, 0.15f, 1f);
+        [SerializeField] private int buttonFontSize = 24;
+
+        [Header("Lobby")]
+        [SerializeField] private Vector2 listSize = new Vector2(450, 200);
+        [SerializeField] private float listSpacing = 4f;
+        [SerializeField] private Vector2 lobbyRowSize = new Vector2(430, 40);
+        [SerializeField] private int maxLobbiesShown = 5;
+        [SerializeField] private int statusFontSize = 22;
+        [SerializeField] private int currentLobbyFontSize = 18;
+        [SerializeField] private Color currentLobbyColor = new Color(0.4f, 0.8f, 0.4f, 1f);
+        [SerializeField] private int readyRowFontSize = 20;
+        [SerializeField] private string noLobbiesText = "No lobbies found";
+        [SerializeField] private Color noLobbiesColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+        [SerializeField] private int noLobbiesFontSize = 18;
+
+        [Header("Version Label")]
+        [SerializeField] private int versionFontSize = 18;
+        [SerializeField] private Color versionColor = new Color(0.8f, 0.8f, 0.8f, 0.8f);
+        [SerializeField] private Vector2 versionOffset = new Vector2(-16f, -8f);
+        [SerializeField] private Vector2 versionSize = new Vector2(200f, 30f);
 
         private Transform mainContent;
         private Transform lobbyContent;
@@ -162,11 +211,11 @@ namespace UI
             var canvasGo = new GameObject("MainMenuCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 100;
+            canvas.sortingOrder = sortingOrder;
 
             var scaler = canvasGo.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.referenceResolution = referenceResolution;
 
             var panel = new GameObject("Panel", typeof(Image), typeof(VerticalLayoutGroup)).GetComponent<RectTransform>();
             panel.SetParent(canvasGo.transform, false);
@@ -175,39 +224,39 @@ namespace UI
             panel.offsetMin = Vector2.zero;
             panel.offsetMax = Vector2.zero;
             var panelImage = panel.GetComponent<Image>();
-            panelImage.color = new Color(0.08f, 0.08f, 0.08f, 1);
+            panelImage.color = backgroundColor;
 
             var layout = panel.GetComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
-            layout.spacing = 30;
+            layout.spacing = panelSpacing;
 
             var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter)).GetComponent<RectTransform>();
             content.SetParent(panel, false);
             content.anchorMin = new Vector2(0.5f, 0.5f);
             content.anchorMax = new Vector2(0.5f, 0.5f);
-            content.sizeDelta = new Vector2(500, 600);
+            content.sizeDelta = contentSize;
             content.anchoredPosition = Vector2.zero;
             var contentLayout = content.GetComponent<VerticalLayoutGroup>();
             contentLayout.childAlignment = TextAnchor.MiddleCenter;
             contentLayout.childControlWidth = true;
             contentLayout.childControlHeight = true;
-            contentLayout.spacing = 10;
+            contentLayout.spacing = contentSpacing;
 
             var titleObj = new GameObject("Title", typeof(TextMeshProUGUI));
             titleObj.transform.SetParent(content, false);
             var title = titleObj.GetComponent<TextMeshProUGUI>();
-            title.text = "Arcrelium";
-            title.fontSize = 64;
+            title.text = titleLabel;
+            title.fontSize = titleFontSize;
             title.fontStyle = FontStyles.Bold;
             title.color = Color.white;
             title.alignment = TextAlignmentOptions.Center;
-            title.rectTransform.sizeDelta = new Vector2(500, 100);
+            title.rectTransform.sizeDelta = titleSize;
 
             var spacer = new GameObject("Spacer", typeof(RectTransform));
             spacer.transform.SetParent(content, false);
-            spacer.GetComponent<RectTransform>().sizeDelta = new Vector2(500, 30);
+            spacer.GetComponent<RectTransform>().sizeDelta = spacerSize;
 
             // Main menu buttons
             mainContent = new GameObject("MainContent", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
@@ -216,7 +265,7 @@ namespace UI
             mcLayout.childAlignment = TextAnchor.MiddleCenter;
             mcLayout.childControlWidth = true;
             mcLayout.childControlHeight = true;
-            mcLayout.spacing = 10;
+            mcLayout.spacing = contentSpacing;
             CreateButton(mainContent, "Start Game (Single Player)", StartGame);
             CreateButton(mainContent, "Multiplayer", ShowMultiplayerPanel);
             CreateButton(mainContent, "Quit", QuitGame);
@@ -228,11 +277,11 @@ namespace UI
             lcLayout.childAlignment = TextAnchor.MiddleCenter;
             lcLayout.childControlWidth = true;
             lcLayout.childControlHeight = true;
-            lcLayout.spacing = 10;
+            lcLayout.spacing = contentSpacing;
             lobbyContent.gameObject.SetActive(false);
 
             statusText = CreateLabel(lobbyContent, "");
-            statusText.fontSize = 22;
+            statusText.fontSize = statusFontSize;
             statusText.gameObject.SetActive(false);
 
             // Browse panel: host/search/join another lobby
@@ -242,24 +291,24 @@ namespace UI
             lobbyListContent = new GameObject("LobbyList", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
             lobbyListContent.SetParent(lobbyContent, false);
             var listRt = lobbyListContent.GetComponent<RectTransform>();
-            listRt.sizeDelta = new Vector2(450, 200);
+            listRt.sizeDelta = listSize;
             var listLayout = lobbyListContent.GetComponent<VerticalLayoutGroup>();
-            listLayout.spacing = 4;
+            listLayout.spacing = listSpacing;
 
             backBtn = CreateButton(lobbyContent, "Back", ShowMainPanel);
 
             // In-lobby room: no lobby browsing, just the member ready list
             currentLobbyLabel = CreateLabel(lobbyContent, "");
-            currentLobbyLabel.fontSize = 18;
-            currentLobbyLabel.color = new Color(0.4f, 0.8f, 0.4f);
+            currentLobbyLabel.fontSize = currentLobbyFontSize;
+            currentLobbyLabel.color = currentLobbyColor;
             currentLobbyLabel.gameObject.SetActive(false);
 
             readyListContent = new GameObject("ReadyList", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
             readyListContent.SetParent(lobbyContent, false);
             var readyRt = readyListContent.GetComponent<RectTransform>();
-            readyRt.sizeDelta = new Vector2(450, 200);
+            readyRt.sizeDelta = listSize;
             var readyLayout = readyListContent.GetComponent<VerticalLayoutGroup>();
-            readyLayout.spacing = 4;
+            readyLayout.spacing = listSpacing;
             readyListContent.gameObject.SetActive(false);
 
             readyToggleBtn = CreateButton(lobbyContent, "Ready Up", ToggleReady);
@@ -278,58 +327,58 @@ namespace UI
             versionObj.transform.SetParent(canvasGo.transform, false);
             var versionText = versionObj.GetComponent<TextMeshProUGUI>();
             versionText.text = version;
-            versionText.fontSize = 18;
-            versionText.color = new Color(0.8f, 0.8f, 0.8f, 0.8f);
+            versionText.fontSize = versionFontSize;
+            versionText.color = versionColor;
             versionText.alignment = TextAlignmentOptions.TopRight;
             var versionRt = versionText.rectTransform;
             versionRt.anchorMin = new Vector2(1f, 1f);
             versionRt.anchorMax = new Vector2(1f, 1f);
             versionRt.pivot = new Vector2(1f, 1f);
-            versionRt.anchoredPosition = new Vector2(-16f, -8f);
-            versionRt.sizeDelta = new Vector2(200f, 30f);
+            versionRt.anchoredPosition = versionOffset;
+            versionRt.sizeDelta = versionSize;
 
             EnsureEventSystem();
         }
 
-        private static TMP_Text CreateLabel(Transform parent, string text)
+        private TMP_Text CreateLabel(Transform parent, string text)
         {
             var obj = new GameObject("Label", typeof(TextMeshProUGUI));
             obj.transform.SetParent(parent, false);
             var tmp = obj.GetComponent<TextMeshProUGUI>();
             tmp.text = text;
-            tmp.fontSize = 24;
+            tmp.fontSize = labelFontSize;
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.rectTransform.sizeDelta = new Vector2(450, 40);
+            tmp.rectTransform.sizeDelta = labelSize;
             return tmp;
         }
 
-        private static GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        private GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
         {
             var btnObj = new GameObject(GetCleanName(label) + "Button", typeof(Image), typeof(Button));
             btnObj.transform.SetParent(parent, false);
             var btnRt = btnObj.GetComponent<RectTransform>();
-            btnRt.sizeDelta = new Vector2(300, 50);
+            btnRt.sizeDelta = buttonSize;
 
             var btnImage = btnObj.GetComponent<Image>();
-            btnImage.color = new Color(0.2f, 0.2f, 0.2f, 1);
+            btnImage.color = buttonColor;
 
             var textObj = new GameObject("Text", typeof(TextMeshProUGUI));
             textObj.transform.SetParent(btnObj.transform, false);
             var text = textObj.GetComponent<TextMeshProUGUI>();
             text.text = label;
-            text.fontSize = 24;
+            text.fontSize = buttonFontSize;
             text.color = Color.white;
             text.alignment = TextAlignmentOptions.Center;
-            text.rectTransform.sizeDelta = new Vector2(300, 50);
+            text.rectTransform.sizeDelta = buttonSize;
 
             var btn = btnObj.GetComponent<Button>();
             btn.targetGraphic = btnImage;
             btn.onClick.AddListener(onClick);
 
             ColorBlock colors = btn.colors;
-            colors.highlightedColor = new Color(0.35f, 0.35f, 0.35f);
-            colors.pressedColor = new Color(0.15f, 0.15f, 0.15f);
+            colors.highlightedColor = buttonHighlightedColor;
+            colors.pressedColor = buttonPressedColor;
             btn.colors = colors;
 
             return btnObj;
@@ -421,19 +470,19 @@ namespace UI
 
             if (foundLobbies.Count == 0)
             {
-                var lbl = CreateLabel(lobbyListContent, "No lobbies found");
-                lbl.fontSize = 18;
-                lbl.color = new Color(0.7f, 0.7f, 0.7f);
+                var lbl = CreateLabel(lobbyListContent, noLobbiesText);
+                lbl.fontSize = noLobbiesFontSize;
+                lbl.color = noLobbiesColor;
                 return;
             }
 
-            foreach (var lobby in foundLobbies.Take(5))
+            foreach (var lobby in foundLobbies.Take(maxLobbiesShown))
             {
                 string name = lobby.GetData("name") ?? $"Lobby {lobby.Id}";
                 int members = lobby.MemberCount;
                 var btn = CreateButton(lobbyListContent, $"{name} ({members}/4)", () => JoinLobby(lobby));
                 var rt = btn.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(430, 40);
+                rt.sizeDelta = lobbyRowSize;
             }
         }
 
@@ -498,7 +547,7 @@ namespace UI
             foreach (var p in Networking.ReadyTracker.Instance.GetPlayers())
             {
                 var lbl = CreateLabel(readyListContent, $"{p.name} — {(p.ready ? "Ready" : "Not ready")}");
-                lbl.fontSize = 20;
+                lbl.fontSize = readyRowFontSize;
                 lbl.color = new Color(p.colorR, p.colorG, p.colorB, 1f);
             }
 

@@ -9,6 +9,40 @@ namespace UI
 {
     public class Tooltip : MonoBehaviour
     {
+        [Header("Prefab")]
+        [SerializeField] private GameObject uiPrefab;
+
+        [Header("Canvas")]
+        [SerializeField] private int sortingOrder = 200;
+
+        [Header("Panel")]
+        [SerializeField] private Vector2 panelSize = new Vector2(500, 400);
+        [SerializeField] private Color panelColor = new Color(0.12f, 0.12f, 0.12f, 1f);
+        [SerializeField] private float panelSpacing = 6f;
+        [SerializeField] private int paddingLeft = 10;
+        [SerializeField] private int paddingRight = 10;
+        [SerializeField] private int paddingTop = 10;
+        [SerializeField] private int paddingBottom = 10;
+
+        [Header("Header")]
+        [SerializeField] private int headerFontSize = 30;
+        [SerializeField] private Color headerColor = Color.white;
+
+        [Header("Description")]
+        [SerializeField] private int descriptionFontSize = 24;
+        [SerializeField] private Color descriptionColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+
+        [Header("Cards Section")]
+        [SerializeField] private int cardsHeaderFontSize = 27;
+        [SerializeField] private Color cardsHeaderColor = new Color(0.6f, 0.8f, 1f, 1f);
+        [SerializeField] private string cardsHeaderText = "Adds these cards:";
+        [SerializeField] private int cardsFontSize = 22;
+        [SerializeField] private Color cardsColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+
+        [Header("Placement")]
+        [SerializeField] private float textWidth = 480f;
+        [SerializeField] private Vector2 screenOffset = new Vector2(15, -10);
+
         private GameObject canvasRoot;
         private RectTransform panel;
         private TMP_Text headerText;
@@ -17,9 +51,11 @@ namespace UI
         private TMP_Text cardsText;
 
         private static Tooltip instance;
+        private static GameObject staticPrefab;
 
         private void Awake()
         {
+            if (staticPrefab == null && uiPrefab != null) staticPrefab = uiPrefab;
             if (instance != null)
             {
                 Destroy(gameObject);
@@ -37,7 +73,7 @@ namespace UI
 
             var canvas = canvasRoot.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 200;
+            canvas.sortingOrder = sortingOrder;
 
             var overlay = new GameObject("DismissOverlay", typeof(Image), typeof(DismissHandler));
             var overlayRt = overlay.GetComponent<RectTransform>();
@@ -55,49 +91,49 @@ namespace UI
             panel.pivot = new Vector2(0, 1);
             panel.anchorMin = new Vector2(0, 0);
             panel.anchorMax = new Vector2(0, 0);
-            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 500);
-            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 400);
+            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, panelSize.x);
+            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, panelSize.y);
             var panelImage = panel.GetComponent<Image>();
-            panelImage.color = new Color(0.12f, 0.12f, 0.12f, 1);
+            panelImage.color = panelColor;
 
             var layout = panel.GetComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.UpperLeft;
-            layout.spacing = 6f;
-            layout.padding = new RectOffset(10, 10, 10, 10);
+            layout.spacing = panelSpacing;
+            layout.padding = new RectOffset(paddingLeft, paddingRight, paddingTop, paddingBottom);
 
             var headerObj = new GameObject("Header", typeof(TextMeshProUGUI));
             headerObj.transform.SetParent(panel, false);
             headerText = headerObj.GetComponent<TextMeshProUGUI>();
-            headerText.fontSize = 30;
+            headerText.fontSize = headerFontSize;
             headerText.fontStyle = FontStyles.Bold;
-            headerText.color = Color.white;
+            headerText.color = headerColor;
             headerText.textWrappingMode = TextWrappingModes.Normal;
-            headerText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 480);
+            headerText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
 
             var descObj = new GameObject("Description", typeof(TextMeshProUGUI));
             descObj.transform.SetParent(panel, false);
             descriptionText = descObj.GetComponent<TextMeshProUGUI>();
-            descriptionText.fontSize = 24;
-            descriptionText.color = new Color(0.8f, 0.8f, 0.8f);
+            descriptionText.fontSize = descriptionFontSize;
+            descriptionText.color = descriptionColor;
             descriptionText.textWrappingMode = TextWrappingModes.Normal;
-            descriptionText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 480);
+            descriptionText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
 
             var chObj = new GameObject("CardsHeader", typeof(TextMeshProUGUI));
             chObj.transform.SetParent(panel, false);
             cardsHeader = chObj.GetComponent<TextMeshProUGUI>();
-            cardsHeader.fontSize = 27;
+            cardsHeader.fontSize = cardsHeaderFontSize;
             cardsHeader.fontStyle = FontStyles.Bold;
-            cardsHeader.color = new Color(0.6f, 0.8f, 1f);
-            cardsHeader.text = "Adds these cards:";
-            cardsHeader.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 480);
+            cardsHeader.color = cardsHeaderColor;
+            cardsHeader.text = cardsHeaderText;
+            cardsHeader.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
 
             var cardsObj = new GameObject("CardsList", typeof(TextMeshProUGUI));
             cardsObj.transform.SetParent(panel, false);
             cardsText = cardsObj.GetComponent<TextMeshProUGUI>();
-            cardsText.fontSize = 22;
-            cardsText.color = new Color(0.7f, 0.7f, 0.7f);
+            cardsText.fontSize = cardsFontSize;
+            cardsText.color = cardsColor;
             cardsText.textWrappingMode = TextWrappingModes.Normal;
-            cardsText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 480);
+            cardsText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
         }
 
         private void OnDestroy()
@@ -116,7 +152,21 @@ namespace UI
         private static Tooltip GetOrCreate()
         {
             if (instance != null && instance.canvasRoot != null) return instance;
-            var obj = new GameObject("Tooltip", typeof(Tooltip));
+            var existing = FindAnyObjectByType<Tooltip>();
+            if (existing != null)
+            {
+                instance = existing;
+                return instance;
+            }
+            if (staticPrefab != null)
+            {
+                instance = Object.Instantiate(staticPrefab).GetComponent<Tooltip>();
+            }
+            else
+            {
+                var obj = new GameObject("Tooltip", typeof(Tooltip));
+                instance = obj.GetComponent<Tooltip>();
+            }
             return instance;
         }
 
@@ -146,7 +196,7 @@ namespace UI
                 tip.cardsText.text = "";
             }
 
-            tip.panel.anchoredPosition = screenPosition + new Vector2(15, -10);
+            tip.panel.anchoredPosition = screenPosition + tip.screenOffset;
             tip.canvasRoot.SetActive(true);
         }
 
@@ -165,7 +215,7 @@ namespace UI
             tip.cardsHeader.gameObject.SetActive(false);
             tip.cardsText.text = "";
 
-            tip.panel.anchoredPosition = screenPosition + new Vector2(15, -10);
+            tip.panel.anchoredPosition = screenPosition + tip.screenOffset;
             tip.canvasRoot.SetActive(true);
         }
 

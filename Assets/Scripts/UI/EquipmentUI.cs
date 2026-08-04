@@ -42,6 +42,12 @@ namespace UI
         [SerializeField] private float deckListWidth = 360f;
         [Tooltip("Width of the equipment slots column. Used to size the deck list column.")]
         [SerializeField] private float equipmentSlotsWidth = 600f;
+        [Tooltip("Gap between the deck list column and the equipment columns.")]
+        [SerializeField] private float deckListGap = 12f;
+        [Tooltip("Right margin kept for the right-edge columns when narrowing them.")]
+        [SerializeField] private float rightPanelRightMargin = 62f;
+        [Tooltip("Minimum width the right-edge columns can shrink to.")]
+        [SerializeField] private float rightPanelMinWidth = 300f;
 
         private readonly List<InventorySlotUI> spawnedInventorySlots = new List<InventorySlotUI>();
         private EquipmentManager cachedEquipmentManager;
@@ -181,9 +187,8 @@ namespace UI
 
             if (deckList == null)
             {
-                var go = new GameObject("Deck List", typeof(RectTransform), typeof(DeckListUI));
-                go.transform.SetParent(transform, false);
-                deckList = go.GetComponent<DeckListUI>();
+                deckList = DeckListUI.Create();
+                deckList.transform.SetParent(transform, false);
             }
 
             LayoutForDeckList();
@@ -207,8 +212,8 @@ namespace UI
 
             // Push the right-edge columns over so the new left column fits without overlap.
             float rectWidth = ((RectTransform)transform).rect.width;
-            float leftTotal = deckListWidth + equipmentSlotsWidth + 12f;
-            float rightWidth = Mathf.Max(300f, rectWidth - 62f - leftTotal);
+            float leftTotal = deckListWidth + equipmentSlotsWidth + deckListGap;
+            float rightWidth = Mathf.Max(rightPanelMinWidth, rectWidth - rightPanelRightMargin - leftTotal);
 
             NarrowRightPanel("Inventory Slots", rightWidth);
             NarrowRightPanel("Filter Buttons", rightWidth);

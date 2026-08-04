@@ -22,6 +22,7 @@ namespace Networking
         public static event Action<ReadyStateSync> OnReadyStateReceived;
         public static event Action OnLoadNextLevelReceived;
         public static event Action<ulong, LoadoutSync> OnLoadoutSyncReceived;
+        public static event Action<CardPlayedDisplay> OnCardPlayedDisplayReceived;
 
         public static NetworkManager Instance
         {
@@ -120,6 +121,18 @@ namespace Networking
         {
             string json = JsonUtility.ToJson(loadout);
             SendToHost(MessageType.LoadoutSync, json);
+        }
+
+        /// <summary>
+        /// Host -> all clients: a card was just played and resolved. Clients show the card
+        /// on screen so everyone sees what was played. The host shows it locally itself.
+        /// </summary>
+        public void BroadcastCardPlayed(CardPlayedDisplay display)
+        {
+            if (!IsHost) return;
+            if (LobbyManager.Instance.CurrentLobby == null) return;
+            string json = JsonUtility.ToJson(display);
+            SendToAllClients(MessageType.CardPlayedDisplay, json);
         }
 
         private void SendToHost(MessageType type, string json)
@@ -224,6 +237,11 @@ namespace Networking
                 case MessageType.LoadoutSync:
                     var loadoutSync = JsonUtility.FromJson<LoadoutSync>(json);
                     OnLoadoutSyncReceived?.Invoke(sender.Value, loadoutSync);
+                    break;
+
+                case MessageType.CardPlayedDisplay:
+                    var cardDisplay = JsonUtility.FromJson<CardPlayedDisplay>(json);
+                    OnCardPlayedDisplayReceived?.Invoke(cardDisplay);
                     break;
             }
         }
