@@ -489,7 +489,7 @@ namespace UI
 
         private void HostGame()
         {
-            LobbyManager.Instance.CreateLobby(8);
+            LobbyManager.Instance.CreateLobby();
             statusText.gameObject.SetActive(true);
             statusText.text = "Creating lobby...";
         }
@@ -518,7 +518,7 @@ namespace UI
             {
                 string name = lobby.GetData("name") ?? $"Lobby {lobby.Id}";
                 int members = lobby.MemberCount;
-                var btn = CreateButton(lobbyListContent, $"{name} ({members}/8) — {GetModeLabel(lobby)}", () => JoinLobby(lobby));
+                var btn = CreateButton(lobbyListContent, $"{name} ({members}/{lobby.MaxMembers}) — {GetModeLabel(lobby)}", () => JoinLobby(lobby));
                 var rt = btn.GetComponent<RectTransform>();
                 rt.sizeDelta = lobbyRowSize;
             }

@@ -11,11 +11,20 @@ public class LobbyManager : MonoBehaviour
 
     public const string MatchModeKey = "matchmode";
 
+    /// <summary>Max players in a PvE lobby.</summary>
+    public const int PveMaxMembers = 4;
+
+    /// <summary>Max players in a PvP lobby.</summary>
+    public const int PvpMaxMembers = 8;
+
     public Lobby? CurrentLobby { get; private set; }
     public bool IsHost { get; private set; }
 
     /// <summary>The match format for the current lobby (PvE by default).</summary>
     public MatchMode MatchMode { get; private set; } = MatchMode.PvE;
+
+    /// <summary>Max members for the current match format (4 for PvE, 8 for PvP).</summary>
+    public int MaxMembersForCurrentMode => MatchMode == MatchMode.PvP ? PvpMaxMembers : PveMaxMembers;
 
     public static event Action<Lobby> OnLobbyCreated;
     public static event Action<Lobby> OnLobbyJoined;
@@ -95,14 +104,20 @@ public class LobbyManager : MonoBehaviour
         /// <summary>
         /// Sets the lobby's match format (host-only). Before a lobby exists it just stores
         /// the choice so CreateLobby writes it; inside a lobby it is persisted as lobby
-        /// data, which Steam propagates to every member.
+        /// data (Steam propagates it to every member) and the member limit is updated to
+        /// match: 4 players for PvE, 8 for PvP.
         /// </summary>
         public void SetMatchMode(MatchMode mode)
         {
             MatchMode = mode;
             GameState.CurrentMatchMode = mode;
             if (CurrentLobby.HasValue)
-                CurrentLobby.Value.SetData(MatchModeKey, mode.ToString());
+            {
+                var lobby = CurrentLobby.Value;
+                lobby.SetData(MatchModeKey, mode.ToString());
+                lobby.MaxMembers = MaxMembersForCurrentMode;
+                CurrentLobby = lobby;
+            }
             OnMatchModeChanged?.Invoke(mode);
             Debug.Log($"[LobbyManager] SetMatchMode to {mode}");
         }
@@ -143,8 +158,10 @@ public class LobbyManager : MonoBehaviour
             JoinLobby(lobby);
         }
 
-        public async void CreateLobby(int maxMembers = 4)
+        public async void CreateLobby(int maxMembers = 0)
         {
+            if (maxMembers <= 0)
+                maxMembers = MaxMembersForCurrentMode;
             var result = await SteamMatchmaking.CreateLobbyAsync(maxMembers);
             if (result.HasValue)
             {
