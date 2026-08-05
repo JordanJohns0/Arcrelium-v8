@@ -6,7 +6,7 @@ using Cards;
 using Characters;
 using Object = UnityEngine.Object;
 
-namespace Tests
+namespace Tests.Network
 {
     [TestFixture]
     public class CharacterSyncTests

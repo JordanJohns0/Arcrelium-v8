@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
   m_Name: Bad Brace
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
-  CardName: Brace
+  CardName: Bad Brace
   Description: Gain 1 Block
   Artwork: {fileID: 0}
   TargetType: 1

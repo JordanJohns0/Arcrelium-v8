@@ -6,7 +6,7 @@ using Cards;
 using Cards.Effects;
 using Characters;
 
-namespace Tests
+namespace Tests.Cards
 {
     [TestFixture]
     public class DrawCardsEffectTests

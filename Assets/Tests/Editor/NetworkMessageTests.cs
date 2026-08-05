@@ -5,7 +5,7 @@ using UnityEngine;
 using Steamworks;
 using Networking;
 
-namespace Tests
+namespace Tests.Network
 {
     [TestFixture]
     public class NetworkMessageTests

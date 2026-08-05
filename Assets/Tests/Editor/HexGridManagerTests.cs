@@ -4,7 +4,7 @@ using UnityEngine;
 using Characters;
 using HexGrid;
 
-namespace Tests
+namespace Tests.Grid
 {
     [TestFixture]
     public class HexGridManagerTests

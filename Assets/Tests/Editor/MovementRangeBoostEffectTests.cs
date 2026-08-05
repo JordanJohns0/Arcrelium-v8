@@ -6,7 +6,7 @@ using Equipment;
 using Equipment.Effects;
 using HexGrid;
 
-namespace Tests
+namespace Tests.Cards
 {
     [TestFixture]
     public class MovementRangeBoostEffectTests

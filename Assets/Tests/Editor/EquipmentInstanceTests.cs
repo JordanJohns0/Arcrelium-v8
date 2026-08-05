@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Equipment;
 
-namespace Tests
+namespace Tests.Equipment
 {
     [TestFixture]
     public class EquipmentInstanceTests

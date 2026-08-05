@@ -12,4 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91d1c59f698cbf24e86ec574d260966e, type: 3}
   m_Name: DrawCardsEffect_1
   m_EditorClassIdentifier: Assembly-CSharp::Cards.Effects.DrawCardsEffect
-  Amount: 1
+  Amount:
+    Type: 0
+    Constant: 1

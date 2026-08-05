@@ -6,7 +6,7 @@ using UnityEngine;
 using Cards;
 using Equipment;
 
-namespace Tests
+namespace Tests.Equipment
 {
     [TestFixture]
     public class EquipmentLoadoutTests

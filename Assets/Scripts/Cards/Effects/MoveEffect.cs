@@ -43,13 +43,16 @@ namespace Cards.Effects
 
             // Authoritative position updates immediately so a state broadcast right
             // after PlayCard already reflects the final destination. The coroutine
-            // below is purely cosmetic.
+            // below is purely cosmetic and skipped outside play mode (e.g. edit-mode tests).
             context.Source.SetCellOnly(target);
 
-            if (path != null && path.Count > 0)
-                context.Source.AnimateAlongPath(path);
-            else
-                context.Source.AnimateToCell(target);
+            if (Application.isPlaying)
+            {
+                if (path != null && path.Count > 0)
+                    context.Source.AnimateAlongPath(path);
+                else
+                    context.Source.AnimateToCell(target);
+            }
         }
     }
 }

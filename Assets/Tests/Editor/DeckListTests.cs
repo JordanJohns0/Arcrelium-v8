@@ -5,7 +5,7 @@ using Cards;
 using UI;
 using Object = UnityEngine.Object;
 
-namespace Tests
+namespace Tests.Cards
 {
     [TestFixture]
     public class DeckListTests

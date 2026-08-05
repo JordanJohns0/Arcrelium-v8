@@ -7,7 +7,7 @@ using Characters;
 using HexGrid;
 using Game;
 
-namespace Tests
+namespace Tests.Game
 {
     [TestFixture]
     public class TurnManagerSyncTests

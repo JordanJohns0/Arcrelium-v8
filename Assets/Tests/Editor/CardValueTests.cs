@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Cards;
 using Characters;
 
-namespace Tests
+namespace Tests.Cards
 {
     [TestFixture]
     public class CardValueTests

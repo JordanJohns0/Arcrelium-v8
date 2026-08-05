@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Game;
 
-namespace Tests
+namespace Tests.Game
 {
+    using Equipment = global::Equipment;
+
     [TestFixture]
     public class GameStateTests
     {

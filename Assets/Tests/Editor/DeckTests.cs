@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Cards;
 
-namespace Tests
+namespace Tests.Cards
 {
     [TestFixture]
     public class DeckTests

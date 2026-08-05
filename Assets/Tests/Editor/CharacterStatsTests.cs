@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Characters;
 
-namespace Tests
+namespace Tests.Characters
 {
     [TestFixture]
     public class CharacterStatsTests

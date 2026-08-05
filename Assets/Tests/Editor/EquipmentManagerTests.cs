@@ -2,8 +2,10 @@ using NUnit.Framework;
 using UnityEngine;
 using Equipment;
 
-namespace Tests
+namespace Tests.Equipment
 {
+    using Cards = global::Cards;
+
     [TestFixture]
     public class EquipmentManagerTests
     {

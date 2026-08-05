@@ -7,7 +7,7 @@ using Characters;
 using Game;
 using Networking;
 
-namespace Tests
+namespace Tests.Game
 {
     [TestFixture]
     public class GameManagerSyncTests

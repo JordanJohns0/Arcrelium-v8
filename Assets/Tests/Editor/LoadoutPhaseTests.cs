@@ -3,7 +3,7 @@ using UnityEngine;
 using Equipment;
 using Game;
 
-namespace Tests
+namespace Tests.Game
 {
     [TestFixture]
     public class LoadoutPhaseTests

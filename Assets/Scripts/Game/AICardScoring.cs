@@ -15,6 +15,7 @@ namespace Game
     {
         public const float LethalBonus = 10f;
         public const float DamagePerHp = 1f;
+        public const float SelfDamagePerHp = 1f;
         public const float WeakTargetBonus = 0.5f;
         public const float HealPerPoint = 1.5f;
         public const float NearDeathHealBonus = 5f;
@@ -33,7 +34,7 @@ namespace Game
         /// damage dealt to a target, self-heal, self-block, and cards drawn.
         /// </summary>
         public static void Accumulate(CardEffectSO effect, Character source,
-            ref int damage, ref int heal, ref int block, ref int draw)
+            ref int damage, ref int heal, ref int block, ref int draw, ref int selfDamage)
         {
             if (effect == null) return;
 
@@ -51,12 +52,15 @@ namespace Game
                 case DrawCardsEffect drawEffect:
                     draw += drawEffect.Amount.Evaluate(source);
                     break;
+                case SelfDamageEffect selfDamageEffect:
+                    selfDamage += selfDamageEffect.Damage.Evaluate(source);
+                    break;
                 case CompositeEffect composite:
                     if (composite.Effects == null) break;
                     foreach (CardEffectSO sub in composite.Effects)
                     {
                         if (sub != null)
-                            Accumulate(sub, source, ref damage, ref heal, ref block, ref draw);
+                            Accumulate(sub, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
                     }
                     break;
             }
@@ -79,8 +83,8 @@ namespace Game
             if (card == null || card.Effect == null || source == null || source.Stats == null)
                 return float.MinValue;
 
-            int damage = 0, heal = 0, block = 0, draw = 0;
-            Accumulate(card.Effect, source, ref damage, ref heal, ref block, ref draw);
+            int damage = 0, heal = 0, block = 0, draw = 0, selfDamage = 0;
+            Accumulate(card.Effect, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
 
             float score = 0f;
             score -= card.Cost * CostPenalty;
@@ -119,6 +123,17 @@ namespace Game
                 int actual = Mathf.Min(draw, space);
                 score += actual * DrawPerCard;
                 if (actual <= 0) score += NoHandSpacePenalty;
+            }
+
+            if (selfDamage > 0)
+            {
+                int effective = EffectiveHpToKill(source);
+                int actual = Mathf.Min(selfDamage, effective);
+                score -= actual * SelfDamagePerHp;
+                if (selfDamage >= effective)
+                    score -= LethalBonus;
+                else if (source.Stats.CurrentHealth <= NearDeathThreshold)
+                    score -= NearDeathHealBonus;
             }
 
             return score;

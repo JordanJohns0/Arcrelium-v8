@@ -7,8 +7,10 @@ using Characters;
 using HexGrid;
 using Game;
 
-namespace Tests
+namespace Tests.Game
 {
+    using Cards = global::Cards;
+
     [TestFixture]
     public class TurnManagerTests
     {

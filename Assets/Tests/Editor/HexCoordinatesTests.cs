@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using HexGrid;
 
-namespace Tests
+namespace Tests.Grid
 {
     [TestFixture]
     public class HexCoordinatesTests

@@ -6,7 +6,7 @@ using Cards.Effects;
 using Characters;
 using HexGrid;
 
-namespace Tests
+namespace Tests.Cards
 {
     [TestFixture]
     public class CompositeEffectTests

@@ -4,10 +4,11 @@ using UnityEngine;
 using Cards;
 using Cards.Effects;
 using Characters;
+using Equipment;
 using Game;
 using Object = UnityEngine.Object;
 
-namespace Tests
+namespace Tests.AI
 {
     [TestFixture]
     public class AICardScoringTests
@@ -222,6 +223,88 @@ namespace Tests
         public void ScoreMove_RewardsClosingDistance()
         {
             Assert.AreEqual((4 - 1) * AICardScoring.MovePerHex, AICardScoring.ScoreMove(4, 1), 0.0001f);
+        }
+
+        [Test]
+        public void Score_SelfDamage_Penalized()
+        {
+            var effect = MakeEffect<SelfDamageEffect>();
+            effect.Damage = CardValue.MakeConstant(2);
+
+            float score = AICardScoring.Score(MakeCard("Self", effect), source, null, -1);
+
+            Assert.AreEqual(-2 * AICardScoring.SelfDamagePerHp, score, 0.0001f);
+        }
+
+        [Test]
+        public void Score_SelfDamageLethal_HeavilyPenalized()
+        {
+            var effect = MakeEffect<SelfDamageEffect>();
+            effect.Damage = CardValue.MakeConstant(12);
+
+            float score = AICardScoring.Score(MakeCard("Self", effect), source, null, -1);
+
+            Assert.AreEqual(
+                -(10 * AICardScoring.SelfDamagePerHp + AICardScoring.LethalBonus), score, 0.0001f);
+        }
+
+        [Test]
+        public void Score_SelfDamageNearDeath_ExtraPenalty()
+        {
+            source.Stats.CurrentHealth = AICardScoring.NearDeathThreshold;
+            var effect = MakeEffect<SelfDamageEffect>();
+            effect.Damage = CardValue.MakeConstant(1);
+
+            float score = AICardScoring.Score(MakeCard("Self", effect), source, null, -1);
+
+            Assert.AreEqual(
+                -(1 * AICardScoring.SelfDamagePerHp + AICardScoring.NearDeathHealBonus), score, 0.0001f);
+        }
+
+        [Test]
+        public void EveryLibraryEffect_IsHandledByAIScoring()
+        {
+            GameDataLibrary library = GameDataLibrary.Instance;
+            Assert.IsNotNull(library, "GameDataLibrary asset missing from Resources.");
+
+            var handled = new HashSet<System.Type>
+            {
+                typeof(AttackEffect),
+                typeof(HealEffect),
+                typeof(GainBlockEffect),
+                typeof(DrawCardsEffect),
+                typeof(CompositeEffect),
+                typeof(SelfDamageEffect),
+                typeof(MoveEffect)
+            };
+
+            var unhandled = new List<string>();
+            foreach (CardData card in library.allCards)
+            {
+                if (card == null) continue;
+                CollectUnhandled(card.Effect, handled, unhandled, card.CardName, 0);
+            }
+
+            Assert.IsEmpty(unhandled, "Effect types the AI cannot score: " + string.Join(", ", unhandled));
+        }
+
+        private static void CollectUnhandled(
+            CardEffectSO effect,
+            HashSet<System.Type> handled,
+            List<string> unhandled,
+            string cardName,
+            int depth)
+        {
+            if (effect == null) return;
+            if (!handled.Contains(effect.GetType()))
+                unhandled.Add($"{cardName}:{effect.GetType().Name}");
+            if (effect is CompositeEffect composite && composite.Effects != null && depth < 8)
+            {
+                foreach (CardEffectSO sub in composite.Effects)
+                {
+                    if (sub != null) CollectUnhandled(sub, handled, unhandled, cardName, depth + 1);
+                }
+            }
         }
     }
 }

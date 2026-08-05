@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Cards.Effects.CompositeEffect
   Effects:
   - {fileID: 11400000, guid: 09046fec638033c4ba12c151c541396c, type: 2}
-  - {fileID: 11400000, guid: fff86a3acb77cb941989053105cb08c9, type: 2}
+  - {fileID: 11400000, guid: 3e30c5bafacd4d669fa251031751db25, type: 2}
