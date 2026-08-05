@@ -72,38 +72,6 @@ namespace Tests.Characters
         }
 
         [Test]
-        public void ApplyDamage_ArmorMitigatesAfterBlock()
-        {
-            stats.Armor = 2;
-            stats.GainBlock(1);
-
-            stats.ApplyDamage(5);
-
-            Assert.AreEqual(0, stats.Block);
-            Assert.AreEqual(8, stats.CurrentHealth);
-        }
-
-        [Test]
-        public void ApplyDamage_ArmorAlone()
-        {
-            stats.Armor = 3;
-
-            stats.ApplyDamage(5);
-
-            Assert.AreEqual(8, stats.CurrentHealth);
-        }
-
-        [Test]
-        public void ApplyDamage_ArmorCannotKill()
-        {
-            stats.Armor = 10;
-
-            stats.ApplyDamage(5);
-
-            Assert.AreEqual(10, stats.CurrentHealth);
-        }
-
-        [Test]
         public void ApplyDamage_LethalDamage()
         {
             stats.ApplyDamage(20);
@@ -150,15 +118,14 @@ namespace Tests.Characters
         }
 
         [Test]
-        public void FullDamagePipeline_BlockArmorHealth()
+        public void FullDamagePipeline_BlockHealth()
         {
-            stats.Armor = 1;
             stats.GainBlock(2);
 
             stats.ApplyDamage(6);
 
             Assert.AreEqual(0, stats.Block);
-            Assert.AreEqual(7, stats.CurrentHealth);
+            Assert.AreEqual(6, stats.CurrentHealth);
         }
 
         [Test]

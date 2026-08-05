@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Lucky Opal
   m_EditorClassIdentifier: Assembly-CSharp::Equipment.EquipmentData
-  EquipmentName: Pale Opal
+  EquipmentName: Lucky Opal
   Description: At the start of your turn, heal 1 health.
   Icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
   SlotType: 4

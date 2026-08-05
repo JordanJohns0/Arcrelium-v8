@@ -15,7 +15,9 @@ MonoBehaviour:
   CardName: Sprint
   Description: Move 4
   Artwork: {fileID: 0}
-  TargetType: 2
-  Range: 4
   Cost: 3
-  Effect: {fileID: 11400000, guid: 5c4e3fb7de6cf05458bb40e6f4b4437f, type: 2}
+  Steps:
+  - Effect: {fileID: 11400000, guid: 5c4e3fb7de6cf05458bb40e6f4b4437f, type: 2}
+    TargetType: 2
+    Range: 4
+    CellConstraint: 1

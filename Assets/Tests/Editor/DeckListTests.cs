@@ -14,7 +14,7 @@ namespace Tests.Cards
 
         private CardData MakeCard(string name, int cost)
         {
-            var data = TestHelper.MakeCard(name, TargetType.Self, cost);
+            var data = TestHelper.MakeCard(name, cost);
             trackedSops.Add(data);
             return data;
         }

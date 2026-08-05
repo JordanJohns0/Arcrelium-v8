@@ -30,7 +30,7 @@ namespace Tests.PlayMode
             var effect = ScriptableObject.CreateInstance<GainBlockEffect>();
             effect.Amount = CardValue.MakeConstant(1);
             trackedSops.Add(effect);
-            var data = TestHelper.MakeCard(name, TargetType.Self, cost, effect);
+            var data = TestHelper.MakeCard(name, cost, TestHelper.Step(effect, TargetType.Self));
             trackedSops.Add(data);
             return data;
         }
@@ -40,8 +40,7 @@ namespace Tests.PlayMode
             var effect = ScriptableObject.CreateInstance<AttackEffect>();
             effect.Damage = CardValue.MakeConstant(damage);
             trackedSops.Add(effect);
-            var data = TestHelper.MakeCard(name, TargetType.EnemyCharacter, 0, effect);
-            data.Range = 5;
+            var data = TestHelper.MakeCard(name, 0, TestHelper.Step(effect, TargetType.EnemyCharacter, 5));
             trackedSops.Add(data);
             return data;
         }
@@ -293,7 +292,6 @@ namespace Tests.PlayMode
                 r = -2,
                 currentHp = 7,
                 maxHp = 10,
-                armor = 3,
                 isAlive = true,
                 name = "Alice",
                 colorR = 0.2f,
@@ -309,7 +307,6 @@ namespace Tests.PlayMode
                 r = -1,
                 currentHp = 4,
                 maxHp = 6,
-                armor = 0,
                 isAlive = true,
                 name = "Enemy",
                 colorR = 0.8f,
@@ -348,7 +345,6 @@ namespace Tests.PlayMode
             Assert.AreEqual(0, rebuiltPlayer.TeamId);
             Assert.AreEqual(7, rebuiltPlayer.Stats.CurrentHealth);
             Assert.AreEqual(10, rebuiltPlayer.Stats.MaxHealth);
-            Assert.AreEqual(3, rebuiltPlayer.Stats.Armor);
             Assert.IsTrue(rebuiltPlayer.PlayerColor.HasValue);
             Assert.AreEqual(0.2f, rebuiltPlayer.PlayerColor.Value.r, 0.0001f);
             Assert.AreEqual(0.5f, rebuiltPlayer.PlayerColor.Value.g, 0.0001f);

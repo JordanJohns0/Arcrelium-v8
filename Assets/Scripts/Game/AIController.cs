@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Characters;
 using Cards;
+using Cards.Effects;
 using HexGrid;
 
 namespace Game
@@ -89,7 +90,7 @@ namespace Game
 
             foreach (CardInstance card in hand)
             {
-                if (card == null || card.Data == null || card.Data.Effect == null) continue;
+                if (card == null || card.Data == null || card.Data.Steps == null || card.Data.Steps.Count == 0) continue;
                 if (card.Data.Cost > hand.Count - 1) continue;
                 List<CardInstance> cost = PickCostCards(hand, card);
 
@@ -98,8 +99,7 @@ namespace Game
                     case TargetType.None:
                     case TargetType.Self:
                     {
-                        CardContext ctx = MakeContext(character, card, null, null);
-                        if (!card.Data.Effect.CanExecute(ctx)) break;
+                        if (!AllStepsCanExecute(character, card.Data, null, null)) break;
                         AddCandidate(ref best, card, cost, null, null,
                             AICardScoring.Score(card.Data, character, null, nearestEnemyDistance));
                         break;
@@ -110,13 +110,14 @@ namespace Game
                         foreach (HexCell cell in grid.GetCellsInRange(character.CurrentCell.Coordinates, card.Data.Range))
                         {
                             if (cell == character.CurrentCell) continue;
-                            CardContext ctx = MakeContext(character, card, cell, null);
-                            if (!card.Data.Effect.CanExecute(ctx)) continue;
+                            if (card.Data.CellConstraint == CellConstraint.Empty && cell.Occupant != null) continue;
+                            if (!AllStepsCanExecute(character, card.Data, cell, null)) continue;
 
                             int before = nearestEnemyDistance;
                             int after = DistanceToNearest(enemies, cell.Coordinates);
                             float score = AICardScoring.Score(card.Data, character, null, after)
-                                + AICardScoring.ScoreMove(before, after);
+                                + AICardScoring.ScoreMove(before, after)
+                                + AreaDamageValue(card.Data, character, enemies, cell);
                             AddCandidate(ref best, card, cost, cell, null, score);
                         }
                         break;
@@ -128,8 +129,7 @@ namespace Game
                     {
                         foreach (Character target in GetTargetsInRange(character, card.Data))
                         {
-                            CardContext ctx = MakeContext(character, card, null, target);
-                            if (!card.Data.Effect.CanExecute(ctx)) continue;
+                            if (!AllStepsCanExecute(character, card.Data, null, target)) continue;
                             AddCandidate(ref best, card, cost, null, target,
                                 AICardScoring.Score(card.Data, character, target, nearestEnemyDistance));
                         }
@@ -152,7 +152,23 @@ namespace Game
             best.Score = score;
         }
 
-        private CardContext MakeContext(Character source, CardInstance card, HexCell cell, Character target)
+        /// <summary>
+        /// Every step of the card must be executable against its own context (per-step range
+        /// and target type) for the candidate to be valid — same all-or-nothing rule as the
+        /// resolver, so a multi-step card is only played if it fully resolves.
+        /// </summary>
+        private bool AllStepsCanExecute(Character source, CardData card, HexCell cell, Character target)
+        {
+            foreach (CardEffectStep step in card.Steps)
+            {
+                if (step == null || step.Effect == null) return false;
+                CardContext ctx = MakeContext(source, card, step, cell, target);
+                if (!step.Effect.CanExecute(ctx)) return false;
+            }
+            return true;
+        }
+
+        private CardContext MakeContext(Character source, CardData card, CardEffectStep step, HexCell cell, Character target)
         {
             return new CardContext
             {
@@ -160,8 +176,41 @@ namespace Game
                 Grid = grid,
                 TargetCell = cell,
                 TargetCharacter = target,
-                Range = card.Data.Range
+                Range = step.Range
             };
+        }
+
+        /// <summary>
+        /// Extra value for enemy-targeting area-damage steps: damage × enemies caught in the
+        /// blast around the candidate cell (capped by each enemy's effective HP, plus a lethal
+        /// bonus per kill). Gives AoE plays real value in the AI's decision, not just movement.
+        /// </summary>
+        private float AreaDamageValue(CardData card, Character source, List<Character> enemies, HexCell cell)
+        {
+            float value = 0f;
+            if (card.Steps == null) return value;
+
+            foreach (CardEffectStep step in card.Steps)
+            {
+                if (step?.Effect is not AreaDamageEffect area) continue;
+                if (area.Faction != AreaFaction.Enemies) continue;
+
+                foreach (Character enemy in enemies)
+                {
+                    if (enemy.Stats == null || !enemy.Stats.IsAlive) continue;
+                    int distance = cell.Coordinates.DistanceTo(enemy.CurrentCell.Coordinates);
+                    if (distance > area.Radius) continue;
+
+                    int damage = area.DamageAt(source, distance);
+                    if (damage <= 0) continue;
+
+                    int needed = AICardScoring.EffectiveHpToKill(enemy);
+                    value += Mathf.Min(damage, needed) * AICardScoring.DamagePerHp;
+                    if (damage >= needed)
+                        value += AICardScoring.LethalBonus;
+                }
+            }
+            return value;
         }
 
         /// <summary>

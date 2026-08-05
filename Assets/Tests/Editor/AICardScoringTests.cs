@@ -48,7 +48,7 @@ namespace Tests.AI
 
         private CardData MakeCard(string name, CardEffectSO effect, TargetType targetType = TargetType.Self, int cost = 0)
         {
-            var card = TestHelper.MakeCard(name, targetType, cost, effect);
+            var card = TestHelper.MakeCard(name, cost, TestHelper.Step(effect, targetType));
             trackedSops.Add(card);
             return card;
         }
@@ -61,13 +61,12 @@ namespace Tests.AI
         }
 
         [Test]
-        public void EffectiveHpToKill_IncludesBlockArmorAndHealth()
+        public void EffectiveHpToKill_IncludesBlockAndHealth()
         {
             target.Stats.Block = 2;
-            target.Stats.Armor = 3;
             target.Stats.CurrentHealth = 4;
 
-            Assert.AreEqual(9, AICardScoring.EffectiveHpToKill(target));
+            Assert.AreEqual(6, AICardScoring.EffectiveHpToKill(target));
         }
 
         [Test]
@@ -275,14 +274,20 @@ namespace Tests.AI
                 typeof(DrawCardsEffect),
                 typeof(CompositeEffect),
                 typeof(SelfDamageEffect),
-                typeof(MoveEffect)
+                typeof(MoveEffect),
+                typeof(AreaDamageEffect)
             };
 
             var unhandled = new List<string>();
             foreach (CardData card in library.allCards)
             {
                 if (card == null) continue;
-                CollectUnhandled(card.Effect, handled, unhandled, card.CardName, 0);
+                if (card.Steps == null) continue;
+                foreach (CardEffectStep step in card.Steps)
+                {
+                    if (step != null)
+                        CollectUnhandled(step.Effect, handled, unhandled, card.CardName, 0);
+                }
             }
 
             Assert.IsEmpty(unhandled, "Effect types the AI cannot score: " + string.Join(", ", unhandled));

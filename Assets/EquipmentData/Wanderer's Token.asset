@@ -13,8 +13,11 @@ MonoBehaviour:
   m_Name: Wanderer's Token
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Wanderer's Token
-  Description: 
-  Icon: {fileID: 0}
-  SlotType: 0
-  Cards: []
-  Triggers: []
+  Description: At the end of your turn, move to a random adjacent space.
+  Icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
+  SlotType: 4
+  Cards:
+  - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
+  Triggers:
+  - Timing: 1
+    Effect: {fileID: 11400000, guid: 570dae83add425745a565b3a2f1b1bdd, type: 2}

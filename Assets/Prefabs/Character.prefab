@@ -133,7 +133,6 @@ MonoBehaviour:
     CharacterName: Character
     MaxHealth: 10
     CurrentHealth: 0
-    Armor: 0
     Block: 0
   equipmentManager: {fileID: 1087468177673829988}
 --- !u!114 &722281499782144357

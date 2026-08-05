@@ -30,21 +30,13 @@ namespace Tests.Game
 
             var attackEffect = ScriptableObject.CreateInstance<Cards.Effects.AttackEffect>();
             attackEffect.Damage = CardValue.MakeConstant(3);
-            attackCardData = ScriptableObject.CreateInstance<CardData>();
-            attackCardData.CardName = "Attack";
-            attackCardData.TargetType = TargetType.EnemyCharacter;
-            attackCardData.Range = 5;
-            attackCardData.Cost = 0;
-            attackCardData.Effect = attackEffect;
+            attackCardData = TestHelper.MakeCard("Attack", 0,
+                TestHelper.Step(attackEffect, TargetType.EnemyCharacter, 5));
 
             var selfEffect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
             selfEffect.Amount = CardValue.MakeConstant(2);
-            selfCardData = ScriptableObject.CreateInstance<CardData>();
-            selfCardData.CardName = "Defend";
-            selfCardData.TargetType = TargetType.Self;
-            selfCardData.Range = 0;
-            selfCardData.Cost = 0;
-            selfCardData.Effect = selfEffect;
+            selfCardData = TestHelper.MakeCard("Defend", 0,
+                TestHelper.Step(selfEffect, TargetType.Self));
         }
 
         [TearDown]
@@ -55,6 +47,12 @@ namespace Tests.Game
             Object.DestroyImmediate(source.gameObject);
             Object.DestroyImmediate(target.CurrentCell.gameObject);
             Object.DestroyImmediate(target.gameObject);
+        }
+
+        private static CardData MakeSelfCard(string name, int cost)
+        {
+            var effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+            return TestHelper.MakeCard(name, cost, TestHelper.Step(effect, TargetType.Self));
         }
 
         [Test]
@@ -94,11 +92,7 @@ namespace Tests.Game
         [Test]
         public void PlayCard_CardWithCost_DiscardsCostCards()
         {
-            var expensiveCardData = ScriptableObject.CreateInstance<CardData>();
-            expensiveCardData.CardName = "Expensive";
-            expensiveCardData.TargetType = TargetType.Self;
-            expensiveCardData.Cost = 1;
-            expensiveCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+            var expensiveCardData = MakeSelfCard("Expensive", 1);
 
             var expensive = new CardInstance(expensiveCardData);
             var costCard = new CardInstance(attackCardData);
@@ -115,11 +109,7 @@ namespace Tests.Game
         [Test]
         public void PlayCard_WrongCostCount_ReturnsFalse()
         {
-            var expensiveCardData = ScriptableObject.CreateInstance<CardData>();
-            expensiveCardData.CardName = "Expensive";
-            expensiveCardData.TargetType = TargetType.Self;
-            expensiveCardData.Cost = 2;
-            expensiveCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+            var expensiveCardData = MakeSelfCard("Expensive", 2);
 
             var expensive = new CardInstance(expensiveCardData);
             var costCard = new CardInstance(attackCardData);
@@ -142,12 +132,9 @@ namespace Tests.Game
         }
 
         [Test]
-        public void PlayCard_NullEffect_ReturnsFalse()
+        public void PlayCard_NoSteps_ReturnsFalse()
         {
-            var noEffectData = ScriptableObject.CreateInstance<CardData>();
-            noEffectData.Cost = 0;
-            noEffectData.TargetType = TargetType.None;
-            noEffectData.Effect = null;
+            var noEffectData = TestHelper.MakeCard("NoSteps");
 
             var card = new CardInstance(noEffectData);
             source.Hand.AddCard(card);
@@ -202,12 +189,8 @@ namespace Tests.Game
         [Test]
         public void PlayCard_AllyTargetCard_RejectsEnemyTarget()
         {
-            var allyTargetCardData = ScriptableObject.CreateInstance<CardData>();
-            allyTargetCardData.CardName = "Buff";
-            allyTargetCardData.TargetType = TargetType.AllyCharacter;
-            allyTargetCardData.Range = 5;
-            allyTargetCardData.Cost = 0;
-            allyTargetCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+            var allyTargetCardData = TestHelper.MakeCard("Buff", 0,
+                TestHelper.Step(ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>(), TargetType.AllyCharacter, 5));
 
             source.Hand.AddCard(new CardInstance(allyTargetCardData));
             var card = source.Hand.Cards[0];
@@ -221,11 +204,7 @@ namespace Tests.Game
         [Test]
         public void PlayCard_DuplicateCostCard_ReturnsFalse()
         {
-            var expensiveCardData = ScriptableObject.CreateInstance<CardData>();
-            expensiveCardData.CardName = "Expensive";
-            expensiveCardData.TargetType = TargetType.Self;
-            expensiveCardData.Cost = 2;
-            expensiveCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+            var expensiveCardData = MakeSelfCard("Expensive", 2);
 
             var expensive = new CardInstance(expensiveCardData);
             var costCard = new CardInstance(attackCardData);
@@ -241,11 +220,7 @@ namespace Tests.Game
         [Test]
         public void PlayCard_CostCardNotInHand_ReturnsFalse()
         {
-            var expensiveCardData = ScriptableObject.CreateInstance<CardData>();
-            expensiveCardData.CardName = "Expensive";
-            expensiveCardData.TargetType = TargetType.Self;
-            expensiveCardData.Cost = 1;
-            expensiveCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+            var expensiveCardData = MakeSelfCard("Expensive", 1);
 
             var expensive = new CardInstance(expensiveCardData);
             var notInHand = new CardInstance(attackCardData);
@@ -260,11 +235,7 @@ namespace Tests.Game
         [Test]
         public void PlayCard_PlayedCardAsCost_ReturnsFalse()
         {
-            var expensiveCardData = ScriptableObject.CreateInstance<CardData>();
-            expensiveCardData.CardName = "Expensive";
-            expensiveCardData.TargetType = TargetType.Self;
-            expensiveCardData.Cost = 1;
-            expensiveCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+            var expensiveCardData = MakeSelfCard("Expensive", 1);
 
             var card = new CardInstance(expensiveCardData);
             source.Hand.AddCard(card);
@@ -277,12 +248,8 @@ namespace Tests.Game
         [Test]
         public void PlayCard_HexCellCard_RejectsNullCell()
         {
-            var moveCardData = ScriptableObject.CreateInstance<CardData>();
-            moveCardData.CardName = "Walk";
-            moveCardData.TargetType = TargetType.HexCell;
-            moveCardData.Range = 1;
-            moveCardData.Cost = 0;
-            moveCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.MoveEffect>();
+            var moveCardData = TestHelper.MakeCard("Walk", 0,
+                TestHelper.Step(ScriptableObject.CreateInstance<Cards.Effects.MoveEffect>(), TargetType.HexCell, 1));
 
             var card = new CardInstance(moveCardData);
             source.Hand.AddCard(card);
@@ -308,12 +275,8 @@ namespace Tests.Game
         [Test]
         public void PlayCard_AnyTargetCard_AcceptsEnemyAndAlly()
         {
-            var anyCardData = ScriptableObject.CreateInstance<CardData>();
-            anyCardData.CardName = "Aid";
-            anyCardData.TargetType = TargetType.AnyCharacter;
-            anyCardData.Range = 5;
-            anyCardData.Cost = 0;
-            anyCardData.Effect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
+            var anyCardData = TestHelper.MakeCard("Aid", 0,
+                TestHelper.Step(ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>(), TargetType.AnyCharacter, 5));
 
             var ally = TestHelper.CreateCharacter(2, 2, 0, teamId: 0);
             try

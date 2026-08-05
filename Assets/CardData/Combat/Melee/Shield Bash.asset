@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Slash
-  m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
-  CardName: Slash
-  Description: Deal 2 damage
+  m_Name: Shield Bash
+  m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
+  CardName: Shield Bash
+  Description: Deal damage equal to your block.
   Artwork: {fileID: 0}
-  TargetType: 3
-  Range: 1
-  Cost: 0
-  Effect: {fileID: 11400000, guid: 27dc0be6e10472e4193f1b964ea432e3, type: 2}
+  Cost: 1
+  Steps:
+  - Effect: {fileID: 11400000, guid: 20b0493a56bde2447b0e83db19141213, type: 2}
+    TargetType: 3
+    Range: 1

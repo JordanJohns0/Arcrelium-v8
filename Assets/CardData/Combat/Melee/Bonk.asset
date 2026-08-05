@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Excalibur's Justice
+  m_Name: Bonk
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
-  CardName: Excalibur's Justice
-  Description: Deal 10 damage
+  CardName: Bonk
+  Description: Deal 2 damage
   Artwork: {fileID: 0}
-  TargetType: 3
-  Range: 1
-  Cost: 2
-  Effect: {fileID: 11400000, guid: 622f11b00e7d1a345bd74f88e23f1aad, type: 2}
+  Cost: 1
+  Steps:
+  - Effect: {fileID: 11400000, guid: 27dc0be6e10472e4193f1b964ea432e3, type: 2}
+    TargetType: 3
+    Range: 1

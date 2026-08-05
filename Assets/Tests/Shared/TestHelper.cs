@@ -85,14 +85,18 @@ namespace Tests
             return character;
         }
 
-        public static CardData MakeCard(string name, TargetType targetType = TargetType.Self, int cost = 0, CardEffectSO effect = null)
+        public static CardData MakeCard(string name, int cost = 0, params CardEffectStep[] steps)
         {
             var data = ScriptableObject.CreateInstance<CardData>();
             data.CardName = name;
-            data.TargetType = targetType;
             data.Cost = cost;
-            data.Effect = effect;
+            data.Steps = new List<CardEffectStep>(steps);
             return data;
+        }
+
+        public static CardEffectStep Step(CardEffectSO effect, TargetType targetType = TargetType.Self, int range = 0)
+        {
+            return new CardEffectStep { Effect = effect, TargetType = targetType, Range = range };
         }
 
         /// <summary>

@@ -390,14 +390,12 @@ namespace Game
 
             int enemyCount = baseEnemyCount + (GameState.CurrentLevel - 1) * extraEnemiesPerLevel;
             var spawnCells = GetValidSpawnCells(enemyCount);
-            int enemyHp = 2 + GameState.CurrentLevel;
-            int enemyArmor = Mathf.Max(0, GameState.CurrentLevel - 1);
+            int enemyHp = 3;
 
             for (int i = 0; i < enemyCount && i < spawnCells.Count; i++)
             {
                 Character enemy = Instantiate(enemyCharacterPrefab);
                 enemy.Stats.MaxHealth = enemyHp;
-                enemy.Stats.Armor = enemyArmor;
                 enemy.Initialize(GameState.EnemyOwnerPlayerId + i, spawnCells[i], teamId: 1);
                 enemy.SetName("Enemy");
                 enemy.SetPlayerColor(EnemyColor);
@@ -556,7 +554,6 @@ namespace Game
                     r = c.CurrentCell.Coordinates.R,
                     currentHp = c.Stats.CurrentHealth,
                     maxHp = c.Stats.MaxHealth,
-                    armor = c.Stats.Armor,
                     block = c.Stats.Block,
                     isAlive = c.Stats.IsAlive,
                     name = c.Stats.CharacterName,
@@ -819,7 +816,6 @@ namespace Game
             if (character.Stats == null) return;
             character.Stats.MaxHealth = cs.maxHp;
             character.Stats.CurrentHealth = cs.currentHp;
-            character.Stats.Armor = cs.armor;
             character.Stats.Block = cs.block;
             character.Stats.NotifyChanged();
         }

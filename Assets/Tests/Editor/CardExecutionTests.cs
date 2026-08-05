@@ -72,7 +72,12 @@ namespace Tests.Cards
                 Assert.False(string.IsNullOrEmpty(card.CardName), "Registered card has no name.");
                 Assert.IsTrue(seenNames.Add(card.CardName),
                     $"Duplicate card name in GameDataLibrary: '{card.CardName}' (names must be unique).");
-                AssertEffectBound(card.Effect, card.CardName, 0);
+                Assert.Greater(card.Steps.Count, 0, $"Card '{card.CardName}' has no steps.");
+                foreach (CardEffectStep step in card.Steps)
+                {
+                    Assert.IsNotNull(step, $"Card '{card.CardName}' has a null step.");
+                    AssertEffectBound(step.Effect, card.CardName, 0);
+                }
                 Assert.GreaterOrEqual(card.Cost, 0, $"Card '{card.CardName}' has negative cost.");
                 Assert.LessOrEqual(card.Cost, 4, $"Card '{card.CardName}' costs {card.Cost} — cost plus the card itself must fit a 5-card hand.");
                 Assert.GreaterOrEqual(card.Range, 0, $"Card '{card.CardName}' has negative range.");
@@ -144,8 +149,10 @@ namespace Tests.Cards
         public void Card_PlaysSuccessfully(string cardName)
         {
             CardData data = Resolve(cardName);
+            ExpectedOutcome expected = SpecFor(data);
             using (Setup setup = BuildSetup(data))
             {
+                setup.TargetPickCell = expected.TargetPickCell;
                 int handBefore = setup.Source.Hand.Cards.Count;
                 bool played = setup.Play();
 
@@ -154,7 +161,7 @@ namespace Tests.Cards
                 foreach (CardInstance cost in setup.CostCards)
                     Assert.IsFalse(setup.Source.Hand.Contains(cost), $"Cost card was not consumed for '{cardName}'.");
 
-                int drawn = Mathf.Min(TotalDrawAmount(data.Effect), 5);
+                int drawn = Mathf.Min(TotalDrawAmount(data), 5);
                 Assert.AreEqual(handBefore - (1 + data.Cost) + drawn, setup.Source.Hand.Cards.Count,
                     $"'{cardName}': unexpected hand size after play.");
             }
@@ -165,11 +172,12 @@ namespace Tests.Cards
         public void Card_Outcome_MatchesDesign(string cardName)
         {
             CardData data = Resolve(cardName);
+            ExpectedOutcome expected = SpecFor(data);
             using (Setup setup = BuildSetup(data))
             {
+                setup.TargetPickCell = expected.TargetPickCell;
                 Assert.IsTrue(setup.Play(), $"Card '{cardName}' could not be played with a valid target setup.");
 
-                ExpectedOutcome expected = SpecFor(data);
                 Assert.AreEqual(expected.SourceHealth, setup.Source.Stats.CurrentHealth, $"'{cardName}': source health.");
                 Assert.AreEqual(expected.SourceBlock, setup.Source.Stats.Block, $"'{cardName}': source block.");
                 Assert.AreEqual(expected.EnemyHealth, setup.Enemy.Stats.CurrentHealth, $"'{cardName}': enemy health.");
@@ -258,6 +266,17 @@ namespace Tests.Cards
             }
         }
 
+        private static int TotalDrawAmount(CardData card)
+        {
+            if (card.Steps == null) return 0;
+            int total = 0;
+            foreach (CardEffectStep step in card.Steps)
+            {
+                if (step != null) total += TotalDrawAmount(step.Effect);
+            }
+            return total;
+        }
+
         private static Setup BuildSetup(CardData data)
         {
             var setup = new Setup { Data = data };
@@ -327,8 +346,8 @@ namespace Tests.Cards
                     return SourceBlockDraw(4, 1);
                 case "Restore":
                     return SourceHeal(9);
-                case "Spiked Handle":
-                    return SourceDamageDraw(7, 2);
+                case "Painful Slash":
+                    return SelfDamageAttack(1, 4);
                 case "Walk":
                 case "Only the enemy has this card":
                     return MoveTo(1);
@@ -338,6 +357,12 @@ namespace Tests.Cards
                     return MoveTo(3);
                 case "Sprint":
                     return MoveTo(4);
+                case "Fireball":
+                    return AreaBlast(2, new HexCoordinates(2, -1));
+                case "Flame Bolt":
+                    return RangedAttack(2);
+                case "Painful Sprint":
+                    return MoveAndSelfDamage(2, 1);
                 default:
                     Assert.Fail($"No expected outcome defined for card '{card.CardName}' — add a SpecFor row.");
                     return default;
@@ -364,9 +389,14 @@ namespace Tests.Cards
             return new ExpectedOutcome { SourceHealth = health, SourceBlock = 3, EnemyHealth = 10 };
         }
 
-        private static ExpectedOutcome SourceDamageDraw(int health, int draws)
+        private static ExpectedOutcome SelfDamageAttack(int selfDamage, int enemyDamage)
         {
-            return new ExpectedOutcome { SourceHealth = health, SourceBlock = 2, EnemyHealth = 10, HandCount = draws };
+            return new ExpectedOutcome
+            {
+                SourceHealth = 7,
+                SourceBlock = 3 - selfDamage,
+                EnemyHealth = 10 - enemyDamage
+            };
         }
 
         private static ExpectedOutcome MoveTo(int range)
@@ -380,6 +410,55 @@ namespace Tests.Cards
             };
         }
 
+        private static ExpectedOutcome MoveAndSelfDamage(int range, int selfDamage)
+        {
+            return new ExpectedOutcome
+            {
+                SourceHealth = 7,
+                SourceBlock = 3 - selfDamage,
+                EnemyHealth = 10,
+                TargetCellCoordinates = new HexCoordinates(range, 0)
+            };
+        }
+
+        private static ExpectedOutcome RangedAttack(int damage)
+        {
+            return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10 - damage };
+        }
+
+        private static ExpectedOutcome AreaBlast(int damage, HexCoordinates targetPick)
+        {
+            return new ExpectedOutcome
+            {
+                SourceHealth = 7,
+                SourceBlock = 3 - damage,
+                EnemyHealth = 10 - damage,
+                TargetPickCell = targetPick
+            };
+        }
+
+        [Test]
+        public void HexCell_CellConstraintEmpty_RejectsOccupiedCell()
+        {
+            CardData walk = Resolve("Walk");
+            using (Setup setup = BuildSetup(walk))
+            {
+                Character blocker = TestHelper.CreateCharacterOnGrid(setup.Grid, 0, 1, 0);
+
+                int handBefore = setup.Source.Hand.Cards.Count;
+                int sourceHp = setup.Source.Stats.CurrentHealth;
+
+                HexCell targetCell = setup.Grid.GetCell(new HexCoordinates(1, 0));
+                bool played = setup.Resolver.PlayCard(setup.Source, setup.Card, setup.CostCards, targetCell, null);
+
+                Assert.IsFalse(played);
+                Assert.AreEqual(handBefore, setup.Source.Hand.Cards.Count);
+                Assert.AreEqual(sourceHp, setup.Source.Stats.CurrentHealth);
+
+                UnityEngine.Object.DestroyImmediate(blocker.gameObject);
+            }
+        }
+
         private struct ExpectedOutcome
         {
             public int SourceHealth;
@@ -387,6 +466,8 @@ namespace Tests.Cards
             public int EnemyHealth;
             public int HandCount;
             public HexCoordinates? TargetCellCoordinates;
+            /// <summary>If set, the Play method picks this cell instead of (Range, 0).</summary>
+            public HexCoordinates? TargetPickCell;
         }
 
         private sealed class Setup : IDisposable
@@ -402,6 +483,8 @@ namespace Tests.Cards
 
             public readonly List<GameObject> owned = new List<GameObject>();
 
+            public HexCoordinates? TargetPickCell;
+
             public bool Play()
             {
                 Character targetCharacter = null;
@@ -412,7 +495,10 @@ namespace Tests.Cards
                     case TargetType.Self:
                         break;
                     case TargetType.HexCell:
-                        targetCell = Grid.GetCell(new HexCoordinates(Data.Range, 0));
+                        if (TargetPickCell.HasValue)
+                            targetCell = Grid.GetCell(TargetPickCell.Value);
+                        else
+                            targetCell = Grid.GetCell(new HexCoordinates(Data.Range, 0));
                         break;
                     case TargetType.EnemyCharacter:
                     case TargetType.AnyCharacter:

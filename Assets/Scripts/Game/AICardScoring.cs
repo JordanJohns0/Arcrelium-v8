@@ -43,6 +43,9 @@ namespace Game
                 case AttackEffect attack:
                     damage += attack.Damage.Evaluate(source);
                     break;
+                case AreaDamageEffect area:
+                    damage += area.Damage.Evaluate(source);
+                    break;
                 case HealEffect healEffect:
                     heal += healEffect.Amount.Evaluate(source);
                     break;
@@ -66,11 +69,11 @@ namespace Game
             }
         }
 
-        /// <summary>Total damage needed to kill the target accounting for block and armor.</summary>
+        /// <summary>Total damage needed to kill the target accounting for block.</summary>
         public static int EffectiveHpToKill(Character target)
         {
             if (target == null || target.Stats == null) return 0;
-            return target.Stats.Block + target.Stats.Armor + target.Stats.CurrentHealth;
+            return target.Stats.Block + target.Stats.CurrentHealth;
         }
 
         /// <summary>
@@ -80,11 +83,15 @@ namespace Game
         /// </summary>
         public static float Score(CardData card, Character source, Character target, int distanceToNearestEnemy)
         {
-            if (card == null || card.Effect == null || source == null || source.Stats == null)
+            if (card == null || card.Steps == null || card.Steps.Count == 0 || source == null || source.Stats == null)
                 return float.MinValue;
 
             int damage = 0, heal = 0, block = 0, draw = 0, selfDamage = 0;
-            Accumulate(card.Effect, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
+            foreach (CardEffectStep step in card.Steps)
+            {
+                if (step != null)
+                    Accumulate(step.Effect, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
+            }
 
             float score = 0f;
             score -= card.Cost * CostPenalty;

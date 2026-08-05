@@ -10,12 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Bonk
-  m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
-  CardName: Bonk
-  Description: Deal 2 damage
+  m_Name: Fireball
+  m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
+  CardName: Fireball
+  Description: Target a hex. Deal 3 damage to the character there and 1 damage to
+    each adjacent character.
   Artwork: {fileID: 0}
-  TargetType: 3
-  Range: 1
-  Cost: 1
-  Effect: {fileID: 11400000, guid: 27dc0be6e10472e4193f1b964ea432e3, type: 2}
+  Cost: 2
+  Steps:
+  - Effect: {fileID: 11400000, guid: c98916f367606d9488607f7298ba0a27, type: 2}
+    TargetType: 2
+    Range: 3

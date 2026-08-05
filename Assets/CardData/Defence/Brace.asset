@@ -15,7 +15,8 @@ MonoBehaviour:
   CardName: Brace
   Description: Gain 1 Block
   Artwork: {fileID: 0}
-  TargetType: 1
-  Range: 0
   Cost: 0
-  Effect: {fileID: 11400000, guid: 62d740655fe03de40b89bfad2d452f8e, type: 2}
+  Steps:
+  - Effect: {fileID: 11400000, guid: 62d740655fe03de40b89bfad2d452f8e, type: 2}
+    TargetType: 1
+    Range: 0

@@ -16,6 +16,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 27adf8c9266e6d045b520433b21f7e03, type: 2}
   - {fileID: 11400000, guid: 082b69e6ea8a54d4383f6a4301c01b8a, type: 2}
   - {fileID: 11400000, guid: 8d10d8b820d0c744ba4b2e19e00715a1, type: 2}
+  - {fileID: 0}
   loadout:
     Head: {fileID: 0}
     Chest: {fileID: 11400000, guid: 27adf8c9266e6d045b520433b21f7e03, type: 2}

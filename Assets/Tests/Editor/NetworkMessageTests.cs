@@ -28,7 +28,6 @@ namespace Tests.Network
                 r = -3,
                 currentHp = 5,
                 maxHp = 10,
-                armor = 2,
                 block = 3,
                 isAlive = true,
                 name = "Alice",
@@ -54,7 +53,6 @@ namespace Tests.Network
             Assert.AreEqual(-3, d.r);
             Assert.AreEqual(5, d.currentHp);
             Assert.AreEqual(10, d.maxHp);
-            Assert.AreEqual(2, d.armor);
             Assert.AreEqual(3, d.block);
             Assert.IsTrue(d.isAlive);
             Assert.AreEqual("Alice", d.name);

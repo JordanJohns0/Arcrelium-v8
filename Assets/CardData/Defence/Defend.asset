@@ -17,7 +17,8 @@ MonoBehaviour:
 
     Draw a Card'
   Artwork: {fileID: 0}
-  TargetType: 1
-  Range: 0
   Cost: 1
-  Effect: {fileID: 11400000, guid: 1414dbd31e75d5d4fa8f9e4298d8db75, type: 2}
+  Steps:
+  - Effect: {fileID: 11400000, guid: 1414dbd31e75d5d4fa8f9e4298d8db75, type: 2}
+    TargetType: 1
+    Range: 0

@@ -342,7 +342,9 @@ namespace UI
             switch (card.TargetType)
             {
                 case TargetType.HexCell:
-                    return cell.IsWalkable;
+                    if (!cell.IsWalkable) return false;
+                    if (card.CellConstraint == CellConstraint.Empty && cell.Occupant != null) return false;
+                    return true;
                 case TargetType.EnemyCharacter:
                     return cell.Occupant != null
                         && cell.Occupant.IsEnemyOf(source)

@@ -13,7 +13,7 @@ Scripts/
     HexCell.cs           - a single tile MonoBehaviour (occupant, blocked state)
     HexGridManager.cs    - builds the board, lookups, BFS pathing
   Characters/
-    CharacterStats.cs    - plain data: health, movement, attack, armor
+    CharacterStats.cs    - plain data: health, movement, attack, block
     Character.cs          - MonoBehaviour: stats + deck/hand + board position
   Cards/
     ICardEffect.cs        - interface + CardContext (source, grid, target, range)

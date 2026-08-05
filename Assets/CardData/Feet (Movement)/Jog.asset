@@ -15,7 +15,9 @@ MonoBehaviour:
   CardName: Jog
   Description: Move 2
   Artwork: {fileID: 0}
-  TargetType: 2
-  Range: 2
   Cost: 1
-  Effect: {fileID: 11400000, guid: 5c4e3fb7de6cf05458bb40e6f4b4437f, type: 2}
+  Steps:
+  - Effect: {fileID: 11400000, guid: 5c4e3fb7de6cf05458bb40e6f4b4437f, type: 2}
+    TargetType: 2
+    Range: 2
+    CellConstraint: 1

@@ -101,7 +101,6 @@ namespace Tests.Game
             Assert.AreEqual(-2, p.r);
             Assert.AreEqual(player.Stats.CurrentHealth, p.currentHp);
             Assert.AreEqual(player.Stats.MaxHealth, p.maxHp);
-            Assert.AreEqual(player.Stats.Armor, p.armor);
             Assert.AreEqual("Alice", p.name);
             Assert.AreEqual(0.1f, p.colorR, 0.0001f);
             Assert.AreEqual(0.2f, p.colorG, 0.0001f);

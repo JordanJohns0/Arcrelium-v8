@@ -15,7 +15,8 @@ MonoBehaviour:
   CardName: Restore
   Description: Heal 2 Health
   Artwork: {fileID: 0}
-  TargetType: 4
-  Range: 2
   Cost: 0
-  Effect: {fileID: 11400000, guid: 99d04cf36313d7744aa81a27700d685a, type: 2}
+  Steps:
+  - Effect: {fileID: 11400000, guid: 99d04cf36313d7744aa81a27700d685a, type: 2}
+    TargetType: 4
+    Range: 2

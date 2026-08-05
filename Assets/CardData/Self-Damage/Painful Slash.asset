@@ -12,10 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
   m_Name: Painful Slash
   m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
-  CardName: New Card
-  Description: 
+  CardName: Painful Slash
+  Description: Deal 4 damage to an enemy and 1 to yourself.
   Artwork: {fileID: 0}
-  TargetType: 2
-  Range: 1
-  Cost: 0
-  Effect: {fileID: 0}
+  Cost: 1
+  Steps:
+  - Effect: {fileID: 11400000, guid: f2c4b7a1e6d34f5c9a8b1d2e3f4a5b6c, type: 2}
+    TargetType: 3
+    Range: 1
+  - Effect: {fileID: 11400000, guid: 3e30c5bafacd4d669fa251031751db25, type: 2}
+    TargetType: 1
+    Range: 0

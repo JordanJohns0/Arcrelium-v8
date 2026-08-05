@@ -37,11 +37,8 @@ namespace Tests.Game
 
             var selfEffect = ScriptableObject.CreateInstance<Cards.Effects.GainBlockEffect>();
             selfEffect.Amount = CardValue.MakeConstant(1);
-            selfCardData = ScriptableObject.CreateInstance<CardData>();
-            selfCardData.CardName = "Defend";
-            selfCardData.TargetType = TargetType.Self;
-            selfCardData.Cost = 0;
-            selfCardData.Effect = selfEffect;
+            selfCardData = TestHelper.MakeCard("Defend", 0,
+                TestHelper.Step(selfEffect, TargetType.Self));
         }
 
         [TearDown]

@@ -15,7 +15,8 @@ MonoBehaviour:
   CardName: Fortify
   Description: Gain 3 Block
   Artwork: {fileID: 0}
-  TargetType: 1
-  Range: 0
   Cost: 2
-  Effect: {fileID: 11400000, guid: 76cfbe1b9702e2a4cbece7a17f1e0162, type: 2}
+  Steps:
+  - Effect: {fileID: 11400000, guid: 76cfbe1b9702e2a4cbece7a17f1e0162, type: 2}
+    TargetType: 1
+    Range: 0

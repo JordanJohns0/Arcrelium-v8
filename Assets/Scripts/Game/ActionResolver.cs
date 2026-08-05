@@ -38,26 +38,34 @@ namespace Game
         {
             if (source == null || card == null) return false;
             if (!source.Hand.Contains(card)) return false;
-            if (card.Data.Effect == null) { Debug.Log($"[ActionResolver] FAIL: card '{card.Data.CardName}' has no effect."); return false; }
+            if (!HasBoundSteps(card.Data)) return false;
 
             costCards ??= new List<CardInstance>();
             if (!IsCostValid(source, card, costCards)) return false;
             if (!IsTargetValid(source, card.Data, targetCell, targetCharacter)) return false;
 
-            var context = new CardContext
+            // Validate every step against its own context (its own range and target type)
+            // before any step executes, so a multi-step card never partially resolves.
+            var executions = new List<(CardEffectStep Step, CardContext Context)>(card.Data.Steps.Count);
+            foreach (CardEffectStep step in card.Data.Steps)
             {
-                Source = source,
-                Grid = grid,
-                TargetCell = targetCell,
-                TargetCharacter = targetCharacter,
-                Range = card.Data.Range
-            };
+                CardContext context = MakeContext(source, card.Data, step, targetCell, targetCharacter);
+                if (!step.Effect.CanExecute(context)) return false;
+                executions.Add((step, context));
+            }
 
-            if (!card.Data.Effect.CanExecute(context)) return false;
+            // Equipment may boost range before execution; the bonus applies to every step.
+            CardContext equipmentContext = PrimaryContext(executions);
+            OnBeforeCardPlay?.Invoke(equipmentContext);
+            int bonusRange = equipmentContext.BonusRange;
+            if (bonusRange != 0)
+            {
+                foreach (var (_, context) in executions)
+                    context.BonusRange = bonusRange;
+            }
 
-            OnBeforeCardPlay?.Invoke(context);
-
-            card.Data.Effect.Execute(context);
+            foreach (var (step, context) in executions)
+                step.Effect.Execute(context);
 
             // Pay cost: discard the other cards, then discard the played card itself.
             foreach (CardInstance costCard in costCards)
@@ -91,6 +99,51 @@ namespace Game
             return true;
         }
 
+        private static bool HasBoundSteps(CardData card)
+        {
+            if (card.Steps == null || card.Steps.Count == 0)
+            {
+                Debug.Log($"[ActionResolver] FAIL: card '{card.CardName}' has no steps.");
+                return false;
+            }
+            foreach (CardEffectStep step in card.Steps)
+            {
+                if (step == null || step.Effect == null)
+                {
+                    Debug.Log($"[ActionResolver] FAIL: card '{card.CardName}' has an empty step.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private CardContext MakeContext(Character source, CardData card, CardEffectStep step,
+            HexCell targetCell, Character targetCharacter)
+        {
+            return new CardContext
+            {
+                Source = source,
+                Grid = grid,
+                TargetCell = targetCell,
+                TargetCharacter = targetCharacter,
+                Range = step.Range
+            };
+        }
+
+        /// <summary>
+        /// The context for the step whose target was picked, or the first step's context for
+        /// untargeted cards. This is what equipment sees on OnBeforeCardPlay.
+        /// </summary>
+        private static CardContext PrimaryContext(List<(CardEffectStep Step, CardContext Context)> executions)
+        {
+            foreach (var (step, context) in executions)
+            {
+                if (step.TargetType != TargetType.None && step.TargetType != TargetType.Self)
+                    return context;
+            }
+            return executions.Count > 0 ? executions[0].Context : null;
+        }
+
         private static bool IsTargetValid(Character source, CardData card, HexCell targetCell, Character targetCharacter)
         {
             switch (card.TargetType)
@@ -99,7 +152,9 @@ namespace Game
                 case TargetType.Self:
                     return true;
                 case TargetType.HexCell:
-                    return targetCell != null;
+                    if (targetCell == null) return false;
+                    if (card.CellConstraint == CellConstraint.Empty && targetCell.Occupant != null) return false;
+                    return true;
                 case TargetType.EnemyCharacter:
                     return targetCharacter != null
                         && targetCharacter.Stats.IsAlive
