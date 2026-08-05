@@ -5,7 +5,7 @@ cost: 2
 target: Enemy
 range: 1
 effect: Attack
-status: implemented
+status: designed
 tags:
   - wiki/card
 ---

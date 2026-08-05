@@ -5,14 +5,15 @@ cost: 1
 target: Enemy
 range: 1
 effect: Attack
-status: implemented
+status: designed
 tags:
   - wiki/card
 ---
 ## Description
-Deal 1 damage
+Deal 2 damage
 
 ## Rules / Notes
+- Actual damage is 2 — `Damage_1.asset` is Constant 2. The asset's description field still says "Deal 1 damage".
 
 ## Data consistency
 - [x] Asset exists in `Assets/CardData/` #card ✅ 2026-08-05

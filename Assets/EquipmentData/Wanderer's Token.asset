@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Wanderer's Token
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
-  EquipmentName: New Equipment
+  EquipmentName: Wanderer's Token
   Description: 
   Icon: {fileID: 0}
   SlotType: 0

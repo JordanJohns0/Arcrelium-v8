@@ -5,7 +5,7 @@ cost: 1
 target: Self
 range: 0
 effect: Composite
-status: implemented
+status: designed
 tags:
   - wiki/card
 ---

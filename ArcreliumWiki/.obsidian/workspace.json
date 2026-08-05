@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Wiki/Cards/_Index.md",
+                "file": "Wiki/Cards/Painful Slash.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "_Index"
+              "title": "Painful Slash"
             }
           }
         ]
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Wiki/Cards/_Index.md",
+                "file": "Wiki/Cards/Painful Slash.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -118,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Wiki/Cards/_Index.md",
+                "file": "Wiki/Cards/Painful Slash.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -161,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Wiki/Cards/_Index.md",
+                "file": "Wiki/Cards/Painful Slash.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -176,7 +176,7 @@
             "state": {
               "type": "file-properties",
               "state": {
-                "file": "Wiki/Cards/_Index.md"
+                "file": "Wiki/Cards/Painful Slash.md"
               },
               "icon": "lucide-info",
               "title": "File properties"
@@ -204,6 +204,9 @@
   },
   "active": "1daff2d939b90ede",
   "lastOpenFiles": [
+    "Wiki/Cards/_Index.md",
+    "Wiki/Cards/Only the enemy has this card.md",
+    "Wiki/Cards/Spiked Handle.md",
     "Wiki/Equipment/_Index.md",
     "Wiki/Equipment/Tower Shield.md",
     "Wiki/Equipment/Wanderer's Token.md",
@@ -227,9 +230,6 @@
     "Wiki/Equipment/Starter/Rusty Sword.md",
     "Wiki/Equipment/Starter/Leather Boots.md",
     "Wiki/Equipment/Starter/Leather Armour.md",
-    "Wiki/Tasks/Features/_Index.md",
-    "Wiki/Tasks/Bugs/_Index.md",
-    "Wiki/Systems/_Index.md",
     "Wiki/Equipment/Enemy",
     "Wiki/Equipment/Starter",
     "Attachments",

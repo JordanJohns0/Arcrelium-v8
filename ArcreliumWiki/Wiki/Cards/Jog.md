@@ -5,7 +5,7 @@ cost: 1
 target: HexCell
 range: 2
 effect: Move
-status: implemented
+status: designed
 tags:
   - wiki/card
 ---

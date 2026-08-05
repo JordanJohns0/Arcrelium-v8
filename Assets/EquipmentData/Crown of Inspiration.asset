@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Crown of Inspiration
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
-  EquipmentName: New Equipment
+  EquipmentName: Crown of Inspiration
   Description: 
   Icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
   SlotType: 0

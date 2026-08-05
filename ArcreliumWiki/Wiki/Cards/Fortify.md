@@ -5,7 +5,7 @@ cost: 2
 target: Self
 range: 0
 effect: GainBlock
-status: implemented
+status: designed
 tags:
   - wiki/card
 ---

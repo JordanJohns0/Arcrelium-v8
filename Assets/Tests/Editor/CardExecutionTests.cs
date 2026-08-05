@@ -125,6 +125,21 @@ namespace Tests.Cards
         }
 
         [Test]
+        public void NoEquipmentAssetUsesPlaceholderName()
+        {
+            var offenders = new List<string>();
+            foreach (string guid in AssetDatabase.FindAssets("t:EquipmentData"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var equipment = AssetDatabase.LoadAssetAtPath<EquipmentData>(path);
+                if (equipment != null && equipment.EquipmentName == "New Equipment")
+                    offenders.Add(path);
+            }
+
+            Assert.IsEmpty(offenders, "Equipment assets still using the default 'New Equipment' name: " + string.Join(", ", offenders));
+        }
+
+        [Test]
         [TestCaseSource(nameof(RegisteredCardNames))]
         public void Card_PlaysSuccessfully(string cardName)
         {
@@ -305,7 +320,7 @@ namespace Tests.Cards
                     return SourceBlock(5);
                 case "Fortify":
                     return SourceBlock(6);
-                case "Bulwurk":
+                case "Bulwark":
                     return SourceBlock(8);
                 case "Defend":
                 case "Inspire":

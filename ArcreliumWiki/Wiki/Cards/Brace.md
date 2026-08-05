@@ -5,12 +5,12 @@ cost: 0
 target: Self
 range: 0
 effect: GainBlock
-status: implemented
+status: designed
 tags:
   - wiki/card
 ---
 ## Description
-Gain 2 block
+Gain 1 block
 
 ## Rules / Notes
 - 

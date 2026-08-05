@@ -5,7 +5,7 @@ cost: 0
 target: Ally
 range: 2
 effect: Heal
-status: implemented
+status: designed
 tags:
   - wiki/card
 ---
@@ -13,7 +13,7 @@ tags:
 Heal 2 health
 
 ## Rules / Notes
-- 
+- Declared `TargetType` is AllyCharacter (range 2), but `HealEffect` always heals the source — selecting an ally does not affect them.
 
 ## Data consistency
 - [x] Asset exists in `Assets/CardData/` #card ✅ 2026-08-05
