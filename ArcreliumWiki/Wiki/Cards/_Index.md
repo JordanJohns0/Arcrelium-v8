@@ -12,8 +12,8 @@ SORT cost ASC
 ```tasks
 not done
 tag includes #card
+path does not include Templates
 ```
 
 ## Create
-
-Create a card note with `Ctrl+N` in this folder — the Card template auto-applies (it asks cost, target, range, effect).
+Create a card note with `Ctrl+N` in this folder - the Card template auto-applies (it asks cost, target, range, effect).

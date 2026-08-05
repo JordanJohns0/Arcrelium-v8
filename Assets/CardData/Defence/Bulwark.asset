@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Bulwurk
+  m_Name: Bulwark
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
-  CardName: Bulwurk
+  CardName: Bulwark
   Description: Gain 5 Block
   Artwork: {fileID: 0}
   TargetType: 1

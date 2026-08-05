@@ -5,15 +5,11 @@ status: drafted
 tags:
   - wiki/system
 ---
-
-# <% tp.file.title %>
-
 ## Overview
 
 ## How it works
 
 ## Files
-
 - 
 
 ## Related
@@ -21,5 +17,4 @@ tags:
 - [[Wiki/Home]]
 
 ## Open questions
-
 - 

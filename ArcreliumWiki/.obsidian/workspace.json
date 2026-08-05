@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "e00be1ce29c42219",
+        "id": "4136baed519b876f",
         "type": "tabs",
         "children": [
           {
-            "id": "b4f072733f89e059",
+            "id": "1daff2d939b90ede",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -42,7 +42,7 @@
               "state": {
                 "sortOrder": "alphabetical",
                 "autoReveal": false,
-                "showSearch": false,
+                "showSearch": true,
                 "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
@@ -169,8 +169,21 @@
               "icon": "lucide-list",
               "title": "Outline"
             }
+          },
+          {
+            "id": "da66420b3aa82549",
+            "type": "leaf",
+            "state": {
+              "type": "file-properties",
+              "state": {
+                "file": "Wiki/Cards/_Index.md"
+              },
+              "icon": "lucide-info",
+              "title": "File properties"
+            }
           }
-        ]
+        ],
+        "currentTab": 5
       }
     ],
     "direction": "horizontal",
@@ -189,38 +202,43 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "b4ff2ce442949734",
+  "active": "1daff2d939b90ede",
   "lastOpenFiles": [
-    "Welcome.md",
+    "Wiki/Equipment/_Index.md",
+    "Wiki/Equipment/Tower Shield.md",
+    "Wiki/Equipment/Wanderer's Token.md",
+    "Wiki/Cards/Bulwark.md",
+    "Wiki/Equipment/Sword of Truth.md",
+    "Wiki/Equipment/Staff of Healing.md",
+    "Wiki/Cards/Painful Slash.md",
+    "Wiki/Equipment/Sword with spikes in the handle.md",
+    "Wiki/Equipment/Null Amulet.md",
+    "Wiki/Equipment/Metal Fist.md",
+    "Wiki/Equipment/Lucky Opal.md",
+    "Wiki/Equipment/Excalibur.md",
+    "Wiki/Equipment/Crown of Inspiration.md",
+    "Wiki/Equipment/Leather Goblin Armour.md",
+    "Wiki/Equipment/Goblin Sword.md",
+    "Wiki/Equipment/Goblin Shoes.md",
+    "Templates/_Card.md",
+    "Wiki/Equipment/Boots of Swiftness.md",
+    "Wiki/Cards/Bonk.md",
+    "Templates/Equipment.md",
+    "Wiki/Equipment/Starter/Rusty Sword.md",
+    "Wiki/Equipment/Starter/Leather Boots.md",
+    "Wiki/Equipment/Starter/Leather Armour.md",
     "Wiki/Tasks/Features/_Index.md",
     "Wiki/Tasks/Bugs/_Index.md",
-    "Wiki/Systems/Networking.md",
-    "Wiki/Systems/AI Scoring.md",
-    "Wiki/Systems/Turn Order.md",
-    "Wiki/Systems/Cost Model.md",
-    "Wiki/Systems/Combat Flow.md",
     "Wiki/Systems/_Index.md",
-    "Wiki/Grid/_Index.md",
-    "Wiki/Equipment/_Index.md",
-    "Wiki/Characters/_Index.md",
-    "Wiki/Effects/_Index.md",
-    "Wiki/Cards/_Index.md",
-    "Wiki/Home.md",
-    "Templates/Feature.md",
-    "Templates/Bug.md",
-    "Templates/System.md",
-    "Templates/Equipment.md",
-    "Templates/Effect.md",
-    "Templates/Card.md",
+    "Wiki/Equipment/Enemy",
+    "Wiki/Equipment/Starter",
+    "Attachments",
+    "Wiki/Cards/Combat",
     "Wiki/Tasks/Features",
     "Wiki/Tasks/Bugs",
     "Wiki/Tasks",
     "Wiki/Systems",
     "Wiki/Effects",
-    "Wiki/Grid",
-    "Wiki/Equipment",
-    "Wiki/Characters",
-    "Wiki/Cards",
-    "Wiki"
+    "Wiki/Grid"
   ]
 }

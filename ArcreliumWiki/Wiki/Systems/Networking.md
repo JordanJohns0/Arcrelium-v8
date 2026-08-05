@@ -17,10 +17,10 @@ lobby data is how every machine agrees on PvE vs PvP.
 
 ## Files
 
-- `Assets/Scripts/Steam/LobbyManager.cs` — lobby create/join/leave, match mode, member tracking
+- `Assets/Scripts/Steam/LobbyManager.cs` - lobby create/join/leave, match mode, member tracking
 - `Assets/Scripts/Steam/SteamManager.cs`
 - `Assets/Scripts/Networking/NetworkManager.cs`
-- `Assets/Scripts/Networking/NetworkMessages.cs` — GameStateSync, CharacterState, PlayCardRequest, PassRequest, ReadyRequest/ReadyStateSync, ChatMessage, LoadoutSync, CardPlayedDisplay
+- `Assets/Scripts/Networking/NetworkMessages.cs` - GameStateSync, CharacterState, PlayCardRequest, PassRequest, ReadyRequest/ReadyStateSync, ChatMessage, LoadoutSync, CardPlayedDisplay
 - `Assets/Scripts/Networking/ReadyTracker.cs`
 
 ## Tests

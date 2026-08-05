@@ -5,6 +5,7 @@ not done
 path includes Wiki/Tasks/Features
 group by status
 sort by priority
+path does not include Templates
 ```
 
 ## All features

@@ -1,7 +1,7 @@
 # Equipment
 
 ```dataview
-TABLE slot, enemy-only, status
+TABLE slot, status
 FROM "Wiki/Equipment"
 WHERE type = "equipment"
 SORT file.name ASC
@@ -12,6 +12,7 @@ SORT file.name ASC
 ```tasks
 not done
 tag includes #equipment
+path does not include Templates
 ```
 
 ## Create

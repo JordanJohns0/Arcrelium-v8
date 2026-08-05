@@ -10,14 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
-  m_Name: Enemy_Feet
+  m_Name: Leather Goblin Armour
   m_EditorClassIdentifier: Assembly-CSharp::Equipment.EquipmentData
-  EquipmentName: Leather Boots
+  EquipmentName: Leather Goblin Armour
   Description: 
   Icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
-  SlotType: 2
+  SlotType: 1
   Cards:
-  - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
-  - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
-  - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
+  - {fileID: 11400000, guid: 532bfc9a5deefbc4b8d8d08fa070bff7, type: 2}
+  - {fileID: 11400000, guid: 532bfc9a5deefbc4b8d8d08fa070bff7, type: 2}
   Triggers: []

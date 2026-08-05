@@ -8,9 +8,6 @@ area:
 created: <% tp.date.now("YYYY-MM-DD") %>
 related:
 ---
-
-# <% tp.file.title %>
-
 ## Symptom
 
 _What happens, in plain words._
