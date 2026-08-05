@@ -4,11 +4,29 @@ using UnityEngine.SceneManagement;
 
 namespace Game
 {
+    /// <summary>
+    /// Lobby match format. PvE is the classic co-op fight vs AI enemies; in PvP every
+    /// player is on their own team (everyone else is an enemy) and the last player
+    /// standing wins.
+    /// </summary>
+    public enum MatchMode { PvE, PvP }
+
     public static class GameState
     {
+        /// <summary>OwnerPlayerId threshold at or above which a character is AI-controlled.</summary>
+        public const int EnemyOwnerPlayerId = 100;
+
         public static int CurrentLevel { get; set; } = 1;
         public static GameMode ActiveMode { get; set; } = GameMode.SinglePlayer;
         public static int LocalPlayerId { get; set; } = 0;
+
+        /// <summary>
+        /// Which match format the current lobby/run is using. Kept in sync with the
+        /// lobby's "matchmode" data (see LobbyManager) so every machine agrees.
+        /// </summary>
+        public static MatchMode CurrentMatchMode { get; set; } = MatchMode.PvE;
+
+        public static bool IsPvP => CurrentMatchMode == MatchMode.PvP;
 
         /// <summary>
         /// When true, the game starts on the loadout screen instead of the board: players

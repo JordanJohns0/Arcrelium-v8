@@ -23,7 +23,7 @@ namespace Equipment.Effects
                 Character occupant = neighbor.Occupant;
                 if (occupant == null) continue;
                 if (occupant == context.Source) continue;
-                if (occupant.Team == context.Source.Team) continue;
+                if (occupant.IsAllyOf(context.Source)) continue;
 
                 occupant.TakeDamage(Damage);
             }

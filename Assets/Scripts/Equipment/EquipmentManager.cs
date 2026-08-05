@@ -85,6 +85,29 @@ namespace Equipment
             EquipmentSlotType slot = forcedSlot ?? data.SlotType;
             int index = forcedIndex ?? 0;
 
+            // Auto-assign to the first free slot for multi-slot equipment (hands,
+            // trinkets) so equipping without an explicit index fills empty slots in order.
+            if (forcedIndex == null)
+            {
+                switch (slot)
+                {
+                    case EquipmentSlotType.Hand:
+                        index = leftHandSlot == null ? 0 : 1;
+                        break;
+                    case EquipmentSlotType.Trinket:
+                        index = -1;
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (trinketSlots.Count <= i || trinketSlots[i] == null)
+                            {
+                                index = i;
+                                break;
+                            }
+                        }
+                        break;
+                }
+            }
+
             if (!CanEquip(data, slot, index)) return false;
 
             var instance = new EquipmentInstance(data);
@@ -101,22 +124,13 @@ namespace Equipment
                     feetSlot = instance;
                     break;
                 case EquipmentSlotType.Hand:
-                    if (forcedIndex == 1 || (forcedIndex == null && leftHandSlot != null))
-                        rightHandSlot = instance;
-                    else
-                        leftHandSlot = instance;
+                    if (index == 1) rightHandSlot = instance;
+                    else leftHandSlot = instance;
                     break;
                 case EquipmentSlotType.Trinket:
-                    if (forcedIndex.HasValue)
-                    {
-                        while (trinketSlots.Count <= forcedIndex.Value)
-                            trinketSlots.Add(null);
-                        trinketSlots[forcedIndex.Value] = instance;
-                    }
-                    else
-                    {
-                        trinketSlots.Add(instance);
-                    }
+                    while (trinketSlots.Count <= index)
+                        trinketSlots.Add(null);
+                    trinketSlots[index] = instance;
                     break;
             }
 

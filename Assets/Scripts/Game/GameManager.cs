@@ -17,8 +17,6 @@ namespace Game
 
     public class GameManager : MonoBehaviour
     {
-        private const int EnemyOwnerPlayerId = 100;
-
         private static readonly Color EnemyColor = new Color(0.85f, 0.30f, 0.25f);
 
         private static readonly HexCoordinates[] MultiplayerAllySpawns =
@@ -26,7 +24,11 @@ namespace Game
             new HexCoordinates(0, -2),
             new HexCoordinates(1, -2),
             new HexCoordinates(-1, -1),
-            new HexCoordinates(-1, -2)
+            new HexCoordinates(-1, -2),
+            new HexCoordinates(2, -2),
+            new HexCoordinates(1, -3),
+            new HexCoordinates(-2, 0),
+            new HexCoordinates(-2, -1)
         };
 
         [SerializeField] private HexGridManager grid;
@@ -82,6 +84,20 @@ namespace Game
         {
             victoryAchieved = false;
             GameMode currentMode = GameState.ActiveMode;
+
+            // Make sure this machine knows the lobby's match format even if it only just
+            // entered the lobby (the lobby data is authoritative; LobbyManager keeps
+            // GameState.CurrentMatchMode in sync, this is a belt-and-suspenders read).
+            if (currentMode != GameMode.SinglePlayer && LobbyManager.Instance.CurrentLobby.HasValue)
+            {
+                string modeData = LobbyManager.Instance.CurrentLobby.Value.GetData("matchmode");
+                if (!string.IsNullOrEmpty(modeData)
+                    && System.Enum.TryParse<MatchMode>(modeData, true, out MatchMode parsed))
+                {
+                    GameState.CurrentMatchMode = parsed;
+                }
+            }
+
             switch (currentMode)
             {
                 case GameMode.SinglePlayer:
@@ -362,6 +378,16 @@ namespace Game
             else
                 SetupSinglePlayerPlayer();
 
+            // PvP is purely player-vs-player: every player is on their own team and
+            // the last one standing wins, so no AI enemies spawn.
+            if (GameState.IsPvP)
+            {
+                turnManager.SetTurnOrder(new List<Character>(activeCharacters));
+                GameState.MatchLoadouts.Clear();
+                turnManager.StartMatch();
+                return;
+            }
+
             int enemyCount = baseEnemyCount + (GameState.CurrentLevel - 1) * extraEnemiesPerLevel;
             var spawnCells = GetValidSpawnCells(enemyCount);
             int enemyHp = 2 + GameState.CurrentLevel;
@@ -372,7 +398,7 @@ namespace Game
                 Character enemy = Instantiate(enemyCharacterPrefab);
                 enemy.Stats.MaxHealth = enemyHp;
                 enemy.Stats.Armor = enemyArmor;
-                enemy.Initialize(EnemyOwnerPlayerId + i, spawnCells[i], teamId: 1);
+                enemy.Initialize(GameState.EnemyOwnerPlayerId + i, spawnCells[i], teamId: 1);
                 enemy.SetName("Enemy");
                 enemy.SetPlayerColor(EnemyColor);
                 enemy.OnDefeated += HandleCharacterDefeated;
@@ -407,8 +433,13 @@ namespace Game
                     : new HexCoordinates(allySpawnQ, allySpawnR);
                 if (!grid.TryGetCell(coords, out HexCell cell)) continue;
 
+                // PvE: every human player shares team 0 (allies). PvP: each player gets
+                // a distinct team id so they are their own team and everyone else is an
+                // enemy.
+                int teamId = GameState.IsPvP ? i + 1 : 0;
+
                 Character player = Instantiate(playerCharacterPrefab);
-                player.Initialize(i, cell, teamId: 0, loadout: GetMatchLoadout(i));
+                player.Initialize(i, cell, teamId: teamId, loadout: GetMatchLoadout(i));
                 player.SetName(members[i].Name);
                 player.SetPlayerColor(PlayerPalette.GetColor(i));
                 player.OnDefeated += HandleCharacterDefeated;
@@ -461,18 +492,34 @@ namespace Game
             activeCharacters.Remove(character);
             turnManager.RemoveFromTurnOrder(character);
 
-            bool anyEnemyAlive = false;
-            for (int i = 0; i < activeCharacters.Count; i++)
+            if (IsMatchOver())
+                ShowVictory();
+        }
+
+        /// <summary>
+        /// Match-over decision. PvE: won once no AI enemy is alive. PvP: last team
+        /// standing — won when at most one distinct team id remains alive.
+        /// </summary>
+        internal bool IsMatchOver()
+        {
+            if (GameState.IsPvP)
             {
-                if (activeCharacters[i].Team == Team.Enemy)
+                var aliveTeams = new HashSet<int>();
+                foreach (Character c in activeCharacters)
                 {
-                    anyEnemyAlive = true;
-                    break;
+                    if (c == null || c.Stats == null || !c.Stats.IsAlive) continue;
+                    aliveTeams.Add(c.TeamId);
                 }
+                return aliveTeams.Count <= 1;
             }
 
-            if (!anyEnemyAlive)
-                ShowVictory();
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null || c.Stats == null) continue;
+                if (c.OwnerPlayerId >= GameState.EnemyOwnerPlayerId && c.Stats.IsAlive)
+                    return false;
+            }
+            return true;
         }
 
         public void BroadcastGameState()
@@ -735,7 +782,9 @@ namespace Game
                     var coords = new HexCoordinates(cs.q, cs.r);
                     if (!grid.TryGetCell(coords, out HexCell cell)) continue;
 
-                    Character prefab = cs.teamId == 0 ? playerCharacterPrefab : enemyCharacterPrefab;
+                    Character prefab = cs.ownerPlayerId >= GameState.EnemyOwnerPlayerId
+                        ? enemyCharacterPrefab
+                        : playerCharacterPrefab;
                     if (prefab == null) continue;
 
                     Character character = Instantiate(prefab);

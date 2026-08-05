@@ -76,6 +76,7 @@ namespace UI
         private GameObject inviteFriendsBtn;
         private GameObject startMatchBtn;
         private GameObject leaveLobbyBtn;
+        private GameObject modeToggleBtn;
         private readonly List<Lobby> foundLobbies = new List<Lobby>();
 
         private bool lobbyEventsSubscribed;
@@ -136,6 +137,7 @@ namespace UI
             LobbyManager.OnLobbyJoined += HandleLobbyJoined;
             LobbyManager.OnLobbyListReceived += HandleLobbyListReceived;
             LobbyManager.OnMembersChanged += HandleMembersChanged;
+            LobbyManager.OnMatchModeChanged += HandleMatchModeChanged;
             Networking.NetworkManager.OnStartGameReceived += HandleStartGameReceived;
             Networking.ReadyTracker.OnReadyStateChanged += RefreshReadyUI;
         }
@@ -146,6 +148,7 @@ namespace UI
             LobbyManager.OnLobbyJoined -= HandleLobbyJoined;
             LobbyManager.OnLobbyListReceived -= HandleLobbyListReceived;
             LobbyManager.OnMembersChanged -= HandleMembersChanged;
+            LobbyManager.OnMatchModeChanged -= HandleMatchModeChanged;
             Networking.NetworkManager.OnStartGameReceived -= HandleStartGameReceived;
             Networking.ReadyTracker.OnReadyStateChanged -= RefreshReadyUI;
         }
@@ -190,13 +193,21 @@ namespace UI
         private void UpdateCurrentLobbyLabel()
         {
             if (!LobbyManager.Instance.CurrentLobby.HasValue) return;
+            LobbyManager.Instance.RefreshMatchMode();
             var lobby = LobbyManager.Instance.CurrentLobby.Value;
             lobby.Refresh();
             string name = lobby.GetData("name") ?? $"Lobby {lobby.Id}";
             int memberCount = lobby.MemberCount;
-            currentLobbyLabel.text = $"{name} ({memberCount}/{lobby.MaxMembers} players)";
+            currentLobbyLabel.text = $"{name} ({memberCount}/{lobby.MaxMembers} players) — {GetModeLabel(lobby)}";
             currentLobbyLabel.gameObject.SetActive(true);
             Debug.Log($"[MainMenu] Updated lobby label: {name} ({memberCount}/{lobby.MaxMembers})");
+        }
+
+        private static string GetModeLabel(Lobby lobby)
+        {
+            string data = lobby.GetData("matchmode");
+            if (string.IsNullOrEmpty(data)) return "PvE";
+            return data.Trim().ToLowerInvariant() == "pvp" ? "PvP" : "PvE";
         }
 
         private void HandleLobbyListReceived(List<Lobby> lobbies)
@@ -287,6 +298,7 @@ namespace UI
             // Browse panel: host/search/join another lobby
             hostGameBtn = CreateButton(lobbyContent, "Host Game", HostGame);
             refreshLobbiesBtn = CreateButton(lobbyContent, "Refresh Lobbies", RefreshLobbies);
+            modeToggleBtn = CreateButton(lobbyContent, "Mode: PvE", ToggleMatchMode);
 
             lobbyListContent = new GameObject("LobbyList", typeof(RectTransform), typeof(VerticalLayoutGroup)).transform;
             lobbyListContent.SetParent(lobbyContent, false);
@@ -425,9 +437,11 @@ namespace UI
 
             hostGameBtn.SetActive(true);
             refreshLobbiesBtn.SetActive(true);
+            modeToggleBtn.SetActive(true);
             lobbyListContent.gameObject.SetActive(true);
             backBtn.SetActive(true);
             leaveLobbyBtn.SetActive(false);
+            RefreshModeButton();
             RefreshLobbies();
         }
 
@@ -447,11 +461,35 @@ namespace UI
             lobbyListContent.gameObject.SetActive(false);
             backBtn.SetActive(false);
             leaveLobbyBtn.SetActive(true);
+            modeToggleBtn.SetActive(LobbyManager.Instance.IsHost);
+            RefreshModeButton();
+        }
+
+        private void ToggleMatchMode()
+        {
+            var current = LobbyManager.Instance.MatchMode;
+            var next = current == Game.MatchMode.PvE ? Game.MatchMode.PvP : Game.MatchMode.PvE;
+            LobbyManager.Instance.SetMatchMode(next);
+            RefreshModeButton();
+        }
+
+        private void HandleMatchModeChanged(Game.MatchMode mode)
+        {
+            RefreshModeButton();
+            UpdateCurrentLobbyLabel();
+        }
+
+        private void RefreshModeButton()
+        {
+            if (modeToggleBtn == null) return;
+            var text = modeToggleBtn.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null)
+                text.text = LobbyManager.Instance.MatchMode == Game.MatchMode.PvP ? "Mode: PvP" : "Mode: PvE";
         }
 
         private void HostGame()
         {
-            LobbyManager.Instance.CreateLobby(4);
+            LobbyManager.Instance.CreateLobby(8);
             statusText.gameObject.SetActive(true);
             statusText.text = "Creating lobby...";
         }
@@ -480,7 +518,7 @@ namespace UI
             {
                 string name = lobby.GetData("name") ?? $"Lobby {lobby.Id}";
                 int members = lobby.MemberCount;
-                var btn = CreateButton(lobbyListContent, $"{name} ({members}/4)", () => JoinLobby(lobby));
+                var btn = CreateButton(lobbyListContent, $"{name} ({members}/8) — {GetModeLabel(lobby)}", () => JoinLobby(lobby));
                 var rt = btn.GetComponent<RectTransform>();
                 rt.sizeDelta = lobbyRowSize;
             }

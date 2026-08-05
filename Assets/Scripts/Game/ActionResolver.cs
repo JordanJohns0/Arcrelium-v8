@@ -103,11 +103,11 @@ namespace Game
                 case TargetType.EnemyCharacter:
                     return targetCharacter != null
                         && targetCharacter.Stats.IsAlive
-                        && targetCharacter.Team != source.Team;
+                        && targetCharacter.IsEnemyOf(source);
                 case TargetType.AllyCharacter:
                     return targetCharacter != null
                         && targetCharacter.Stats.IsAlive
-                        && targetCharacter.Team == source.Team;
+                        && targetCharacter.IsAllyOf(source);
                 case TargetType.AnyCharacter:
                     return targetCharacter != null && targetCharacter.Stats.IsAlive;
                 default:

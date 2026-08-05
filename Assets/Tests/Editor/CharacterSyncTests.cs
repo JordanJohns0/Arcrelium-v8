@@ -137,6 +137,65 @@ namespace Tests
         }
 
         [Test]
+        public void IsAllyOf_SameTeamId_IsAlly()
+        {
+            var other = TestHelper.CreateCharacter(1, 0, 0, teamId: 0);
+            try
+            {
+                Assert.IsTrue(character.IsAllyOf(other));
+                Assert.IsFalse(character.IsEnemyOf(other));
+            }
+            finally
+            {
+                Object.DestroyImmediate(other.CurrentCell.gameObject);
+                Object.DestroyImmediate(other.gameObject);
+            }
+        }
+
+        [Test]
+        public void IsAllyOf_DifferentTeamId_IsEnemy()
+        {
+            var other = TestHelper.CreateCharacter(1, 0, 0, teamId: 1);
+            try
+            {
+                Assert.IsTrue(character.IsEnemyOf(other));
+                Assert.IsFalse(character.IsAllyOf(other));
+            }
+            finally
+            {
+                Object.DestroyImmediate(other.CurrentCell.gameObject);
+                Object.DestroyImmediate(other.gameObject);
+            }
+        }
+
+        [Test]
+        public void IsAllyOf_PvPDistinctTeams_AreMutualEnemies()
+        {
+            var p1 = TestHelper.CreateCharacter(0, 0, 0, teamId: 1);
+            var p2 = TestHelper.CreateCharacter(1, 0, 0, teamId: 2);
+            try
+            {
+                Assert.IsTrue(p1.IsEnemyOf(p2));
+                Assert.IsTrue(p2.IsEnemyOf(p1));
+                Assert.IsFalse(p1.IsAllyOf(p2));
+            }
+            finally
+            {
+                Object.DestroyImmediate(p1.CurrentCell.gameObject);
+                Object.DestroyImmediate(p1.gameObject);
+                Object.DestroyImmediate(p2.CurrentCell.gameObject);
+                Object.DestroyImmediate(p2.gameObject);
+            }
+        }
+
+        [Test]
+        public void IsAllyOf_Self_SameTeam()
+        {
+            Assert.IsTrue(character.IsAllyOf(character));
+            Assert.IsFalse(character.IsEnemyOf(character));
+        }
+
+        [Test]
         public void SetName_SetsCharacterName()
         {
             character.SetName("Bob");

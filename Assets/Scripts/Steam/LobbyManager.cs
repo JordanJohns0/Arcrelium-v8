@@ -3,20 +3,27 @@ using System.Collections.Generic;
 using Steamworks;
 using Steamworks.Data;
 using UnityEngine;
+using Game;
 
 public class LobbyManager : MonoBehaviour
     {
-        private static LobbyManager instance;
+    private static LobbyManager instance;
 
-        public Lobby? CurrentLobby { get; private set; }
-        public bool IsHost { get; private set; }
+    public const string MatchModeKey = "matchmode";
 
-        public static event Action<Lobby> OnLobbyCreated;
-        public static event Action<Lobby> OnLobbyJoined;
-        public static event Action OnLobbyLeft;
-        public static event Action<List<Lobby>> OnLobbyListReceived;
-        public static event Action OnMembersChanged;
-        public static event Action<Lobby, Friend> OnLobbyMemberLeft;
+    public Lobby? CurrentLobby { get; private set; }
+    public bool IsHost { get; private set; }
+
+    /// <summary>The match format for the current lobby (PvE by default).</summary>
+    public MatchMode MatchMode { get; private set; } = MatchMode.PvE;
+
+    public static event Action<Lobby> OnLobbyCreated;
+    public static event Action<Lobby> OnLobbyJoined;
+    public static event Action OnLobbyLeft;
+    public static event Action<List<Lobby>> OnLobbyListReceived;
+    public static event Action OnMembersChanged;
+    public static event Action<Lobby, Friend> OnLobbyMemberLeft;
+    public static event Action<MatchMode> OnMatchModeChanged;
 
         public static LobbyManager Instance
         {
@@ -59,15 +66,58 @@ public class LobbyManager : MonoBehaviour
             SteamFriends.OnGameLobbyJoinRequested -= HandleGameLobbyJoinRequested;
         }
 
+        /// <summary>
+        /// Re-reads the lobby's match format (PvE/PvP) from its metadata so this client
+        /// agrees with the host. Call whenever the lobby may have changed (after joining,
+        /// on member changes, or before starting a match). Host changes are picked up the
+        /// next time any member refreshes the lobby, and GameManager.Start re-reads the
+        /// mode before the match begins.
+        /// </summary>
+        public void RefreshMatchMode()
+        {
+            if (CurrentLobby.HasValue)
+                ApplyMatchMode(CurrentLobby.Value);
+        }
+
+        private void ApplyMatchMode(Lobby lobby)
+        {
+            string data = lobby.GetData(MatchModeKey);
+            if (string.IsNullOrEmpty(data)) return;
+            if (System.Enum.TryParse<MatchMode>(data, true, out MatchMode parsed) && parsed != MatchMode)
+            {
+                MatchMode = parsed;
+                GameState.CurrentMatchMode = parsed;
+                OnMatchModeChanged?.Invoke(parsed);
+                Debug.Log($"[LobbyManager] Match mode is now {parsed}");
+            }
+        }
+
+        /// <summary>
+        /// Sets the lobby's match format (host-only). Before a lobby exists it just stores
+        /// the choice so CreateLobby writes it; inside a lobby it is persisted as lobby
+        /// data, which Steam propagates to every member.
+        /// </summary>
+        public void SetMatchMode(MatchMode mode)
+        {
+            MatchMode = mode;
+            GameState.CurrentMatchMode = mode;
+            if (CurrentLobby.HasValue)
+                CurrentLobby.Value.SetData(MatchModeKey, mode.ToString());
+            OnMatchModeChanged?.Invoke(mode);
+            Debug.Log($"[LobbyManager] SetMatchMode to {mode}");
+        }
+
         private void HandleMemberJoined(Lobby lobby, Friend friend)
         {
             Debug.Log($"[LobbyManager] Member joined: {friend.Name} ({friend.Id}) — lobby now has {lobby.MemberCount} members");
+            RefreshMatchMode();
             OnMembersChanged?.Invoke();
         }
 
         private void HandleMemberLeft(Lobby lobby, Friend friend)
         {
             Debug.Log($"[LobbyManager] Member left: {friend.Name} ({friend.Id})");
+            RefreshMatchMode();
             OnMembersChanged?.Invoke();
             OnLobbyMemberLeft?.Invoke(lobby, friend);
         }
@@ -102,6 +152,7 @@ public class LobbyManager : MonoBehaviour
                 IsHost = true;
                 CurrentLobby?.SetData("name", $"{SteamClient.Name}'s Game");
                 CurrentLobby?.SetData("HostSteamId", SteamClient.SteamId.ToString());
+                CurrentLobby?.SetData(MatchModeKey, MatchMode.ToString());
                 CurrentLobby?.SetPublic();
                 CurrentLobby?.SetJoinable(true);
                 SteamFriends.SetRichPresence("connect", result.Value.Id.ToString());
@@ -131,6 +182,9 @@ var result = await SteamMatchmaking.LobbyList.RequestAsync();
             {
                 CurrentLobby = lobby;
                 IsHost = false;
+                MatchMode = MatchMode.PvE;
+                GameState.CurrentMatchMode = MatchMode.PvE;
+                ApplyMatchMode(lobby);
                 Debug.Log($"[LobbyManager] Joined lobby: {lobby.Id}");
                 OnLobbyJoined?.Invoke(lobby);
             }
@@ -147,6 +201,8 @@ var result = await SteamMatchmaking.LobbyList.RequestAsync();
                 CurrentLobby?.Leave();
                 CurrentLobby = null;
                 IsHost = false;
+                MatchMode = MatchMode.PvE;
+                GameState.CurrentMatchMode = MatchMode.PvE;
                 SteamFriends.ClearRichPresence();
                 OnLobbyLeft?.Invoke();
             }

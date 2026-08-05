@@ -224,9 +224,9 @@ namespace UI
             switch (card.TargetType)
             {
                 case TargetType.EnemyCharacter:
-                    return target.Team != source.Team;
+                    return target.IsEnemyOf(source);
                 case TargetType.AllyCharacter:
-                    return target.Team == source.Team;
+                    return target.IsAllyOf(source);
                 case TargetType.AnyCharacter:
                     return true;
                 default:
@@ -345,11 +345,11 @@ namespace UI
                     return cell.IsWalkable;
                 case TargetType.EnemyCharacter:
                     return cell.Occupant != null
-                        && cell.Occupant.Team != source.Team
+                        && cell.Occupant.IsEnemyOf(source)
                         && cell.Occupant.Stats.IsAlive;
                 case TargetType.AllyCharacter:
                     return cell.Occupant != null
-                        && cell.Occupant.Team == source.Team
+                        && cell.Occupant.IsAllyOf(source)
                         && cell.Occupant.Stats.IsAlive;
                 case TargetType.AnyCharacter:
                     return cell.Occupant != null && cell.Occupant.Stats.IsAlive;

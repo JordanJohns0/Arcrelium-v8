@@ -145,5 +145,77 @@ namespace Tests
 
             Assert.AreEqual(1, sync.characterStates.Count);
         }
+
+        [Test]
+        public void IsMatchOver_PvP_MultipleAliveTeams_ReturnsFalse()
+        {
+            GameState.CurrentMatchMode = MatchMode.PvP;
+            try
+            {
+                MakeCharacter(0, 1, "A", 0, -2);
+                MakeCharacter(1, 2, "B", 1, -2);
+
+                Assert.IsFalse(manager.IsMatchOver());
+            }
+            finally
+            {
+                GameState.CurrentMatchMode = MatchMode.PvE;
+            }
+        }
+
+        [Test]
+        public void IsMatchOver_PvP_OnlyOneAliveTeam_ReturnsTrue()
+        {
+            GameState.CurrentMatchMode = MatchMode.PvP;
+            try
+            {
+                var a = MakeCharacter(0, 1, "A", 0, -2);
+                MakeCharacter(1, 2, "B", 1, -2);
+                MakeCharacter(2, 2, "B2", 2, 0);
+
+                a.Stats.CurrentHealth = 0;
+
+                Assert.IsTrue(manager.IsMatchOver());
+            }
+            finally
+            {
+                GameState.CurrentMatchMode = MatchMode.PvE;
+            }
+        }
+
+        [Test]
+        public void IsMatchOver_PvE_AliveEnemy_ReturnsFalse()
+        {
+            GameState.CurrentMatchMode = MatchMode.PvE;
+            try
+            {
+                MakeCharacter(0, 0, "Player", 0, -2);
+                MakeCharacter(GameState.EnemyOwnerPlayerId, 1, "Enemy", 2, 0);
+
+                Assert.IsFalse(manager.IsMatchOver());
+            }
+            finally
+            {
+                GameState.CurrentMatchMode = MatchMode.PvE;
+            }
+        }
+
+        [Test]
+        public void IsMatchOver_PvE_NoAliveEnemy_ReturnsTrue()
+        {
+            GameState.CurrentMatchMode = MatchMode.PvE;
+            try
+            {
+                MakeCharacter(0, 0, "Player", 0, -2);
+                var enemy = MakeCharacter(GameState.EnemyOwnerPlayerId, 1, "Enemy", 2, 0);
+                enemy.Stats.CurrentHealth = 0;
+
+                Assert.IsTrue(manager.IsMatchOver());
+            }
+            finally
+            {
+                GameState.CurrentMatchMode = MatchMode.PvE;
+            }
+        }
     }
 }

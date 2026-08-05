@@ -120,7 +120,7 @@ namespace Tests
         {
             var names = new EquipmentLoadout().ToNames();
             Assert.AreEqual(8, names.Length);
-            CollectionAssert.AreEqual(new string[8], names);
+            CollectionAssert.AreEqual(new[] { "", "", "", "", "", "", "", "" }, names);
         }
 
         [Test]

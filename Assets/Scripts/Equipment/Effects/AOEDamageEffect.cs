@@ -1,5 +1,6 @@
 using UnityEngine;
 using HexGrid;
+using Characters;
 
 namespace Equipment.Effects
 {
@@ -22,7 +23,7 @@ namespace Equipment.Effects
             {
                 if (cell.Occupant == null) continue;
                 if (cell.Occupant == context.Source) continue;
-                if (cell.Occupant.Team == context.Source.Team) continue;
+                if (cell.Occupant.IsAllyOf(context.Source)) continue;
 
                 cell.Occupant.TakeDamage(Damage);
             }

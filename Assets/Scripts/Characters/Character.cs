@@ -33,6 +33,21 @@ namespace Characters
         public Team Team => TeamId == 0 ? Team.Ally : Team.Enemy;
         public Color? PlayerColor { get; private set; }
 
+        /// <summary>
+        /// Two characters are allies iff their TeamIds match. In PvE all human players
+        /// share team 0 and AI enemies team 1; in PvP every player gets a distinct TeamId,
+        /// so each player is only their own ally.
+        /// </summary>
+        public bool IsAllyOf(Character other)
+        {
+            return other != null && other.TeamId == TeamId;
+        }
+
+        public bool IsEnemyOf(Character other)
+        {
+            return other != null && other.TeamId != TeamId;
+        }
+
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
 

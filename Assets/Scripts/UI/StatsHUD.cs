@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Characters;
+using Game;
 
 namespace UI
 {
@@ -56,9 +57,30 @@ namespace UI
         private GameObject alliesRoot;
         private GameObject enemiesRoot;
         private bool initialized;
+        private int? cachedLocalTeamId;
 
         private readonly List<Character> pendingCharacters = new List<Character>();
         private readonly Dictionary<Character, StatEntry> entries = new Dictionary<Character, StatEntry>();
+
+        /// <summary>
+        /// The local player's team. From their perspective only characters on this team
+        /// are allies — in PvE that's every human player (team 0), and in PvP only their
+        /// own character (each player has a distinct team id).
+        /// </summary>
+        private int GetLocalTeamId()
+        {
+            if (cachedLocalTeamId.HasValue) return cachedLocalTeamId.Value;
+
+            foreach (Character c in FindObjectsByType<Character>(FindObjectsSortMode.None))
+            {
+                if (c != null && c.OwnerPlayerId == GameState.LocalPlayerId)
+                {
+                    cachedLocalTeamId = c.TeamId;
+                    return c.TeamId;
+                }
+            }
+            return 0;
+        }
 
         private void OnEnable()
         {
@@ -225,7 +247,7 @@ namespace UI
         {
             if (entries.ContainsKey(character)) return;
 
-            bool isAlly = character.Team == Team.Ally;
+            bool isAlly = character.TeamId == GetLocalTeamId();
             var target = isAlly ? alliesRoot : enemiesRoot;
             if (target == null) return;
 
@@ -321,7 +343,7 @@ namespace UI
                 if (kv.Key == null || kv.Key.Stats != stats) continue;
                 UpdateEntryLabels(kv.Value, stats);
                 UpdateEntryNameColor(kv.Value, kv.Key);
-                UpdateBars(kv.Value, stats, kv.Key.Team == Team.Ally);
+                UpdateBars(kv.Value, stats, kv.Key.TeamId == GetLocalTeamId());
                 break;
             }
         }
