@@ -1,0 +1,47 @@
+{
+  "data_version": 2,
+  "command_timeout": 5,
+  "templates_folder": "Templates",
+  "templates_pairs": [],
+  "trigger_on_file_creation_mode": "folder",
+  "auto_jump_to_cursor": false,
+  "jump_to_cursor_after_file_name": false,
+  "shell_path": "",
+  "user_scripts_folder": "",
+  "folder_templates": [
+    {
+      "folder": "Wiki/Cards",
+      "template": "Templates/Card.md"
+    },
+    {
+      "folder": "Wiki/Effects",
+      "template": "Templates/Effect.md"
+    },
+    {
+      "folder": "Wiki/Equipment",
+      "template": "Templates/Equipment.md"
+    },
+    {
+      "folder": "Wiki/Systems",
+      "template": "Templates/System.md"
+    },
+    {
+      "folder": "Wiki/Tasks/Bugs",
+      "template": "Templates/Bug.md"
+    },
+    {
+      "folder": "Wiki/Tasks/Features",
+      "template": "Templates/Feature.md"
+    }
+  ],
+  "file_templates": [],
+  "syntax_highlighting": true,
+  "syntax_highlighting_mobile": false,
+  "enabled_templates_hotkeys": [],
+  "startup_templates": [],
+  "intellisense_render": "1",
+  "ignore_folders_on_creation": [],
+  "template_folder": "Templates",
+  "timeout": 5,
+  "enable_ribbon_icon": true
+}
