@@ -10,6 +10,8 @@ using Characters;
 using HexGrid;
 using Game;
 using Networking;
+using Equipment;
+using UI;
 
 namespace Tests.PlayMode
 {
@@ -24,6 +26,11 @@ namespace Tests.PlayMode
         private Character enemy;
         private readonly List<Character> tracked = new List<Character>();
         private readonly List<ScriptableObject> trackedSops = new List<ScriptableObject>();
+
+        private static readonly FieldInfo loadoutScreenField =
+            typeof(GameManager).GetField("loadoutScreen", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo spawnsField =
+            typeof(GameManager).GetField("spawns", BindingFlags.NonPublic | BindingFlags.Instance);
 
         private CardData SelfCard(string name, int cost = 0)
         {
@@ -65,6 +72,12 @@ namespace Tests.PlayMode
 
             grid = TestHelper.CreateTestGrid(2);
 
+            var hexPrefabGo = new GameObject("HexCellPrefab");
+            hexPrefabGo.transform.SetParent(grid.transform);
+            var hexPrefab = hexPrefabGo.AddComponent<HexCell>();
+            typeof(HexGridManager).GetField("hexCellPrefab", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(grid, hexPrefab);
+
             typeof(TurnManager).GetField("actionResolver", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(turnManager, actionResolver);
             typeof(ActionResolver).GetField("grid", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -94,6 +107,48 @@ namespace Tests.PlayMode
             manager.activeCharacters.AddRange(new[] { player, enemy });
             turnManager.SetTurnOrder(new List<Character>(manager.activeCharacters));
             turnManager.StartMatch();
+        }
+
+        private void SeedSpawns(Character playerPrefab, Character enemyPrefab)
+        {
+            spawnsField.SetValue(manager, new List<GameManager.CharacterSpawn>
+            {
+                new GameManager.CharacterSpawn { characterPrefab = playerPrefab, ownerPlayerId = 0, spawnQ = 0, spawnR = 0 },
+                new GameManager.CharacterSpawn { characterPrefab = enemyPrefab, ownerPlayerId = 100, spawnQ = 1, spawnR = 0 }
+            });
+        }
+
+        private static GameStateSync VictorySync(int ownerPlayerId, int maxHp, int currentHp)
+        {
+            var sync = new GameStateSync { currentTurnIndex = 0, victory = true };
+            sync.characterStates.Add(new CharacterState
+            {
+                ownerPlayerId = ownerPlayerId,
+                teamId = 0,
+                q = 0,
+                r = 0,
+                currentHp = currentHp,
+                maxHp = maxHp,
+                isAlive = true,
+                name = "Player",
+                colorR = 0.2f,
+                colorG = 0.5f,
+                colorB = 0.8f,
+                handCardNames = new string[0]
+            });
+            return sync;
+        }
+
+        private void CleanupLoadoutScreen()
+        {
+            var screen = loadoutScreenField.GetValue(manager) as LoadoutScreen;
+            if (screen != null) Object.DestroyImmediate(screen.gameObject);
+            loadoutScreenField.SetValue(manager, null);
+
+            var ready = Object.FindAnyObjectByType<ReadyTracker>();
+            if (ready != null) Object.DestroyImmediate(ready.gameObject);
+            var lobby = Object.FindAnyObjectByType<LobbyManager>();
+            if (lobby != null) Object.DestroyImmediate(lobby.gameObject);
         }
 
         private static void DestroyCharacter(Character c)
@@ -393,6 +448,181 @@ namespace Tests.PlayMode
             finally
             {
                 Character.OnCharacterCreated -= listener;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SetupMatch_Rerun_DestroysPreviousSpawns()
+        {
+            var playerPrefab = TestHelper.CreateCharacter(0, 0, 0, 0);
+            var enemyPrefab = TestHelper.CreateCharacter(100, 0, 0, 1);
+            tracked.Add(playerPrefab);
+            tracked.Add(enemyPrefab);
+            SeedSpawns(playerPrefab, enemyPrefab);
+
+            manager.SetupMatch();
+            var firstBatch = new List<Character>(manager.activeCharacters);
+            manager.SetupMatch();
+            var secondBatch = new List<Character>(manager.activeCharacters);
+
+            Assert.AreEqual(2, secondBatch.Count, "Re-running SetupMatch must not stack duplicate spawns.");
+            Assert.AreNotSame(firstBatch[0], secondBatch[0], "Second run must build a fresh board.");
+
+            yield return null;
+
+            foreach (var stale in firstBatch)
+                Assert.IsTrue(stale == null, "Stale spawn must be destroyed when SetupMatch runs again.");
+            foreach (var fresh in secondBatch)
+                Assert.IsFalse(fresh == null, "Fresh spawn must remain alive.");
+        }
+
+        [UnityTest]
+        public IEnumerator SetupDynamicMatch_Rerun_DestroysPreviousSpawns()
+        {
+            var setupDynamicMatch = typeof(GameManager).GetMethod("SetupDynamicMatch", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            setupDynamicMatch.Invoke(manager, null);
+            var firstBatch = new List<Character>(manager.activeCharacters);
+            int firstCount = firstBatch.Count;
+            Assert.Greater(firstCount, 0, "SetupDynamicMatch must spawn at least the player character.");
+
+            setupDynamicMatch.Invoke(manager, null);
+            var secondBatch = new List<Character>(manager.activeCharacters);
+
+            Assert.AreEqual(firstCount, secondBatch.Count, "Re-running SetupDynamicMatch must not stack duplicate spawns.");
+            Assert.AreNotSame(firstBatch[0], secondBatch[0], "Second run must build a fresh board.");
+
+            yield return null;
+
+            foreach (var stale in firstBatch)
+                Assert.IsTrue(stale == null, "Stale spawn must be destroyed when SetupDynamicMatch runs again.");
+            foreach (var fresh in secondBatch)
+                Assert.IsFalse(fresh == null, "Fresh spawn must remain alive.");
+        }
+
+        [UnityTest]
+        public IEnumerator BeginMatch_Twice_IsNoOpAfterFirstStart()
+        {
+            var playerPrefab = TestHelper.CreateCharacter(0, 0, 0, 0);
+            var enemyPrefab = TestHelper.CreateCharacter(100, 0, 0, 1);
+            tracked.Add(playerPrefab);
+            tracked.Add(enemyPrefab);
+            SeedSpawns(playerPrefab, enemyPrefab);
+
+            typeof(GameManager).GetField("playerCharacterPrefab", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(manager, null);
+            typeof(GameManager).GetField("enemyCharacterPrefab", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(manager, null);
+
+            var beginMatch = typeof(GameManager).GetMethod("BeginMatch", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            beginMatch.Invoke(manager, null);
+            var firstBatch = new List<Character>(manager.activeCharacters);
+            beginMatch.Invoke(manager, null);
+
+            Assert.AreEqual(2, manager.activeCharacters.Count, "BeginMatch must spawn exactly one batch.");
+            Assert.AreSame(firstBatch[0], manager.activeCharacters[0],
+                "The re-entrancy guard must make a second BeginMatch a no-op instead of re-spawning.");
+
+            yield return null;
+
+            Assert.IsFalse(firstBatch[0] == null, "A guarded no-op BeginMatch must not tear down the running match.");
+        }
+
+        [Test]
+        public void HandlePlayCardRequest_FullHand_DrawCardStillDraws()
+        {
+            SetUpPlayersAndStartMatch();
+
+            var drawEffect = ScriptableObject.CreateInstance<DrawCardsEffect>();
+            drawEffect.Amount = CardValue.MakeConstant(1);
+            trackedSops.Add(drawEffect);
+            var drawData = TestHelper.MakeCard("Draw", 0, TestHelper.Step(drawEffect, TargetType.Self));
+            trackedSops.Add(drawData);
+
+            player.Deck.SetStartingCards(new List<CardData> { TestHelper.MakeCard("Drawable") });
+            player.Deck.Shuffle();
+            player.Hand.AddCard(new CardInstance(drawData));
+            while (!player.Hand.IsFull)
+                player.Hand.AddCard(new CardInstance(drawData));
+
+            manager.HandlePlayCardRequest(123ul, new PlayCardRequest { cardHandIndex = 0 });
+
+            Assert.AreEqual(player.MaxHandSize, player.Hand.Cards.Count,
+                "The played card's slot must be freed before draw effects run, so a full hand doesn't block the draw.");
+        }
+
+        [Test]
+        public void HandleGameStateReceived_VictorySync_KeepsLoadoutScreenOpen()
+        {
+            var emptyPool = ScriptableObject.CreateInstance<RewardPool>();
+            trackedSops.Add(emptyPool);
+            RewardPool.SetMain(emptyPool);
+            try
+            {
+                var sync = VictorySync(0, 10, 7);
+
+                manager.HandleGameStateReceived(sync);
+                var screen = loadoutScreenField.GetValue(manager) as LoadoutScreen;
+                manager.HandleGameStateReceived(sync);
+
+                Assert.IsNotNull(screen, "Victory must open the loadout screen so the reward is visible.");
+                Assert.AreSame(screen, loadoutScreenField.GetValue(manager),
+                    "A second victory sync must not destroy and recreate the loadout screen.");
+            }
+            finally
+            {
+                RewardPool.SetMain(null);
+                PlayerInventoryProvider.ResetForTests();
+                CleanupLoadoutScreen();
+            }
+        }
+
+        [Test]
+        public void ShowVictory_Twice_UnlocksRewardOnce()
+        {
+            var rewardA = ScriptableObject.CreateInstance<EquipmentData>();
+            rewardA.EquipmentName = "RewardA";
+            var rewardB = ScriptableObject.CreateInstance<EquipmentData>();
+            rewardB.EquipmentName = "RewardB";
+            trackedSops.Add(rewardA);
+            trackedSops.Add(rewardB);
+
+            var pool = ScriptableObject.CreateInstance<RewardPool>();
+            pool.rewards.Add(rewardA);
+            pool.rewards.Add(rewardB);
+            trackedSops.Add(pool);
+            RewardPool.SetMain(pool);
+
+            var blankTemplate = ScriptableObject.CreateInstance<PlayerInventory>();
+            trackedSops.Add(blankTemplate);
+
+            string tempRoot = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                "ArcreliumInvTests_" + System.Guid.NewGuid().ToString("N"));
+            PlayerInventoryProvider.RootOverride = tempRoot;
+            PlayerInventoryProvider.DefaultOverride = blankTemplate;
+            PlayerInventoryProvider.ResetForTests();
+
+            try
+            {
+                var showVictory = typeof(GameManager).GetMethod("ShowVictory", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                showVictory.Invoke(manager, null);
+                showVictory.Invoke(manager, null);
+
+                var inventory = PlayerInventoryProvider.GetFor(0UL);
+                Assert.AreEqual(1, inventory.UnlockedEquipment.Count,
+                    "ShowVictory must roll and unlock a single reward even when triggered twice.");
+            }
+            finally
+            {
+                PlayerInventoryProvider.RootOverride = null;
+                PlayerInventoryProvider.DefaultOverride = null;
+                PlayerInventoryProvider.ResetForTests();
+                RewardPool.SetMain(null);
+                if (System.IO.Directory.Exists(tempRoot))
+                    System.IO.Directory.Delete(tempRoot, true);
+                CleanupLoadoutScreen();
             }
         }
     }
