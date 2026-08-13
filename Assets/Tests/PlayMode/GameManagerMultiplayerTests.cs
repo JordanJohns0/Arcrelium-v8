@@ -360,5 +360,40 @@ namespace Tests.PlayMode
             Assert.AreEqual(1, turnManager.CurrentTurnIndex);
             Assert.AreEqual(rebuiltEnemy, turnManager.ActiveCharacter);
         }
+
+        [Test]
+        public void HandleGameStateReceived_SyncedMaxHpAppliedBeforeOnCharacterCreated()
+        {
+            int maxHpSeen = -1;
+            System.Action<Character> listener = c => maxHpSeen = c.Stats.MaxHealth;
+            Character.OnCharacterCreated += listener;
+            try
+            {
+                var sync = new GameStateSync { currentTurnIndex = 0 };
+                sync.characterStates.Add(new CharacterState
+                {
+                    ownerPlayerId = 100,
+                    teamId = 1,
+                    q = 1,
+                    r = -1,
+                    currentHp = 4,
+                    maxHp = 6,
+                    isAlive = true,
+                    name = "Enemy",
+                    colorR = 0.8f,
+                    colorG = 0.3f,
+                    colorB = 0.3f
+                });
+
+                manager.HandleGameStateReceived(sync);
+
+                Assert.AreEqual(6, maxHpSeen,
+                    "StatsHUD builds segments from MaxHealth at OnCharacterCreated — it must already be the synced value.");
+            }
+            finally
+            {
+                Character.OnCharacterCreated -= listener;
+            }
+        }
     }
 }

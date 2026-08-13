@@ -70,6 +70,7 @@ namespace Game
 
         private LoadoutScreen loadoutScreen;
         private bool victoryAchieved;
+        private bool matchStarted;
 
         /// <summary>
         /// Loadouts collected from every player during the loadout phase. The host starts
@@ -83,6 +84,7 @@ namespace Game
         private void Start()
         {
             victoryAchieved = false;
+            matchStarted = false;
             GameMode currentMode = GameState.ActiveMode;
 
             // Make sure this machine knows the lobby's match format even if it only just
@@ -189,6 +191,9 @@ namespace Game
         /// </summary>
         private void BeginMatch()
         {
+            if (matchStarted) return;
+            matchStarted = true;
+
             GameState.ShowLoadoutScreen = false;
             switch (GameState.ActiveMode)
             {
@@ -345,7 +350,7 @@ namespace Game
         public void SetupMatch()
         {
             grid.GenerateGrid();
-            activeCharacters.Clear();
+            DestroyActiveCharacters();
 
             foreach (var spawn in spawns)
             {
@@ -368,10 +373,22 @@ namespace Game
             turnManager.StartMatch();
         }
 
+        private void DestroyActiveCharacters()
+        {
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null) continue;
+                c.CancelMoveAnimation();
+                if (c.CurrentCell != null) c.CurrentCell.ClearOccupant();
+                Destroy(c.gameObject);
+            }
+            activeCharacters.Clear();
+        }
+
         private void SetupDynamicMatch()
         {
             grid.GenerateGrid();
-            activeCharacters.Clear();
+            DestroyActiveCharacters();
 
             if (GameState.ActiveMode == GameMode.Host)
                 SetupMultiplayerPlayers();
@@ -568,12 +585,14 @@ namespace Game
 
         private void HandleActionResolved()
         {
+            if (victoryAchieved) return;
             if (GameState.ActiveMode == GameMode.Host)
                 BroadcastGameState();
         }
 
         private void HandleTurnStartedBroadcast(Character character)
         {
+            if (victoryAchieved) return;
             if (GameState.ActiveMode == GameMode.Host)
                 BroadcastGameState();
         }
@@ -640,8 +659,9 @@ namespace Game
                 : null;
 
             Debug.Log($"[GameManager] Client {senderSteamId} plays '{card.Data?.CardName}'");
-            turnManager.PlayCard(card, costCards, targetCell, targetCharacter);
-            BroadcastGameState();
+            bool played = turnManager.PlayCard(card, costCards, targetCell, targetCharacter);
+            if (!played)
+                BroadcastGameState();
         }
 
         internal void HandlePassRequest(ulong senderSteamId)
@@ -725,6 +745,7 @@ namespace Game
 
         private void ShowVictory()
         {
+            if (victoryAchieved) return;
             victoryAchieved = true;
             BroadcastGameState();
 
@@ -752,7 +773,7 @@ namespace Game
         {
             if (state == null) return;
 
-            if (loadoutScreen != null && state.characterStates.Count > 0)
+            if (loadoutScreen != null && state.characterStates.Count > 0 && !state.victory)
                 DestroyLoadoutScreen();
 
             if (state.characterStates.Count > 0)
@@ -785,6 +806,8 @@ namespace Game
                     if (prefab == null) continue;
 
                     Character character = Instantiate(prefab);
+                    if (character.Stats != null)
+                        character.Stats.MaxHealth = cs.maxHp;
                     character.Initialize(cs.ownerPlayerId, cell, teamId: cs.teamId,
                         loadout: cs.ownerPlayerId == GameState.LocalPlayerId
                             ? PlayerInventoryProvider.GetLocal().Loadout

@@ -28,6 +28,9 @@ namespace Game
         /// Returns false (and changes nothing) if the card isn't in hand, the cost payment is
         /// invalid, or the effect rejects the target. Costs are only paid once the play is
         /// confirmed valid — a failed attempt never discards anything.
+        ///
+        /// The played card and its cost cards are removed from the hand BEFORE effects resolve,
+        /// so draw effects see the freed hand slots instead of being blocked by a full hand.
         /// </summary>
         public bool PlayCard(
             Character source,
@@ -64,10 +67,8 @@ namespace Game
                     context.BonusRange = bonusRange;
             }
 
-            foreach (var (step, context) in executions)
-                step.Effect.Execute(context);
-
-            // Pay cost: discard the other cards, then discard the played card itself.
+            // Pay cost: discard the other cards, then the played card itself. Must happen
+            // before effects execute so draw effects see the freed hand slots.
             foreach (CardInstance costCard in costCards)
             {
                 source.Hand.RemoveCard(costCard);
@@ -75,6 +76,9 @@ namespace Game
             }
             source.Hand.RemoveCard(card);
             source.Deck.Discard(card);
+
+            foreach (var (step, context) in executions)
+                step.Effect.Execute(context);
 
             OnCardPlayed?.Invoke(source, card.Data);
             return true;

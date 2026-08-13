@@ -90,6 +90,27 @@ namespace Tests.Game
         }
 
         [Test]
+        public void PlayCard_DrawCard_FreesHandSlotBeforeDrawing()
+        {
+            var drawEffect = ScriptableObject.CreateInstance<Cards.Effects.DrawCardsEffect>();
+            drawEffect.Amount = CardValue.MakeConstant(1);
+            var drawData = TestHelper.MakeCard("Draw", 0,
+                TestHelper.Step(drawEffect, TargetType.Self));
+
+            source.Deck.SetStartingCards(new List<CardData> { TestHelper.MakeCard("Drawable") });
+            source.Deck.Shuffle();
+            source.Hand.AddCard(new CardInstance(drawData));
+            while (!source.Hand.IsFull)
+                source.Hand.AddCard(new CardInstance(attackCardData));
+
+            bool played = resolver.PlayCard(source, source.Hand.Cards[0]);
+
+            Assert.IsTrue(played);
+            Assert.AreEqual(source.MaxHandSize, source.Hand.Cards.Count,
+                "The played card's slot must be freed before draw effects run, so a full hand doesn't block the draw.");
+        }
+
+        [Test]
         public void PlayCard_CardWithCost_DiscardsCostCards()
         {
             var expensiveCardData = MakeSelfCard("Expensive", 1);
