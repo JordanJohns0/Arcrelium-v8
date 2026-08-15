@@ -14,7 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Staff of Fire
   Description: 
-  Icon: {fileID: 0}
-  SlotType: 0
-  Cards: []
+  Icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
+  SlotType: 3
+  Cards:
+  - {fileID: 11400000, guid: 2b3456bb75c782a4ea1f236eb07f72bf, type: 2}
+  - {fileID: 11400000, guid: 2b3456bb75c782a4ea1f236eb07f72bf, type: 2}
+  - {fileID: 11400000, guid: fef01527983b00b41b3a8bc774f9ae63, type: 2}
   Triggers: []
