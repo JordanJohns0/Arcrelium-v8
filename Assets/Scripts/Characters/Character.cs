@@ -50,6 +50,7 @@ namespace Characters
 
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
+        public event Action<int> OnDamageTaken;
 
         public static event Action<Character> OnCharacterCreated;
         public static event Action<Character> OnCharacterDestroyed;
@@ -246,6 +247,7 @@ namespace Characters
         public void TakeDamage(int amount)
         {
             stats.ApplyDamage(amount);
+            OnDamageTaken?.Invoke(amount);
             if (!stats.IsAlive)
             {
                 Die();

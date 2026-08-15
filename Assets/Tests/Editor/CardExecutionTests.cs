@@ -190,6 +190,47 @@ namespace Tests.Cards
             }
         }
 
+        /// <summary>
+        /// Fireball's description: "Deal 3 damage to the character there and 1 damage to each
+        /// adjacent character." This test asserts exactly that.
+        /// </summary>
+        [Test]
+        public void Fireball_MatchesDescription()
+        {
+            CardData fireball = Resolve("Fireball");
+            using (Setup setup = BuildSetup(fireball))
+            {
+                // Reset source to full HP so "source is not a target" is unambiguous.
+                setup.Source.Stats.Initialize();
+
+                // Put the primary target ON the picked hex and a victim on an adjacent hex.
+                HexCoordinates center = new HexCoordinates(2, 0); // range 2 from source (0,0)
+                setup.Enemy.PlaceOnCell(setup.Grid.GetCell(center));
+                Character adjacent = TestHelper.CreateCharacterOnGrid(setup.Grid, 1, 3, 0);  // 1 hex away
+                Character far = TestHelper.CreateCharacterOnGrid(setup.Grid, 1, 4, 0);       // 2 hexes away
+
+                try
+                {
+                    setup.TargetPickCell = center;
+                    Assert.IsTrue(setup.Play(), "Fireball should play against a valid hex.");
+
+                    Assert.AreEqual(7, setup.Enemy.Stats.CurrentHealth,
+                        "Character on the picked hex should take 3 damage.");
+                    Assert.AreEqual(9, adjacent.Stats.CurrentHealth,
+                        "Adjacent characters should take 1 damage.");
+                    Assert.AreEqual(10, far.Stats.CurrentHealth,
+                        "Characters 2+ hexes away should take no damage.");
+                    Assert.AreEqual(10, setup.Source.Stats.CurrentHealth,
+                        "Source is 2 hexes away and must not be hit by its own Fireball.");
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(adjacent.gameObject);
+                    UnityEngine.Object.DestroyImmediate(far.gameObject);
+                }
+            }
+        }
+
         [Test]
         public void PlayCard_InvalidTarget_ReturnsFalse_AndMutatesNothing()
         {
@@ -358,7 +399,16 @@ namespace Tests.Cards
                 case "Sprint":
                     return MoveTo(4);
                 case "Fireball":
-                    return AreaBlast(2, new HexCoordinates(2, -1));
+                    // Description: "Deal 3 damage to the character there and 1 damage to each
+                    // adjacent character." In the generic fixture the enemy sits adjacent to the
+                    // picked hex, so it should take 1 and the caster (2 hexes out) 0.
+                    return new ExpectedOutcome
+                    {
+                        SourceHealth = 7,
+                        SourceBlock = 3,
+                        EnemyHealth = 9,
+                        TargetPickCell = new HexCoordinates(2, -1)
+                    };
                 case "Flame Bolt":
                     return RangedAttack(2);
                 case "Painful Sprint":

@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Cards.Effects.AreaDamageEffect
   Damage:
     Type: 0
-    Constant: 2
-  Radius: 2
-  Faction: 2
-  IncludeSelf: 1
-  DamagePerHexFalloff: 0
+    Constant: 3
+  Radius: 1
+  Faction: 0
+  IncludeSelf: 0
+  DamagePerHexFalloff: 2
   MinimumDamage: 0

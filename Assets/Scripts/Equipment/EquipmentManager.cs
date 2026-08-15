@@ -64,6 +64,7 @@ namespace Equipment
             }
 
             character.OnMovedToCell += HandleMovedToCell;
+            character.OnDamageTaken += HandleDamageTaken;
         }
 
         private void LoadFromInspector()
@@ -383,6 +384,11 @@ namespace Equipment
             }
         }
 
+        private void HandleDamageTaken(int amount)
+        {
+            FireTriggers(TriggerTiming.OnDamageTaken);
+        }
+
         public void FireTriggers(TriggerTiming timing)
         {
             var context = new EquipmentContext
@@ -435,6 +441,7 @@ namespace Equipment
             if (character != null)
             {
                 character.OnMovedToCell -= HandleMovedToCell;
+                character.OnDamageTaken -= HandleDamageTaken;
             }
         }
     }
