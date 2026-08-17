@@ -500,6 +500,65 @@ namespace Tests.PlayMode
                 Assert.IsFalse(fresh == null, "Fresh spawn must remain alive.");
         }
 
+        [Test]
+        public void GetMaxSpreadSpawnCells_EachSpawnIsTheFarthestPossibleCell()
+        {
+            var spreadGrid = TestHelper.CreateTestGrid(4);
+            typeof(GameManager).GetField("grid", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(manager, spreadGrid);
+
+            var method = typeof(GameManager).GetMethod("GetMaxSpreadSpawnCells", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            for (int count = 2; count <= 8; count++)
+            {
+                var spawns = (List<HexCell>)method.Invoke(manager, new object[] { count });
+
+                Assert.AreEqual(count, spawns.Count, $"Count {count} must produce exactly {count} spawn cells.");
+                Assert.IsTrue(spawns.TrueForAll(c => c.IsWalkable), "Every spawn cell must be walkable.");
+
+                var chosen = new List<HexCell>();
+                foreach (var spawn in spawns)
+                {
+                    Assert.IsFalse(chosen.Exists(c => c.Coordinates == spawn.Coordinates),
+                        $"Count {count}: spawn cell {spawn.Coordinates} must not repeat.");
+
+                    if (chosen.Count == 0)
+                    {
+                        chosen.Add(spawn);
+                        continue;
+                    }
+
+                    // This spawn must be the walkable cell farthest from the already-placed
+                    // spawns (the previous set), which is the greedy property we want to lock in.
+                    int actualMin = MinDistanceTo(spawn, chosen);
+                    int bestPossible = 0;
+                    foreach (var candidate in spreadGrid.AllCells)
+                    {
+                        if (!candidate.IsWalkable || chosen.Exists(c => c.Coordinates == candidate.Coordinates))
+                            continue;
+                        int min = MinDistanceTo(candidate, chosen);
+                        if (min > bestPossible) bestPossible = min;
+                    }
+
+                    Assert.AreEqual(bestPossible, actualMin,
+                        $"Count {count}: spawn #{chosen.Count + 1} must be the cell farthest from the already-placed players.");
+
+                    chosen.Add(spawn);
+                }
+            }
+        }
+
+        private static int MinDistanceTo(HexCell cell, List<HexCell> others)
+        {
+            int min = int.MaxValue;
+            foreach (var other in others)
+            {
+                int d = cell.Coordinates.DistanceTo(other.Coordinates);
+                if (d < min) min = d;
+            }
+            return min;
+        }
+
         [UnityTest]
         public IEnumerator BeginMatch_Twice_IsNoOpAfterFirstStart()
         {

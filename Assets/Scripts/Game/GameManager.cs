@@ -441,12 +441,24 @@ namespace Game
             for (int i = 0; i < members.Count; i++)
                 steamIdToPlayerId[members[i].Id.Value] = i;
 
+            // PvP: place every player as far from everyone else as possible so nobody
+            // starts next to an opponent. PvE keeps the fixed ally spawn table.
+            var pvpSpawns = GameState.IsPvP ? GetMaxSpreadSpawnCells(members.Count) : null;
+
             for (int i = 0; i < members.Count; i++)
             {
-                var coords = i < MultiplayerAllySpawns.Length
-                    ? MultiplayerAllySpawns[i]
-                    : new HexCoordinates(allySpawnQ, allySpawnR);
-                if (!grid.TryGetCell(coords, out HexCell cell)) continue;
+                HexCell cell;
+                if (pvpSpawns != null && i < pvpSpawns.Count)
+                {
+                    cell = pvpSpawns[i];
+                }
+                else
+                {
+                    var coords = i < MultiplayerAllySpawns.Length
+                        ? MultiplayerAllySpawns[i]
+                        : new HexCoordinates(allySpawnQ, allySpawnR);
+                    if (!grid.TryGetCell(coords, out cell)) continue;
+                }
 
                 // PvE: every human player shares team 0 (allies). PvP: each player gets
                 // a distinct team id so they are their own team and everyone else is an
@@ -500,6 +512,51 @@ namespace Game
             for (int i = 0; i < take; i++)
                 result.Add(candidates[i]);
             return result;
+        }
+
+        /// <summary>
+        /// Greedy farthest-point placement for 2-8 players: each next spawn is the walkable
+        /// cell that maximizes its minimum hex distance to every already-chosen spawn, so the
+        /// whole group spreads as wide as the board allows. Candidate order is sorted by
+        /// coordinates so the layout is deterministic across machines and test runs.
+        /// </summary>
+        private List<HexCell> GetMaxSpreadSpawnCells(int count)
+        {
+            var candidates = new List<HexCell>(grid.AllCells);
+            candidates.RemoveAll(cell => !cell.IsWalkable);
+
+            candidates.Sort((a, b) =>
+            {
+                var ca = a.Coordinates;
+                var cb = b.Coordinates;
+                int q = ca.Q.CompareTo(cb.Q);
+                return q != 0 ? q : ca.R.CompareTo(cb.R);
+            });
+
+            var chosen = new List<HexCell>();
+            int take = Mathf.Min(count, candidates.Count);
+            for (int n = 0; n < take; n++)
+            {
+                int bestIndex = -1;
+                int bestMinDistance = -1;
+                for (int i = 0; i < candidates.Count; i++)
+                {
+                    int minDistance = int.MaxValue;
+                    foreach (var other in chosen)
+                    {
+                        int distance = candidates[i].Coordinates.DistanceTo(other.Coordinates);
+                        if (distance < minDistance) minDistance = distance;
+                    }
+                    if (minDistance > bestMinDistance)
+                    {
+                        bestMinDistance = minDistance;
+                        bestIndex = i;
+                    }
+                }
+                chosen.Add(candidates[bestIndex]);
+                candidates.RemoveAt(bestIndex);
+            }
+            return chosen;
         }
 
         private void HandleCharacterDefeated(Character character)
