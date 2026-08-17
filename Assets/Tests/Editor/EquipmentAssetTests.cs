@@ -52,7 +52,7 @@ namespace Tests.Equipment
             {
                 Name = "Crown of Inspiration",
                 Slot = EquipmentSlotType.Head,
-                Cards = new[] { "Inspire", "Inspire" },
+                Cards = new[] { "Inspire" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -87,7 +87,7 @@ namespace Tests.Equipment
             {
                 Name = "Spiked Sword",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Slash", "Slash", "Painful Slash" },
+                Cards = new[] { "Slash", "Painful Slash", "Painful Slash" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -108,7 +108,7 @@ namespace Tests.Equipment
             {
                 Name = "Sword of Truth",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Slash", "Slash", "Inspire", "Inspire" },
+                Cards = new[] { "Slash", "Slash", "Inspire" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -165,6 +165,41 @@ namespace Tests.Equipment
                 Name = "Rusty Sword",
                 Slot = EquipmentSlotType.Hand,     // Starter_Sword
                 Cards = new[] { "Slash", "Slash", "Slash" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Broadsword",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Heavy Slash", "Slash", "Parry" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Claymore",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Heavy Slash", "Heavy Slash", "Heavy Slash" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Greatsword",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Heavy Slash", "Slash", "Slash" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Khopesh",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Slash", "Slash", "Disarming Slash" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Shortsword",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Slash" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
         };

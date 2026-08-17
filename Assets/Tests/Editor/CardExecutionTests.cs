@@ -413,6 +413,12 @@ namespace Tests.Cards
                     return RangedAttack(2);
                 case "Painful Sprint":
                     return MoveAndSelfDamage(2, 1);
+                case "Disarming Slash":
+                    return Attack(2);
+                case "Heavy Slash":
+                    return Attack(4);
+                case "Parry":
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 5, EnemyHealth = 10 };
                 default:
                     Assert.Fail($"No expected outcome defined for card '{card.CardName}' — add a SpecFor row.");
                     return default;
@@ -506,6 +512,43 @@ namespace Tests.Cards
                 Assert.AreEqual(sourceHp, setup.Source.Stats.CurrentHealth);
 
                 UnityEngine.Object.DestroyImmediate(blocker.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Parry's conditional effect: "If an adjacent enemy exists, gain 2 block."
+        /// Tests both branches — condition true (enemy adjacent) and false (no adjacent enemy).
+        /// </summary>
+        [Test]
+        public void Parry_ConditionalBranches()
+        {
+            CardData parry = Resolve("Parry");
+            using (Setup setup = BuildSetup(parry))
+            {
+                // Branch 1 — enemy IS adjacent (1,-1). Condition true → gain 2 block.
+                Assert.IsTrue(setup.Play(), "Parry should play with an adjacent enemy.");
+                Assert.AreEqual(5, setup.Source.Stats.Block,
+                    "Parry should grant 2 block when an enemy is adjacent (3 starting + 2 = 5).");
+                Assert.AreEqual(10, setup.Enemy.Stats.CurrentHealth,
+                    "Parry must not damage the enemy.");
+
+                // Re-add card and cost cards to hand for branch 2.
+                setup.Source.Hand.AddCard(setup.Card);
+                foreach (CardInstance cost in setup.CostCards)
+                    setup.Source.Hand.AddCard(cost);
+
+                // Reset stats and move enemy out of adjacency.
+                setup.Source.Stats.Initialize();
+                setup.Source.Stats.ApplyDamage(3);
+                setup.Source.Stats.GainBlock(3);
+                setup.Enemy.PlaceOnCell(setup.Grid.GetCell(new HexCoordinates(2, -1)));
+
+                // Branch 2 — no enemy adjacent. Condition false → no block gain.
+                Assert.IsTrue(setup.Play(), "Parry should play even without an adjacent enemy.");
+                Assert.AreEqual(3, setup.Source.Stats.Block,
+                    "Parry must not grant block when no enemy is adjacent.");
+                Assert.AreEqual(10, setup.Enemy.Stats.CurrentHealth,
+                    "Parry must not damage the enemy.");
             }
         }
 

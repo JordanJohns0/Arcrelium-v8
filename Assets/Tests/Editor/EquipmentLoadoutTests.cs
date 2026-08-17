@@ -445,5 +445,99 @@ namespace Tests.Equipment
                 File.Delete(path);
             }
         }
+
+        [Test]
+        public void ResetToTemplate_ClearsCacheAndAppliesTemplate()
+        {
+            PlayerInventoryProvider.RootOverride = TempRoot();
+            Directory.CreateDirectory(TempRoot());
+
+            var template = ScriptableObject.CreateInstance<PlayerInventory>();
+            tracked.Add(template);
+            var templateHelm = MakeEquipment(EquipmentSlotType.Head, "Template Helm");
+            template.Unlock(templateHelm);
+            template.Loadout.Set(EquipmentSlotType.Head, 0, templateHelm);
+            PlayerInventoryProvider.DefaultOverride = template;
+
+            const ulong steamId = 8888;
+
+            // First call populates cache with template defaults.
+            var before = PlayerInventoryProvider.GetFor(steamId);
+            Assert.AreEqual(templateHelm, before.Loadout.Head);
+
+            // Simulate mid-run progress: equip a different item and unlock extra gear.
+            var upgradedHelm = MakeEquipment(EquipmentSlotType.Head, "Upgraded Helm");
+            before.Loadout.Set(EquipmentSlotType.Head, 0, upgradedHelm);
+            before.Unlock(upgradedHelm);
+            Assert.AreEqual(upgradedHelm, before.Loadout.Head);
+
+            // ResetToTemplate should wipe the progress.
+            PlayerInventoryProvider.ResetToTemplate(steamId);
+            var after = PlayerInventoryProvider.GetFor(steamId);
+
+            Assert.AreEqual(templateHelm, after.Loadout.Head,
+                "Loadout must revert to the template after reset.");
+            Assert.AreEqual(1, after.UnlockedEquipment.Count,
+                "Unlocked list must match the template after reset.");
+            Assert.IsTrue(after.IsUnlocked(templateHelm),
+                "Template items must be in the unlocked list.");
+            Assert.IsFalse(after.IsUnlocked(upgradedHelm),
+                "Non-template items must not survive the reset.");
+
+            string path = PlayerInventoryProvider.GetPath(steamId);
+            if (File.Exists(path)) File.Delete(path);
+        }
+
+        [Test]
+        public void ResetToTemplate_SavesToDiskSoFreshProcessGetsTemplate()
+        {
+            PlayerInventoryProvider.RootOverride = TempRoot();
+            Directory.CreateDirectory(TempRoot());
+
+            var template = ScriptableObject.CreateInstance<PlayerInventory>();
+            tracked.Add(template);
+            var templateShield = MakeEquipment(EquipmentSlotType.Hand, "Wooden Shield");
+            template.Unlock(templateShield);
+            template.Loadout.Set(EquipmentSlotType.Hand, 0, templateShield);
+            PlayerInventoryProvider.DefaultOverride = template;
+
+            const ulong steamId = 9999;
+
+            // Load, modify, then reset.
+            var inv = PlayerInventoryProvider.GetFor(steamId);
+            inv.Loadout.Set(EquipmentSlotType.Hand, 0,
+                MakeEquipment(EquipmentSlotType.Hand, "Legendary Sword"));
+            PlayerInventoryProvider.ResetToTemplate(steamId);
+
+            // Simulate a fresh process: clear cache and reload from disk.
+            PlayerInventoryProvider.ResetForTests();
+            var reloaded = PlayerInventoryProvider.GetFor(steamId);
+
+            Assert.AreEqual(templateShield, reloaded.Loadout.LeftHand,
+                "After a fresh load from disk, the loadout must match the template.");
+
+            string path = PlayerInventoryProvider.GetPath(steamId);
+            if (File.Exists(path)) File.Delete(path);
+        }
+
+        [Test]
+        public void ResetToTemplate_MissingTemplate_DoesNotThrow()
+        {
+            PlayerInventoryProvider.RootOverride = TempRoot();
+            Directory.CreateDirectory(TempRoot());
+            PlayerInventoryProvider.DefaultOverride = ScriptableObject.CreateInstance<PlayerInventory>();
+            tracked.Add(PlayerInventoryProvider.DefaultOverride);
+            GameDataLibrary.SetInstance(null);
+
+            // Should not throw even with an empty template (no unlocks, no loadout).
+            PlayerInventoryProvider.ResetToTemplate(12345);
+
+            var inv = PlayerInventoryProvider.GetFor(12345);
+            Assert.IsNotNull(inv);
+            Assert.IsTrue(inv.UnlockedEquipment == null || inv.UnlockedEquipment.Count == 0);
+
+            string path = PlayerInventoryProvider.GetPath(12345);
+            if (File.Exists(path)) File.Delete(path);
+        }
     }
 }

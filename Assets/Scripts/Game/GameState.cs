@@ -73,6 +73,7 @@ namespace Game
         {
             CurrentLevel = 1;
             ShowLoadoutScreen = true;
+            Equipment.PlayerInventoryProvider.ResetToTemplate(Equipment.PlayerInventoryProvider.LocalPlayerKey);
             SceneManager.LoadScene("GameScene");
         }
     }

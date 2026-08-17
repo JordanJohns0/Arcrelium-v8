@@ -66,6 +66,12 @@ namespace Game
                             Accumulate(sub, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
                     }
                     break;
+                case ConditionalEffect conditional:
+                    if (conditional.TrueEffect != null)
+                        Accumulate(conditional.TrueEffect, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
+                    if (conditional.FalseEffect != null)
+                        Accumulate(conditional.FalseEffect, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
+                    break;
             }
         }
 

@@ -275,7 +275,8 @@ namespace Tests.AI
                 typeof(CompositeEffect),
                 typeof(SelfDamageEffect),
                 typeof(MoveEffect),
-                typeof(AreaDamageEffect)
+                typeof(AreaDamageEffect),
+                typeof(ConditionalEffect)
             };
 
             var unhandled = new List<string>();
@@ -309,6 +310,13 @@ namespace Tests.AI
                 {
                     if (sub != null) CollectUnhandled(sub, handled, unhandled, cardName, depth + 1);
                 }
+            }
+            if (effect is ConditionalEffect conditional && depth < 8)
+            {
+                if (conditional.TrueEffect != null)
+                    CollectUnhandled(conditional.TrueEffect, handled, unhandled, cardName, depth + 1);
+                if (conditional.FalseEffect != null)
+                    CollectUnhandled(conditional.FalseEffect, handled, unhandled, cardName, depth + 1);
             }
         }
     }

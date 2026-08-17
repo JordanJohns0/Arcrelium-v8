@@ -145,6 +145,21 @@ namespace Equipment
             }
         }
 
+        /// <summary>
+        /// Discards any cached/save file for the given player and replaces it with a fresh
+        /// clone of the starter template. Called at the start of every run so each run
+        /// begins with the base equipment regardless of previous progress.
+        /// </summary>
+        public static void ResetToTemplate(ulong steamId)
+        {
+            cache.Remove(steamId);
+            var instance = ScriptableObject.CreateInstance<PlayerInventory>();
+            ApplyTemplate(instance);
+            EnsureLoadoutOwned(instance);
+            cache[steamId] = instance;
+            Save(steamId, instance);
+        }
+
         public static void ResetForTests()
         {
             cache.Clear();
