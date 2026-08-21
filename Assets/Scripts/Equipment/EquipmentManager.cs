@@ -136,6 +136,7 @@ namespace Equipment
             }
 
             OnEquipmentChanged?.Invoke(instance);
+            FireEnchantmentLifecycle(instance, equipping: true);
             return true;
         }
 
@@ -172,6 +173,7 @@ namespace Equipment
 
             if (removed != null)
             {
+                FireEnchantmentLifecycle(removed, equipping: false);
                 OnEquipmentChanged?.Invoke(removed);
                 return true;
             }
@@ -203,7 +205,8 @@ namespace Equipment
         }
 
         /// <summary>
-        /// Collects all CardData from every equipped item. Used to build the character's deck.
+        /// Collects all CardData from every equipped item, including cards granted by
+        /// enchantments. Used to build the character's deck.
         /// </summary>
         public List<CardData> GetAllCards()
         {
@@ -326,12 +329,68 @@ namespace Equipment
 
         private void ClearAllSlots()
         {
+            // Revert enchantment effects (stat bonuses, granted deck cards) before dropping references.
+            FireEnchantmentLifecycle(headSlot, equipping: false);
+            FireEnchantmentLifecycle(chestSlot, equipping: false);
+            FireEnchantmentLifecycle(feetSlot, equipping: false);
+            FireEnchantmentLifecycle(leftHandSlot, equipping: false);
+            FireEnchantmentLifecycle(rightHandSlot, equipping: false);
+
+            foreach (var slot in trinketSlots)
+                FireEnchantmentLifecycle(slot, equipping: false);
+
             headSlot = null;
             chestSlot = null;
             feetSlot = null;
             leftHandSlot = null;
             rightHandSlot = null;
             trinketSlots.Clear();
+        }
+
+        /// <summary>
+        /// Runs every enchantment on the given equipment's OnEquipped/OnUnequipped hook.
+        /// </summary>
+        private void FireEnchantmentLifecycle(EquipmentInstance instance, bool equipping)
+        {
+            if (instance?.Data?.Enchantments == null || character == null) return;
+
+            foreach (var enchantment in instance.Data.Enchantments)
+            {
+                if (enchantment == null) continue;
+                if (equipping) enchantment.OnEquipped(instance, character);
+                else enchantment.OnUnequipped(instance, character);
+            }
+        }
+
+        /// <summary>
+        /// Total bonus damage added to <paramref name="playedCard"/> by enchantments on
+        /// currently worn equipment. Consulted by ActionResolver when a card is played.
+        /// </summary>
+        public int GetTotalCardDamageBonus(CardData playedCard)
+        {
+            int total = 0;
+
+            CollectEnchantmentDamageBonus(headSlot, playedCard, ref total);
+            CollectEnchantmentDamageBonus(chestSlot, playedCard, ref total);
+            CollectEnchantmentDamageBonus(feetSlot, playedCard, ref total);
+            CollectEnchantmentDamageBonus(leftHandSlot, playedCard, ref total);
+            CollectEnchantmentDamageBonus(rightHandSlot, playedCard, ref total);
+
+            foreach (var slot in trinketSlots)
+                CollectEnchantmentDamageBonus(slot, playedCard, ref total);
+
+            return total;
+        }
+
+        private static void CollectEnchantmentDamageBonus(EquipmentInstance slot, CardData playedCard, ref int total)
+        {
+            if (slot?.Data?.Enchantments == null) return;
+
+            foreach (var enchantment in slot.Data.Enchantments)
+            {
+                if (enchantment != null)
+                    total += enchantment.GetDamageBonus(slot, playedCard);
+            }
         }
 
         private void HandleTurnStarted(Character turnCharacter)
@@ -411,6 +470,10 @@ namespace Equipment
             if (slot == null) return;
             if (slot.Data.Cards != null)
                 cards.AddRange(slot.Data.Cards);
+
+            if (slot.Data.Enchantments == null) return;
+            foreach (var enchantment in slot.Data.Enchantments)
+                enchantment?.CollectGrantedCards(cards);
         }
 
         private static void AddTriggersFromSlot(EquipmentInstance slot, TriggerTiming timing, List<EquipmentTrigger> triggers)

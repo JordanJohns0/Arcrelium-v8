@@ -272,7 +272,6 @@ namespace UI
                 }
                 editLoadout.Set(slotType, slotIndex, data);
                 targetSlot.SetEquipment(data);
-                if (inventory != null) inventory.Remove(data);
                 RefreshInventory();
                 return;
             }
@@ -286,11 +285,11 @@ namespace UI
                 inventory.Unlock(targetSlot.CurrentEquipment);
             }
 
-            // Equip into the EquipmentManager
+            // Equip into the EquipmentManager. The item stays owned (unlocked list) while
+            // equipped — removing it would let reward rolls hand it out as a "new" unlock.
             if (cachedEquipmentManager.Equip(data, slotType, slotIndex))
             {
                 targetSlot.SetEquipment(data);
-                inventory.Remove(data);
             }
             RefreshInventory();
         }

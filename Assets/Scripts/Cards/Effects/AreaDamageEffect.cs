@@ -58,7 +58,7 @@ namespace Cards.Effects
                 Character occupant = cell.Occupant;
                 if (!MatchesFaction(context.Source, occupant, IncludeSelf)) continue;
                 int distance = cell.Coordinates.DistanceTo(context.TargetCell.Coordinates);
-                occupant.TakeDamage(DamageAt(context.Source, distance));
+                occupant.TakeDamage(DamageAt(context.Source, distance, context.BonusDamage));
             }
         }
 
@@ -70,7 +70,7 @@ namespace Cards.Effects
                 Character occupant = cell.Occupant;
                 if (!MatchesFaction(context.Source, occupant, IncludeSelf)) continue;
                 int distance = cell.Coordinates.DistanceTo(context.TargetCell.Coordinates);
-                if (DamageAt(context.Source, distance) <= 0) continue; // a 0-damage hit isn't a real victim
+                if (DamageAt(context.Source, distance, context.BonusDamage) <= 0) continue; // a 0-damage hit isn't a real victim
                 count++;
             }
             return count;
@@ -80,11 +80,12 @@ namespace Cards.Effects
         /// Damage dealt to a target at <paramref name="distance"/> hexes from the blast center:
         /// full <see cref="Damage"/> at the center, dropping by <see cref="DamagePerHexFalloff"/>
         /// per hex, floored at <see cref="MinimumDamage"/> (never below 0). Also used by the AI so
-        /// it values a blast by the actual damage each enemy would take.
+        /// it values a blast by the actual damage each enemy would take. Enchantment bonus damage
+        /// is added before falloff so it applies across the whole blast.
         /// </summary>
-        public int DamageAt(Character source, int distance)
+        public int DamageAt(Character source, int distance, int bonusDamage = 0)
         {
-            int damage = Damage.Evaluate(source) - DamagePerHexFalloff * distance;
+            int damage = Damage.Evaluate(source) + Mathf.Max(0, bonusDamage) - DamagePerHexFalloff * distance;
             if (MinimumDamage > 0) damage = Mathf.Max(damage, MinimumDamage);
             return Mathf.Max(damage, 0);
         }

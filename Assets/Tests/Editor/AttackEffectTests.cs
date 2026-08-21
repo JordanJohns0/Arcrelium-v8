@@ -72,5 +72,22 @@ namespace Tests.Cards
             effect.Execute(ctx);
             Assert.IsFalse(target.Stats.IsAlive);
         }
+
+        [Test]
+        public void Execute_WithBonusDamage_AddsToBase()
+        {
+            var ctx = new CardContext { Source = source, TargetCharacter = target, Range = 5, BonusDamage = 2 };
+            effect.Execute(ctx);
+            Assert.AreEqual(7, target.Stats.MaxHealth - target.Stats.CurrentHealth);
+        }
+
+        [Test]
+        public void Execute_NegativeBonusDamage_Ignored()
+        {
+            var ctx = new CardContext { Source = source, TargetCharacter = target, Range = 5, BonusDamage = -5 };
+            effect.Execute(ctx);
+            Assert.AreEqual(5, target.Stats.MaxHealth - target.Stats.CurrentHealth,
+                "A negative bonus must not reduce (or heal through) card damage.");
+        }
     }
 }

@@ -68,6 +68,16 @@ namespace Equipment
             return items;
         }
 
+        /// <summary>True if the item is equipped in any slot of this loadout.</summary>
+        public bool ContainsItem(EquipmentData item)
+        {
+            foreach (EquipmentData equipped in GetAllItems())
+            {
+                if (equipped == item) return true;
+            }
+            return false;
+        }
+
         public List<CardData> GetAllCards()
         {
             var cards = new List<CardData>();

@@ -212,5 +212,53 @@ namespace Tests.Cards
 
             Assert.IsFalse(enemy.Stats.IsAlive);
         }
+
+        [Test]
+        public void Execute_WithBonusDamage_BoostsWholeBlast()
+        {
+            effect.Radius = 2;
+            Character near = PlaceEnemy(3, -1); // distance 1 from cell (2,0)
+
+            CardContext ctx = Context(grid.GetCell(new HexCoordinates(2, 0)), 5);
+            ctx.BonusDamage = 3;
+            effect.Execute(ctx);
+
+            Assert.AreEqual(10 - (2 + 3), near.Stats.CurrentHealth,
+                "Enchantment bonus damage applies before falloff, so every victim gets it.");
+        }
+
+        [Test]
+        public void DamageAt_BonusDamage_AddedBeforeFalloff()
+        {
+            effect.Damage = CardValue.MakeConstant(5);
+            effect.DamagePerHexFalloff = 2;
+            effect.MinimumDamage = 0;
+
+            // 5 base + 3 bonus - 2 * 2 distance = 4
+            Assert.AreEqual(4, effect.DamageAt(source, 2, 3));
+        }
+
+        [Test]
+        public void DamageAt_NegativeBonus_TreatedAsZero()
+        {
+            Assert.AreEqual(2, effect.DamageAt(source, 0, -5));
+        }
+
+        [Test]
+        public void CanExecute_BonusDamage_CanTurnZeroDamageTargetsIntoVictims()
+        {
+            effect.Damage = CardValue.MakeConstant(2);
+            effect.Radius = 2;
+            effect.DamagePerHexFalloff = 2;
+
+            Character edge = PlaceEnemy(4, 0); // distance 2 -> base 0 damage
+
+            CardContext ctx = Context(grid.GetCell(new HexCoordinates(2, 0)), 5);
+            Assert.IsFalse(effect.CanExecute(ctx), "Sanity: without bonus the edge target is not a victim.");
+
+            ctx.BonusDamage = 3; // 2 + 3 - 4 = 1 damage at the edge
+            Assert.IsTrue(effect.CanExecute(ctx));
+            Object.DestroyImmediate(edge.gameObject);
+        }
     }
 }

@@ -133,5 +133,117 @@ namespace Tests.Cards
 
             Assert.AreEqual(0, deck.DrawPile.Count);
         }
+
+        [Test]
+        public void AddCard_BeforeShuffle_JoinsStartingListOnly()
+        {
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.AddCard(cardDataB);
+
+            Assert.AreEqual(0, deck.DrawPile.Count, "Pre-shuffle the draw pile does not exist yet.");
+
+            deck.Shuffle();
+            Assert.AreEqual(2, deck.DrawPile.Count);
+        }
+
+        [Test]
+        public void AddCard_AfterShuffle_InjectsIntoDrawPile()
+        {
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.Shuffle();
+
+            deck.AddCard(cardDataB);
+
+            Assert.AreEqual(2, deck.DrawPile.Count, "Mid-match grants must be drawable immediately.");
+
+            bool found = false;
+            foreach (CardInstance card in deck.DrawPile)
+                if (card.Data == cardDataB) found = true;
+            Assert.IsTrue(found);
+        }
+
+        [Test]
+        public void AddCard_AfterShuffle_RecordedInStartingList()
+        {
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.Shuffle();
+            deck.AddCard(cardDataB);
+
+            Assert.AreEqual(cardDataB, deck.GetCardDataByName("Card B"),
+                "Granted cards must be resolvable by name for hand-sync rebuilds.");
+        }
+
+        [Test]
+        public void AddCard_Null_DoesNothing()
+        {
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.Shuffle();
+
+            deck.AddCard(null);
+
+            Assert.AreEqual(1, deck.DrawPile.Count);
+        }
+
+        [Test]
+        public void SetStartingCards_ResetsShuffleState()
+        {
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.Shuffle();
+            // After a re-Set the deck is considered pre-shuffle again: AddCard must not
+            // inject into the stale draw pile. Piles keep their old contents until the
+            // next Shuffle rebuilds them from the new starting list.
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.AddCard(cardDataB);
+
+            Assert.AreEqual(1, deck.DrawPile.Count);
+            Assert.AreEqual(cardDataA, deck.DrawPile[0].Data);
+
+            deck.Shuffle();
+            Assert.AreEqual(2, deck.DrawPile.Count);
+        }
+
+        [Test]
+        public void RemoveCard_RemovesFromDrawPileAndStartingList()
+        {
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.Shuffle();
+            deck.AddCard(cardDataB);
+
+            bool removed = deck.RemoveCard(cardDataB);
+
+            Assert.IsTrue(removed);
+            foreach (CardInstance card in deck.DrawPile)
+                Assert.AreNotEqual(cardDataB, card.Data);
+            Assert.IsNull(deck.GetCardDataByName("Card B"));
+        }
+
+        [Test]
+        public void RemoveCard_FallsBackToDiscardPile()
+        {
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.Shuffle();
+            CardInstance drawn = deck.Draw();
+            deck.Discard(drawn);
+
+            bool removed = deck.RemoveCard(cardDataA);
+
+            Assert.IsTrue(removed);
+            Assert.AreEqual(0, deck.DiscardPile.Count);
+        }
+
+        [Test]
+        public void RemoveCard_NotPresent_ReturnsFalse()
+        {
+            deck.SetStartingCards(new List<CardData> { cardDataA });
+            deck.Shuffle();
+
+            Assert.IsFalse(deck.RemoveCard(cardDataB));
+        }
+
+        [Test]
+        public void RemoveCard_Null_ReturnsFalse()
+        {
+            Assert.IsFalse(deck.RemoveCard(null));
+        }
     }
 }
