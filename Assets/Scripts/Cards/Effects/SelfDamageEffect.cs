@@ -6,6 +6,7 @@ namespace Cards.Effects
     /// <summary>
     /// Deals damage to the source character itself (e.g. "take 1 damage" effects).
     /// Block absorbs it like any other damage. Does not require a target.
+    /// Intentionally ignores enchantment BonusDamage — self-harm shouldn't scale with weapon enchants.
     /// </summary>
     [CreateAssetMenu(fileName = "SelfDamageEffect", menuName = "Arcrelium/Effects/Self Damage")]
     public class SelfDamageEffect : CardEffectSO

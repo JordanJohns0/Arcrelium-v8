@@ -16,6 +16,7 @@ namespace Cards
 
         private readonly List<CardInstance> drawPile = new List<CardInstance>();
         private readonly List<CardInstance> discardPile = new List<CardInstance>();
+        private bool shuffled;
 
         public IReadOnlyList<CardInstance> DrawPile => drawPile;
         public IReadOnlyList<CardInstance> DiscardPile => discardPile;
@@ -27,6 +28,7 @@ namespace Cards
         public void SetStartingCards(List<CardData> cards)
         {
             startingCards = cards ?? new List<CardData>();
+            shuffled = false;
         }
 
         public void Shuffle()
@@ -44,6 +46,62 @@ namespace Cards
                 int j = UnityEngine.Random.Range(0, i + 1);
                 (drawPile[i], drawPile[j]) = (drawPile[j], drawPile[i]);
             }
+
+            shuffled = true;
+        }
+
+        /// <summary>
+        /// Adds a card to the deck (e.g. granted by an equipment enchantment). Before the
+        /// first Shuffle it only joins the starting list; afterwards a live copy is also
+        /// inserted at a random position in the draw pile so it can be drawn this match.
+        /// </summary>
+        public void AddCard(CardData data)
+        {
+            if (data == null) return;
+
+            startingCards.Add(data);
+
+            if (!shuffled) return;
+
+            var instance = new CardInstance(data);
+            drawPile.Insert(UnityEngine.Random.Range(0, drawPile.Count + 1), instance);
+        }
+
+        /// <summary>
+        /// Removes one copy of a card from the deck (e.g. revoked on unequip). Removes it
+        /// from the starting list and one live copy from the draw or discard pile; copies
+        /// already drawn into a hand stay playable until used.
+        /// </summary>
+        public bool RemoveCard(CardData data)
+        {
+            if (data == null) return false;
+
+            bool removedFromPiles = false;
+
+            for (int i = drawPile.Count - 1; i >= 0; i--)
+            {
+                if (drawPile[i].Data == data)
+                {
+                    drawPile.RemoveAt(i);
+                    removedFromPiles = true;
+                    break;
+                }
+            }
+
+            if (!removedFromPiles)
+            {
+                for (int i = discardPile.Count - 1; i >= 0; i--)
+                {
+                    if (discardPile[i].Data == data)
+                    {
+                        discardPile.RemoveAt(i);
+                        removedFromPiles = true;
+                        break;
+                    }
+                }
+            }
+
+            return startingCards.Remove(data) || removedFromPiles;
         }
 
         public CardInstance Draw()

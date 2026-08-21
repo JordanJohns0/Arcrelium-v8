@@ -79,5 +79,14 @@ namespace Tests.Cards
 
             Assert.IsFalse(source.Stats.IsAlive);
         }
+
+        [Test]
+        public void Execute_IgnoresBonusDamage()
+        {
+            effect.Execute(new CardContext { Source = source, BonusDamage = 10 });
+
+            Assert.AreEqual(3, source.Stats.MaxHealth - source.Stats.CurrentHealth,
+                "Self-damage must not scale with enchantment bonus damage.");
+        }
     }
 }

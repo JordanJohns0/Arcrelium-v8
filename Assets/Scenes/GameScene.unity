@@ -2744,6 +2744,9 @@ MonoBehaviour:
   statEntryPrefab: {fileID: 1269761494858330571, guid: f43c4cf0098957e47a7f3682333c1f5b, type: 3}
   allyColor: {r: 0.15, g: 0.25, b: 0.5, a: 0.7}
   enemyColor: {r: 0.5, g: 0.15, b: 0.15, a: 0.7}
+  entryHoverHighlight: {r: 1, g: 1, b: 1, a: 0.15}
+  outlineHoverColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineHoverWidth: 0.025
   sortingOrder: -1
   headerFontSize: 18
   scrollBackgroundColor: {r: 0, g: 0, b: 0, a: 0.3}
@@ -4420,7 +4423,7 @@ MonoBehaviour:
   cancelButton: {fileID: 2101950852}
   promptText: {fileID: 372808868}
   grid: {fileID: 396940646}
-  validTargetColor: {r: 0.4, g: 0.85, b: 0.4, a: 1}
+  validTargetColor: {r: 0.4, g: 0.85, b: 0.4, a: 0.5019608}
 --- !u!4 &1364112889
 Transform:
   m_ObjectHideFlags: 0

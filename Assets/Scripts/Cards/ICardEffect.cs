@@ -17,7 +17,7 @@ namespace Cards
     /// Everything a played card needs to resolve its effect: who played it,
     /// the board, and whatever target the player selected (cell and/or character).
     /// Not every field will be populated — depends on the card's TargetType.
-    /// Mutable class so equipment effects can modify BonusRange before execution.
+    /// Mutable class so equipment effects can modify BonusRange/BonusDamage before execution.
     /// </summary>
     public class CardContext
     {
@@ -27,6 +27,7 @@ namespace Cards
         public Character TargetCharacter;
         public int Range;
         public int BonusRange;
+        public int BonusDamage;
 
         public int EffectiveRange => Range + BonusRange;
     }

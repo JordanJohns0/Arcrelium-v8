@@ -70,7 +70,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 5dbf4d759a2659a4f990cef2e78fb609, type: 2}
   - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -149,10 +149,11 @@ MonoBehaviour:
   pillarDepth: 4
   depthRandomRange: 0.8
   surfaceOffsetRange: 0.2
-  interiorMaterial: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  interiorMaterial: {fileID: 2100000, guid: 5dbf4d759a2659a4f990cef2e78fb609, type: 2}
   borderMaterial: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
-  interiorColor: {r: 0.1242139, g: 0.745283, b: 0, a: 1}
-  borderColor: {r: 0.17, g: 0.17, b: 0.17, a: 1}
+  textureTiling: 0.5
+  textureOffset: {x: 0, y: 0}
+  highlightOverlayMaterial: {fileID: 0}
 --- !u!114 &3799297842289235011
 MonoBehaviour:
   m_ObjectHideFlags: 0

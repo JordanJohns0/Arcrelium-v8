@@ -40,7 +40,7 @@ namespace UI
         [Header("Board Highlighting")]
         [SerializeField] private HexGridManager grid;
         [SerializeField] private Color validTargetColor = new Color(0.4f, 0.85f, 0.4f, 1f);
-        private readonly List<(HexCell cell, Color originalColor)> highlightedCells = new List<(HexCell, Color)>();
+        private readonly List<HexMeshGenerator> highlightedCells = new List<HexMeshGenerator>();
         private readonly List<Character> highlightedCharacters = new List<Character>();
 
         private void OnEnable()
@@ -324,8 +324,8 @@ namespace UI
                 HexMeshGenerator meshGen = cell.GetComponent<HexMeshGenerator>();
                 if (meshGen != null)
                 {
-                    highlightedCells.Add((cell, meshGen.InteriorColor));
-                    meshGen.SetInteriorColor(validTargetColor);
+                    meshGen.SetHighlight(true, validTargetColor);
+                    highlightedCells.Add(meshGen);
                 }
 
                 if (cell.Occupant != null && !highlightedCharacters.Contains(cell.Occupant))
@@ -362,11 +362,9 @@ namespace UI
 
         private void ClearBoardHighlights()
         {
-            foreach (var entry in highlightedCells)
+            foreach (HexMeshGenerator meshGen in highlightedCells)
             {
-                if (entry.cell == null) continue;
-                HexMeshGenerator meshGen = entry.cell.GetComponent<HexMeshGenerator>();
-                if (meshGen != null) meshGen.SetInteriorColor(entry.originalColor);
+                if (meshGen != null) meshGen.SetHighlight(false, Color.clear);
             }
             highlightedCells.Clear();
 
@@ -379,10 +377,11 @@ namespace UI
 
         private void RefreshHandHighlights()
         {
-            var highlighted = new List<CardInstance>(pendingCostCards);
-            if (pendingCard != null) highlighted.Add(pendingCard);
             CardInstance nonInteractable = state == SelectionState.SelectingCost ? pendingCard : null;
-            handView.SetHighlighted(highlighted, nonInteractable);
+            handView.SetHighlighted(
+                pendingCard != null ? new[] { pendingCard } : null,
+                nonInteractable,
+                pendingCostCards);
         }
 
         private void UpdatePrompt()

@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Inspire
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
   CardName: Inspire
-  Description: Gain 1 block\nDraw a card
+  Description: Draw a card
   Artwork: {fileID: 0}
   Cost: 0
   Steps:
   - Effect: {fileID: 11400000, guid: 1414dbd31e75d5d4fa8f9e4298d8db75, type: 2}
     TargetType: 1
     Range: 0
+    CellConstraint: 0

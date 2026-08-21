@@ -57,6 +57,9 @@ namespace Equipment
             foreach (var r in rewards)
             {
                 if (r == null || inventory.IsUnlocked(r)) continue;
+                // Equipped items can be absent from the unlocked list (e.g. equipped straight
+                // from a loadout screen); they are still owned and must never roll.
+                if (inventory.Loadout != null && inventory.Loadout.ContainsItem(r)) continue;
                 eligible.Add(r);
             }
             if (eligible.Count == 0) return null;
