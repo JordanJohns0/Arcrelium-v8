@@ -89,14 +89,20 @@ namespace UI
             OnCardClicked?.Invoke(view.Instance);
         }
 
-        /// <summary>Highlights exactly the given cards (used to show the pending play + selected cost cards) and dims everything else.</summary>
-        public void SetHighlighted(IReadOnlyCollection<CardInstance> highlighted, CardInstance nonInteractable = null)
+        /// <summary>
+        /// Highlights the pending card (normal highlight), marks discard-cost cards with a red X,
+        /// and dims/disables everything else as appropriate.
+        /// </summary>
+        public void SetHighlighted(IReadOnlyCollection<CardInstance> highlighted, CardInstance nonInteractable = null,
+            IReadOnlyCollection<CardInstance> discardMarked = null)
         {
             foreach (CardView view in spawnedViews)
             {
                 if (view == null) continue;
                 bool isHighlighted = highlighted != null && Contains(highlighted, view.Instance);
+                bool isMarked = discardMarked != null && Contains(discardMarked, view.Instance);
                 view.SetSelected(isHighlighted);
+                view.SetDiscardMarked(isMarked);
                 view.SetInteractable(view.Instance != nonInteractable);
             }
         }
@@ -107,6 +113,7 @@ namespace UI
             {
                 if (view == null) continue;
                 view.SetSelected(false);
+                view.SetDiscardMarked(false);
                 view.SetInteractable(true);
             }
         }
