@@ -46,7 +46,7 @@ namespace UI
                 if (iconImage != null)
                 {
                     iconImage.sprite = data.Icon;
-                    iconImage.enabled = true;
+                    iconImage.enabled = data.Icon != null;
                 }
                 if (nameLabel != null) nameLabel.text = data.EquipmentName;
             }

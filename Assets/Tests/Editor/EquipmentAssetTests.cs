@@ -456,6 +456,37 @@ namespace Tests.Equipment
             }
         }
 
+        [Test]
+        public void NullAmulet_MultiStepMove_DealsDamagePerStep()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Null Amulet")));
+
+                // (2,-1) is adjacent to both (1,0) and (1,-1)
+                Character enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 2, -1);
+                Character farEnemy = TestHelper.CreateCharacterOnGrid(grid, 1, 2, 2);
+
+                // Step through two cells; enemy is adjacent to both, so it should take 2 damage
+                source.SetCellOnly(grid.GetCell(new HexCoordinates(1, 0)));
+                source.SetCellOnly(grid.GetCell(new HexCoordinates(1, -1)));
+
+                Assert.AreEqual(8, enemy.Stats.CurrentHealth,
+                    "Enemy adjacent to both intermediate steps should take 1 damage per step.");
+                Assert.AreEqual(10, farEnemy.Stats.CurrentHealth, "Distant enemy must be untouched.");
+
+                UnityEngine.Object.DestroyImmediate(enemy.gameObject);
+                UnityEngine.Object.DestroyImmediate(farEnemy.gameObject);
+            }
+            finally
+            {
+                DestroyAll(grid, source, manager);
+            }
+        }
+
         /// <summary>
         /// Metal Fist's trigger is OnDamageTaken -> deal 1 to adjacent enemies. This test drives
         /// the real damage path (Character.TakeDamage) and expects the AOE to fire on each hit.

@@ -429,9 +429,9 @@ RectTransform:
   - {fileID: 1224192699}
   m_Father: {fileID: 1541299346}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 904.76184, y: -35}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 142.85715, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &173188207
@@ -928,9 +928,9 @@ RectTransform:
   - {fileID: 1819003912}
   m_Father: {fileID: 1541299346}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 738.0952, y: -35}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 142.85715, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &308394957
@@ -2192,7 +2192,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.TurnManager
   turnOrder: []
   actionResolver: {fileID: 531838724}
-  cardsDrawnPerTurn: 2
   actionDelay: 0.5
   turnEndDelay: 0.3
 --- !u!114 &531838724
@@ -2599,9 +2598,9 @@ RectTransform:
   - {fileID: 2049708991}
   m_Father: {fileID: 1541299346}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 71.42857, y: -35}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 142.85715, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &580467772
@@ -2745,6 +2744,33 @@ MonoBehaviour:
   statEntryPrefab: {fileID: 1269761494858330571, guid: f43c4cf0098957e47a7f3682333c1f5b, type: 3}
   allyColor: {r: 0.15, g: 0.25, b: 0.5, a: 0.7}
   enemyColor: {r: 0.5, g: 0.15, b: 0.15, a: 0.7}
+  sortingOrder: -1
+  headerFontSize: 18
+  scrollBackgroundColor: {r: 0, g: 0, b: 0, a: 0.3}
+  listSpacing: 50
+  listPadding: 4
+  listPaddingTop: 120
+  nameMinWidth: 60
+  nameMaxWidth: 80
+  namePadding: 8
+  nameFontSize: 30
+  nameHeight: 25
+  nameHorizontalOffset: 4
+  nameVerticalOffset: -4
+  segmentCellSize: {x: 50, y: 25}
+  segmentSpacing: {x: 6, y: 6}
+  segmentRowWidth: 56
+  segmentPadding: 4
+  segmentEdgePadding: 2
+  segmentPaddingVertical: 2
+  hpFillColor: {r: 1, g: 0, b: 0, a: 1}
+  hpEmptyColor: {r: 0, g: 0, b: 0, a: 0.3}
+  blockColor: {r: 0.73, g: 0.73, b: 0.73, a: 0.6}
+  blockPadding: 3
+  rowWidthMargin: 4
+  rowBaseHeight: 6
+  rowHeight: 25
+  rowSpacing: 6
 --- !u!1 &697631504
 GameObject:
   m_ObjectHideFlags: 0
@@ -3080,7 +3106,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &822093557
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3101,7 +3127,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -90}
   m_SizeDelta: {x: -200, y: -200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &822093558
@@ -3166,6 +3192,11 @@ MonoBehaviour:
   trinket3Slot: {fileID: 1218298318}
   inventoryPanel: {fileID: 1256792577}
   inventorySlotPrefab: {fileID: 1729508797446202598, guid: 09d6cff7838e2354cabdf72cdcf8c672, type: 3}
+  deckListWidth: 360
+  equipmentSlotsWidth: 600
+  deckListGap: 12
+  rightPanelRightMargin: 62
+  rightPanelMinWidth: 300
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -3491,9 +3522,9 @@ RectTransform:
   - {fileID: 133155363}
   m_Father: {fileID: 1541299346}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 238.09523, y: -35}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 142.85715, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1066338889
@@ -4534,9 +4565,9 @@ RectTransform:
   - {fileID: 1252124897}
   m_Father: {fileID: 1541299346}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 404.7619, y: -35}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 142.85715, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1434566046
@@ -6370,9 +6401,9 @@ RectTransform:
   - {fileID: 1735829856}
   m_Father: {fileID: 1541299346}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 571.4285, y: -35}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 142.85715, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2014840850

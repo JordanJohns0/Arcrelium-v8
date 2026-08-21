@@ -16,4 +16,8 @@ MonoBehaviour:
   Description: 
   Artwork: {fileID: 0}
   Cost: 0
-  Steps: []
+  Steps:
+  - Effect: {fileID: 11400000, guid: 6f5fa6a50ee701d4eb8a82bfd10a6bd3, type: 2}
+    TargetType: 1
+    Range: 0
+    CellConstraint: 0

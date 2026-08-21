@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Shortsword
   Description: 
-  Icon: {fileID: 0}
-  SlotType: 0
-  Cards: []
+  Icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
+  SlotType: 3
+  Cards:
+  - {fileID: 11400000, guid: 04b94fba1b3f7564aa8af4019e929e43, type: 2}
   Triggers: []

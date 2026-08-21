@@ -41,16 +41,23 @@ namespace Cards.Effects
                     context.EffectiveRange);
             }
 
-            // Authoritative position updates immediately so a state broadcast right
-            // after PlayCard already reflects the final destination. The coroutine
-            // below is purely cosmetic and skipped outside play mode (e.g. edit-mode tests).
-            context.Source.SetCellOnly(target);
-
-            if (Application.isPlaying)
+            // Step through each cell in the path so OnMovedToCell fires per step,
+            // allowing equipment triggers (like Null Amulet) to activate on each move.
+            if (path != null && path.Count > 0)
             {
-                if (path != null && path.Count > 0)
+                foreach (HexCell cell in path)
+                {
+                    context.Source.SetCellOnly(cell);
+                }
+
+                if (Application.isPlaying)
                     context.Source.AnimateAlongPath(path);
-                else
+            }
+            else
+            {
+                context.Source.SetCellOnly(target);
+
+                if (Application.isPlaying)
                     context.Source.AnimateToCell(target);
             }
         }

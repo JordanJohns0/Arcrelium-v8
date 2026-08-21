@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16ce40bd51ca31c43b0506dde3e3bf41, type: 3}
   m_Name: Parry
   m_EditorClassIdentifier: Arcrelium.Game::Cards.Effects.ConditionalEffect
-  Condition: {fileID: 0}
-  TrueEffect: {fileID: 0}
+  Condition: {fileID: 11400000, guid: 7c3abad7689c17647a9d4c8b4fd876a2, type: 2}
+  TrueEffect: {fileID: 11400000, guid: 4959b9bbfffb39746b111f10f66b9f99, type: 2}
   FalseEffect: {fileID: 0}

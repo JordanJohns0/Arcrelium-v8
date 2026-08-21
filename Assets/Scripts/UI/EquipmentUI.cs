@@ -61,6 +61,13 @@ namespace UI
         /// </summary>
         private EquipmentLoadout editLoadout;
 
+        private void Awake()
+        {
+            // Start inactive so the inventory doesn't flash before LoadoutScreen configures it.
+            // LoadoutScreen.Show() and the "Open Inventory" button both call SetActive(true).
+            gameObject.SetActive(false);
+        }
+
         private void OnEnable()
         {
             FindPlayerEquipmentManager();
@@ -323,7 +330,7 @@ namespace UI
 
             foreach (EquipmentData data in inventory.UnlockedEquipment)
             {
-                if (IsEquipped(data)) continue;
+                if (data == null || IsEquipped(data)) continue;
 
                 InventorySlotUI slot = Instantiate(inventorySlotPrefab, inventoryPanel);
                 slot.Setup(data, canvas);

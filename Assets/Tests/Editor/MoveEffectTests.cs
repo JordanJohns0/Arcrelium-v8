@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Cards;
@@ -95,6 +96,21 @@ namespace Tests.Cards
             effect.Execute(ctx);
             Assert.AreEqual(new HexCoordinates(2, 0), source.CurrentCell.Coordinates);
             Assert.AreSame(source, ctx.TargetCell.Occupant);
+        }
+
+        [Test]
+        public void Execute_StepsThroughIntermediateCells()
+        {
+            var ctx = ContextFor(2, 0, 3);
+
+            var visitedCells = new List<HexCoordinates>();
+            source.OnMovedToCell += cell => visitedCells.Add(cell.Coordinates);
+
+            effect.Execute(ctx);
+
+            Assert.AreEqual(new HexCoordinates(2, 0), source.CurrentCell.Coordinates);
+            Assert.IsTrue(visitedCells.Count > 1,
+                "MoveEffect should step through each cell in the path, firing OnMovedToCell per step.");
         }
     }
 }

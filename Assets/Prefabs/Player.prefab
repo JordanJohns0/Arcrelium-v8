@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 7177736162352147799}
   - component: {fileID: 722281499782144357}
   - component: {fileID: 1087468177673829988}
+  - component: {fileID: 6156473257269738834}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -135,6 +136,7 @@ MonoBehaviour:
     CurrentHealth: 0
     Block: 0
   equipmentManager: {fileID: 1087468177673829988}
+  maxHandSize: 5
 --- !u!114 &722281499782144357
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167,3 +169,19 @@ MonoBehaviour:
   trinket1: {fileID: 0}
   trinket2: {fileID: 0}
   trinket3: {fileID: 0}
+--- !u!114 &6156473257269738834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8754585003979157697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9b9c6e08bea5c44cb875d7b237d2de3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Arcrelium.Game::Characters.OutlineEffect
+  outlineMat: {fileID: 2100000, guid: c3171eb2792782f428498cb681b63500, type: 2}
+  outlineColor: {r: 1, g: 0.78079355, b: 0, a: 0.15686275}
+  outlineWidth: 0.02
+  outlineOn: 0

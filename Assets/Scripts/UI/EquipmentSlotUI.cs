@@ -82,7 +82,7 @@ namespace UI
                 if (iconImage != null)
                 {
                     iconImage.sprite = currentEquipment.Icon;
-                    iconImage.enabled = true;
+                    iconImage.enabled = currentEquipment.Icon != null;
                 }
                 if (nameLabel != null) nameLabel.text = currentEquipment.EquipmentName;
             }

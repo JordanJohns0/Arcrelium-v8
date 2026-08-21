@@ -14,6 +14,11 @@ namespace UI
         [SerializeField] private Color allyColor = new Color(0.15f, 0.25f, 0.50f, 0.7f);
         [SerializeField] private Color enemyColor = new Color(0.50f, 0.15f, 0.15f, 0.7f);
 
+        [Header("Hover Highlight")]
+        [SerializeField] private Color entryHoverHighlight = new Color(1f, 1f, 1f, 0.15f);
+        [SerializeField] private Color outlineHoverColor = Color.white;
+        [SerializeField, Range(0f, 0.05f)] private float outlineHoverWidth = 0.025f;
+
         [Header("Canvas")]
         [SerializeField] private int sortingOrder = -1;
 
@@ -86,12 +91,16 @@ namespace UI
         {
             Character.OnCharacterCreated += HandleCharacterCreated;
             Character.OnCharacterDestroyed += HandleCharacterDestroyed;
+            CharacterSelectable.AnyCharacterHovered += HandleCharacterHovered;
+            CharacterSelectable.AnyCharacterHoverEnded += HandleCharacterHoverEnded;
         }
 
         private void OnDisable()
         {
             Character.OnCharacterCreated -= HandleCharacterCreated;
             Character.OnCharacterDestroyed -= HandleCharacterDestroyed;
+            CharacterSelectable.AnyCharacterHovered -= HandleCharacterHovered;
+            CharacterSelectable.AnyCharacterHoverEnded -= HandleCharacterHoverEnded;
         }
 
         private void Start()
@@ -145,6 +154,81 @@ namespace UI
             RemoveCharacter(character);
         }
 
+        private Character hoveredCharacter;
+        private StatEntry hoveredEntry;
+
+        private void HandleCharacterHovered(Character character)
+        {
+            hoveredCharacter = character;
+            SetOutline(character, true);
+
+            if (entries.TryGetValue(character, out StatEntry entry))
+            {
+                hoveredEntry = entry;
+                HighlightEntry(entry, true);
+            }
+        }
+
+        private void HandleCharacterHoverEnded()
+        {
+            if (hoveredCharacter != null)
+                SetOutline(hoveredCharacter, false);
+
+            if (hoveredEntry != null)
+                HighlightEntry(hoveredEntry, false);
+
+            hoveredCharacter = null;
+            hoveredEntry = null;
+        }
+
+        private void HandleStatEntryHovered(StatEntry entry)
+        {
+            hoveredEntry = entry;
+            HighlightEntry(entry, true);
+
+            if (entry.linkedCharacter != null)
+            {
+                hoveredCharacter = entry.linkedCharacter;
+                SetOutline(entry.linkedCharacter, true);
+            }
+        }
+
+        private void HandleStatEntryHoverEnded(StatEntry entry)
+        {
+            HighlightEntry(entry, false);
+
+            if (entry.linkedCharacter != null)
+                SetOutline(entry.linkedCharacter, false);
+
+            hoveredEntry = null;
+            hoveredCharacter = null;
+        }
+
+        private void SetOutline(Character character, bool on)
+        {
+            OutlineEffect outline = character.GetComponent<OutlineEffect>();
+            if (outline == null) return;
+            outline.SetOutlineColor(outlineHoverColor);
+            outline.SetOutlineWidth(outlineHoverWidth);
+            outline.SetOutline(on);
+        }
+
+        private void HighlightEntry(StatEntry entry, bool highlight)
+        {
+            if (entry == null || entry.bg == null) return;
+            if (highlight)
+            {
+                entry.SetOriginalBgColor(entry.bg.color);
+                entry.bg.color = entry.bg.color + entryHoverHighlight;
+                if (entry.nameLabel != null) entry.nameLabel.fontStyle = FontStyles.Bold;
+            }
+            else
+            {
+                entry.RestoreBgColor();
+                if (entry.nameLabel != null) entry.nameLabel.fontStyle = FontStyles.Normal;
+            }
+        }
+
         private void CreateCanvas()
         {
             canvas = GetComponentInParent<Canvas>();
@@ -157,6 +241,9 @@ namespace UI
                 canvas.sortingOrder = sortingOrder;
                 go.AddComponent<CanvasScaler>();
             }
+
+            if (canvas.GetComponent<GraphicRaycaster>() == null)
+                canvas.gameObject.AddComponent<GraphicRaycaster>();
         }
 
         private void CreatePanelStructure()
@@ -266,13 +353,19 @@ namespace UI
 
             if (entry.bg == null) return;
 
+            // bg stays disabled (invisible, no raycast) — hover targets are the
+            // name label and the health segments instead of the full panel.
             entry.bg.color = isAlly ? allyColor : enemyColor;
+            entry.SetOriginalBgColor(entry.bg.color);
+            entry.linkedCharacter = character;
+            entry.OnHoverEntered += HandleStatEntryHovered;
+            entry.OnHoverExited += HandleStatEntryHoverEnded;
 
             // Destroy all labels except name
             float nameWidth = nameMaxWidth;
             if (entry.nameLabel != null)
             {
-                entry.nameLabel.raycastTarget = false;
+                entry.nameLabel.raycastTarget = true;
                 nameWidth = Mathf.Max(nameMinWidth, entry.nameLabel.preferredWidth + namePadding);
                 var labelsParent = entry.nameLabel.transform.parent;
                 if (labelsParent != null)
@@ -331,6 +424,8 @@ namespace UI
             {
                 character.OnDefeated -= HandleCharacterDefeated;
                 character.Stats.OnStatsChanged -= UpdateEntry;
+                entry.OnHoverEntered -= HandleStatEntryHovered;
+                entry.OnHoverExited -= HandleStatEntryHoverEnded;
                 Destroy(entry.gameObject);
                 entries.Remove(character);
             }

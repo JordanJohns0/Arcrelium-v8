@@ -124,6 +124,13 @@ namespace Game
                 ShowLoadoutScreen(null);
                 return;
             }
+
+            // The Equipment UI starts active in the scene. Hide it when the loadout
+            // screen is not shown (e.g. resuming after a scene reload for the next level).
+            var gameCanvas = GameObject.Find("Canvas");
+            var eqUI = gameCanvas != null ? gameCanvas.transform.Find("Equipment UI")?.gameObject : null;
+            if (eqUI != null) eqUI.SetActive(false);
+
             BeginMatch();
         }
 

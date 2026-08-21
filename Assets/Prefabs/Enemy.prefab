@@ -91,5 +91,27 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8754585003979157697, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2568241417802048425}
   m_SourcePrefab: {fileID: 100100000, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+--- !u!1 &3394650976529896304 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8754585003979157697, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+  m_PrefabInstance: {fileID: 6224733067775108017}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2568241417802048425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3394650976529896304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9b9c6e08bea5c44cb875d7b237d2de3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Arcrelium.Game::Characters.OutlineEffect
+  outlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 0.02
