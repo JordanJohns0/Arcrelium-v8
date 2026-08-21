@@ -24,5 +24,8 @@ namespace Equipment
 
         [Tooltip("Triggered effects that fire during gameplay (e.g. start of turn, on damage taken).")]
         public List<EquipmentTrigger> Triggers = new List<EquipmentTrigger>();
+
+        [Tooltip("Enchantments: passive modifiers that only apply while this equipment is worn.")]
+        public List<EquipmentEnchantmentSO> Enchantments = new List<EquipmentEnchantmentSO>();
     }
 }

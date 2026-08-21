@@ -67,6 +67,16 @@ namespace Game
                     context.BonusRange = bonusRange;
             }
 
+            // Enchantments on worn equipment may add damage to this card; applies to every step.
+            int bonusDamage = source.Equipment != null
+                ? source.Equipment.GetTotalCardDamageBonus(card.Data)
+                : 0;
+            if (bonusDamage != 0)
+            {
+                foreach (var (_, context) in executions)
+                    context.BonusDamage = bonusDamage;
+            }
+
             // Pay cost: discard the other cards, then the played card itself. Must happen
             // before effects execute so draw effects see the freed hand slots.
             foreach (CardInstance costCard in costCards)
