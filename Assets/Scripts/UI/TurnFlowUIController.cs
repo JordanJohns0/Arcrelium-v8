@@ -379,10 +379,11 @@ namespace UI
 
         private void RefreshHandHighlights()
         {
-            var highlighted = new List<CardInstance>(pendingCostCards);
-            if (pendingCard != null) highlighted.Add(pendingCard);
             CardInstance nonInteractable = state == SelectionState.SelectingCost ? pendingCard : null;
-            handView.SetHighlighted(highlighted, nonInteractable);
+            handView.SetHighlighted(
+                pendingCard != null ? new[] { pendingCard } : null,
+                nonInteractable,
+                pendingCostCards);
         }
 
         private void UpdatePrompt()

@@ -23,6 +23,12 @@ namespace UI
         [SerializeField] private TMP_Text costText;
         [Tooltip("Enabled while this card is selected (as the card being played, or as a cost payment).")]
         [SerializeField] private GameObject selectionHighlight;
+        [Tooltip("Shown while this card is selected for discard (cost payment). Optional — a red X is generated if left empty.")]
+        [SerializeField] private GameObject discardMark;
+
+        [Header("Discard Mark (auto-generated fallback)")]
+        [SerializeField] private Color discardMarkColor = new Color(0.85f, 0.1f, 0.1f, 0.95f);
+        [SerializeField, Range(1f, 20f)] private float discardMarkThickness = 8f;
 
         [Header("Hover")]
         [SerializeField] private float hoverScale = 1.15f;
@@ -57,12 +63,66 @@ namespace UI
             if (costText != null) costText.text = data.Cost.ToString();
 
             SetSelected(false);
+            SetDiscardMarked(false);
             basePosition = transform.localPosition;
         }
 
         public void SetSelected(bool selected)
         {
+            if (discardMarkActive && selectionHighlight != null) selected = false;
             if (selectionHighlight != null) selectionHighlight.SetActive(selected);
+        }
+
+        private bool discardMarkActive;
+
+        /// <summary>Shows/hides the red X overlay marking this card as selected for discard.</summary>
+        public void SetDiscardMarked(bool marked)
+        {
+            discardMarkActive = marked;
+
+            if (marked)
+            {
+                EnsureDiscardMark();
+                if (discardMark != null) discardMark.SetActive(true);
+                // Discard-marked cards use the X, not the normal highlight.
+                if (selectionHighlight != null) selectionHighlight.SetActive(false);
+            }
+            else if (discardMark != null)
+            {
+                discardMark.SetActive(false);
+            }
+        }
+
+        private void EnsureDiscardMark()
+        {
+            if (discardMark != null) return;
+
+            var root = new GameObject("DiscardMark", typeof(RectTransform));
+            root.transform.SetParent(transform, false);
+            RectTransform rootRt = (RectTransform)root.transform;
+            rootRt.anchorMin = Vector2.zero;
+            rootRt.anchorMax = Vector2.one;
+            rootRt.offsetMin = Vector2.zero;
+            rootRt.offsetMax = Vector2.zero;
+
+            foreach (float angle in new[] { 45f, -45f })
+            {
+                var barGo = new GameObject("XBar", typeof(RectTransform), typeof(Image));
+                barGo.transform.SetParent(root.transform, false);
+                RectTransform barRt = (RectTransform)barGo.transform;
+                // Stretch horizontally across the card, fixed thickness, rotated to form an X.
+                barRt.anchorMin = new Vector2(0f, 0.5f);
+                barRt.anchorMax = new Vector2(1f, 0.5f);
+                barRt.pivot = new Vector2(0.5f, 0.5f);
+                barRt.sizeDelta = new Vector2(0f, discardMarkThickness);
+                barRt.localEulerAngles = new Vector3(0f, 0f, angle);
+
+                Image barImage = barGo.GetComponent<Image>();
+                barImage.color = discardMarkColor;
+                barImage.raycastTarget = false;
+            }
+
+            discardMark = root;
         }
 
         /// <summary>Dim/disable the card when it can't legally be picked right now (e.g. it IS the card being played, so it can't also pay its own cost).</summary>
