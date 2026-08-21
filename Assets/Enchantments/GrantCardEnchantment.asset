@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4962943e188717449647cf5e02356b2, type: 3}
   m_Name: GrantCardEnchantment
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.GrantCardEnchantmentSO
-  EnchantmentName: New Enchantment
+  EnchantmentName: Tough
   Description: 
-  GrantedCard: {fileID: 0}
+  GrantedCard: {fileID: 11400000, guid: a20710a5778400249a96ec84b9416f8f, type: 2}
