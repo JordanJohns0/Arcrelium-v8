@@ -289,6 +289,44 @@ namespace Tests.Equipment
         }
 
         [Test]
+        public void RollUnlocked_ExcludesEquippedButNotInUnlockedList()
+        {
+            var equippedTrinket = MakeEquipment(EquipmentSlotType.Trinket, "Lucky Opal");
+            var fresh = MakeEquipment(EquipmentSlotType.Head, "Helm");
+
+            var inventory = ScriptableObject.CreateInstance<PlayerInventory>();
+            tracked.Add(inventory);
+            // Equipped items are not required to sit in the unlocked list (the UI used to
+            // remove them on equip); the roll must still treat them as owned.
+            inventory.Loadout.Set(EquipmentSlotType.Trinket, 0, equippedTrinket);
+            Assert.IsTrue(inventory.Loadout.ContainsItem(equippedTrinket));
+            Assert.IsFalse(inventory.IsUnlocked(equippedTrinket));
+
+            var pool = ScriptableObject.CreateInstance<RewardPool>();
+            tracked.Add(pool);
+            pool.rewards.AddRange(new[] { equippedTrinket, fresh });
+
+            for (int i = 0; i < 20; i++)
+                Assert.AreNotEqual(equippedTrinket, pool.RollUnlocked(inventory, new System.Random(i)));
+        }
+
+        [Test]
+        public void RollUnlocked_AllEquipped_ReturnsNull()
+        {
+            var trinket = MakeEquipment(EquipmentSlotType.Trinket, "Lucky Opal");
+
+            var inventory = ScriptableObject.CreateInstance<PlayerInventory>();
+            tracked.Add(inventory);
+            inventory.Loadout.Set(EquipmentSlotType.Trinket, 0, trinket);
+
+            var pool = ScriptableObject.CreateInstance<RewardPool>();
+            tracked.Add(pool);
+            pool.rewards.Add(trinket);
+
+            Assert.IsNull(pool.RollUnlocked(inventory, new System.Random(1)));
+        }
+
+        [Test]
         public void GetEquipmentByName_MatchesExactName()
         {
             var library = MakeLibrary(MakeEquipment(EquipmentSlotType.Head, "Helm"));
