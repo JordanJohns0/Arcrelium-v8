@@ -198,6 +198,17 @@ namespace UI
                 deckList.transform.SetParent(transform, false);
             }
 
+            // The Card prefab is stored on the inventory slot prefab; hand it to the deck
+            // list so its rows can preview cards on hover/right-click.
+            if (inventorySlotPrefab != null)
+            {
+                deckList.SetCardPrefab(inventorySlotPrefab.CardPreviewPrefab);
+            }
+            else
+            {
+                Debug.LogWarning("[DeckPreview] EnsureDeckList: inventorySlotPrefab is NULL, no card prefab injected.");
+            }
+
             LayoutForDeckList();
         }
 

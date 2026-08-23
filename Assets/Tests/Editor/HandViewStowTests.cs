@@ -16,6 +16,8 @@ namespace Tests.UI
             typeof(HandView).GetField("cardContainer", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly FieldInfo spawnedViewsField =
             typeof(HandView).GetField("spawnedViews", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo stowedOffsetField =
+            typeof(HandView).GetField("stowedOffset", BindingFlags.NonPublic | BindingFlags.Instance);
 
         private const float StowOffset = 100f;
 
@@ -127,6 +129,7 @@ namespace Tests.UI
 
             HandView hand = go.GetComponent<HandView>();
             containerField.SetValue(hand, containerGo.transform);
+            stowedOffsetField.SetValue(hand, StowOffset); // deterministic, not the Inspector default
             return hand;
         }
 
