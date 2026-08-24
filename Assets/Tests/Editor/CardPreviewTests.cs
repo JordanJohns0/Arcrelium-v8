@@ -297,6 +297,17 @@ namespace Tests.UI
                 BindingFlags.NonPublic | BindingFlags.Instance);
             Assert.AreSame(cardView, cardPrefabField.GetValue(deckList),
                 "EquipmentUI must forward the slot prefab's Card view to the deck list.");
+
+            // The played-card notification display must receive the same Card prefab so
+            // plays render as real cards instead of the name-only fallback. Its field
+            // stores the prefab's GameObject (it instantiates it directly).
+            PlayedCardDisplay popup = Object.FindAnyObjectByType<PlayedCardDisplay>();
+            Assert.IsNotNull(popup, "EnsureDeckList must make the played-card display available.");
+            owned.Add(popup.gameObject);
+            var popupPrefabField = typeof(PlayedCardDisplay).GetField("cardPrefab",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.AreSame(cardView.gameObject, popupPrefabField.GetValue(popup),
+                "EquipmentUI must forward the slot prefab's Card view to the played-card display.");
         }
 
         private static MonoBehaviour FindRowHandler(GameObject deckGo)

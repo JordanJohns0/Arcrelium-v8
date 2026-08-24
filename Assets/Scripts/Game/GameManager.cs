@@ -70,6 +70,7 @@ namespace Game
 
         private LoadoutScreen loadoutScreen;
         private bool victoryAchieved;
+        private bool defeatAchieved;
         private bool matchStarted;
 
         /// <summary>
@@ -84,6 +85,7 @@ namespace Game
         private void Start()
         {
             victoryAchieved = false;
+            defeatAchieved = false;
             matchStarted = false;
             GameMode currentMode = GameState.ActiveMode;
 
@@ -572,7 +574,26 @@ namespace Game
             turnManager.RemoveFromTurnOrder(character);
 
             if (IsMatchOver())
+            {
                 ShowVictory();
+                return;
+            }
+
+            // PvE: once every human player is down while enemies remain, the match is a
+            // loss. The host decides and broadcasts it; clients just display it.
+            if (GameState.ActiveMode != GameMode.Client && AreAllPlayersDead())
+                ShowGameOver();
+        }
+
+        /// <summary>True when no human-owned character is left alive.</summary>
+        internal bool AreAllPlayersDead()
+        {
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null || c.Stats == null || !c.Stats.IsAlive) continue;
+                if (c.OwnerPlayerId < GameState.EnemyOwnerPlayerId) return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -612,7 +633,8 @@ namespace Game
             var sync = new Networking.GameStateSync
             {
                 currentTurnIndex = turnManager.CurrentTurnIndex,
-                victory = victoryAchieved
+                victory = victoryAchieved,
+                gameOver = defeatAchieved
             };
 
             foreach (var c in activeCharacters)
@@ -670,7 +692,15 @@ namespace Game
             if (card == null || card.Data == null) return;
 
             string actorName = actor != null ? actor.Stats.CharacterName : "";
-            UI.PlayedCardDisplay.Show(card.Data.CardName, actorName);
+            Debug.Log($"[PlayPopup] OnCardPlayed actor='{actorName}' " +
+                      $"ownerId={(actor != null ? actor.OwnerPlayerId : -1)} " +
+                      $"local={GameState.LocalPlayerId} mode={GameState.ActiveMode}");
+
+            // The acting player just watched themselves play it — no popup for them.
+            // Everyone else gets the real CardData (no name lookup) so any card,
+            // present or future, renders as a proper card.
+            if (actor == null || actor.OwnerPlayerId != GameState.LocalPlayerId)
+                UI.PlayedCardDisplay.Show(card.Data, actorName);
 
             if (GameState.ActiveMode != GameMode.Host) return;
             Networking.NetworkManager.Instance.BroadcastCardPlayed(new Networking.CardPlayedDisplay
@@ -683,11 +713,15 @@ namespace Game
 
         /// <summary>
         /// Client-side: the host announced a card play; show it on screen so this player
-        /// sees what was played even though only the host resolves card actions.
+        /// sees what was played even though only the host resolves card actions. The
+        /// local player's own plays are not shown; everyone else's are paced.
         /// </summary>
         private void HandleCardPlayedDisplay(Networking.CardPlayedDisplay display)
         {
             if (display == null || string.IsNullOrEmpty(display.cardName)) return;
+            Debug.Log($"[PlayPopup] Broadcast card='{display.cardName}' " +
+                      $"actorPlayerId={display.actorPlayerId} local={GameState.LocalPlayerId}");
+            if (display.actorPlayerId == GameState.LocalPlayerId) return;
             UI.PlayedCardDisplay.Show(display.cardName, display.actorName);
         }
 
@@ -812,7 +846,6 @@ namespace Game
             if (victoryAchieved) return;
             victoryAchieved = true;
             BroadcastGameState();
-
             // Each machine rolls its own reward from the shared pool, so players never
             // see each other's inventories. Unlocks persist across sessions.
             EquipmentData reward = null;
@@ -827,6 +860,18 @@ namespace Game
             }
 
             ShowLoadoutScreen(reward);
+        }
+
+        /// <summary>
+        /// Every player has died: show the Game Over overlay locally and, on the host,
+        /// broadcast it so clients display it too.
+        /// </summary>
+        private void ShowGameOver()
+        {
+            if (defeatAchieved || victoryAchieved) return;
+            defeatAchieved = true;
+            BroadcastGameState();
+            UI.GameOverScreen.Show();
         }
 
         public ActionResolver ActionResolver => actionResolver;
@@ -896,6 +941,8 @@ namespace Game
 
             if (state.victory)
                 ShowVictory();
+            if (state.gameOver)
+                UI.GameOverScreen.Show();
         }
 
         private static void ApplySyncedStats(Character character, Networking.CharacterState cs)

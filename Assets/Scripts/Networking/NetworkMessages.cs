@@ -24,6 +24,7 @@ namespace Networking
         public int currentTurnIndex;
         public int activeCharacterId;
         public bool victory;
+        public bool gameOver;
     }
 
     [System.Serializable]

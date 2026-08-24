@@ -13,13 +13,20 @@ MonoBehaviour:
   m_Name: RewardPool
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.RewardPool
   rewards:
+  - {fileID: 11400000, guid: 7ae34eede51a4404098232169ea3f68e, type: 2}
   - {fileID: 11400000, guid: b594333b81410884ab4cdcd374337d13, type: 2}
+  - {fileID: 11400000, guid: 8fef389436388974891de19d8e930490, type: 2}
+  - {fileID: 11400000, guid: 4c21f668fb862b0428f4382a5a8ee1a3, type: 2}
   - {fileID: 11400000, guid: 4e1a0a72811e8da459fc89e31872bbd7, type: 2}
   - {fileID: 11400000, guid: b1e0717c459915f4fbca3907934f2c3f, type: 2}
+  - {fileID: 11400000, guid: e11a3a3d65215394c8d4121cedcda126, type: 2}
+  - {fileID: 11400000, guid: 2282fc635592ae144929cb003fc045e6, type: 2}
   - {fileID: 11400000, guid: b542c6cf5ddb0484780c7b3f6b7ec2f1, type: 2}
   - {fileID: 11400000, guid: ed81d0b3554e5a34ea162f2275e298b6, type: 2}
   - {fileID: 11400000, guid: 4e3b9f6d0bdd0ff418900d4be2a72e12, type: 2}
+  - {fileID: 11400000, guid: bb5826e0ee8037b489fb6251e5e4b98c, type: 2}
   - {fileID: 11400000, guid: 393cdedbd45026b4ead744f8ba6d6ff7, type: 2}
+  - {fileID: 11400000, guid: 1d2e276c309185c4ca5fea73160b43aa, type: 2}
   - {fileID: 11400000, guid: 19f8d7376a42df34993046bc4ea1f9c4, type: 2}
   - {fileID: 11400000, guid: 453d78c5d32115f4b818eb33b2892c63, type: 2}
   - {fileID: 11400000, guid: f4a6d92b94ded42478f8af94ff35fa0a, type: 2}
