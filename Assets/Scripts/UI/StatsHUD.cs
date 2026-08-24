@@ -157,6 +157,17 @@ namespace UI
         private Character hoveredCharacter;
         private StatEntry hoveredEntry;
 
+        /// <summary>
+        /// Clicking a character's name in the HUD targets that character exactly like
+        /// clicking its model: the same CharacterSelectable event fires, so all target
+        /// validation (range, validity, current selection state) applies unchanged.
+        /// </summary>
+        private void HandleStatEntryNameClicked(StatEntry entry)
+        {
+            if (entry == null || entry.linkedCharacter == null) return;
+            CharacterSelectable.NotifyClicked(entry.linkedCharacter);
+        }
+
         private void HandleCharacterHovered(Character character)
         {
             hoveredCharacter = character;
@@ -360,6 +371,7 @@ namespace UI
             entry.linkedCharacter = character;
             entry.OnHoverEntered += HandleStatEntryHovered;
             entry.OnHoverExited += HandleStatEntryHoverEnded;
+            entry.OnNameClicked += HandleStatEntryNameClicked;
 
             // Destroy all labels except name
             float nameWidth = nameMaxWidth;
@@ -426,6 +438,7 @@ namespace UI
                 character.Stats.OnStatsChanged -= UpdateEntry;
                 entry.OnHoverEntered -= HandleStatEntryHovered;
                 entry.OnHoverExited -= HandleStatEntryHoverEnded;
+                entry.OnNameClicked -= HandleStatEntryNameClicked;
                 Destroy(entry.gameObject);
                 entries.Remove(character);
             }

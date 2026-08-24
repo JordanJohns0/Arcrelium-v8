@@ -8,7 +8,7 @@ using Characters;
 
 namespace UI
 {
-    public class StatEntry : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public class StatEntry : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         public Image bg;
         public Image blockOverlay;
@@ -23,6 +23,9 @@ namespace UI
 
         public event Action<StatEntry> OnHoverEntered;
         public event Action<StatEntry> OnHoverExited;
+
+        /// <summary>Raised when the character's NAME label is clicked (not the HP bars).</summary>
+        public event Action<StatEntry> OnNameClicked;
 
         private Color originalBgColor;
 
@@ -41,6 +44,18 @@ namespace UI
         public void OnPointerExit(PointerEventData eventData)
         {
             OnHoverExited?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Clicks bubble up from whichever raycast target was hit; only a click on the
+        /// name label counts as targeting the character.
+        /// </summary>
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            GameObject hit = eventData.pointerCurrentRaycast.gameObject;
+            if (hit == null) return;
+            if (nameLabel == null || hit.transform != nameLabel.transform) return;
+            OnNameClicked?.Invoke(this);
         }
     }
 }
