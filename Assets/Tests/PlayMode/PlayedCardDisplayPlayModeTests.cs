@@ -168,6 +168,37 @@ namespace Tests.PlayMode
                 "The displayed card must carry the played card's data.");
         }
 
+        [UnityTest]
+        public IEnumerator BroadcastPayload_RendersAccurateStandIn_WhenNameUnknown()
+        {
+            // A name that exists in NO library (the real Resources one included) plus the
+            // broadcast's cost/description: the popup must render an accurate stand-in
+            // card, never a blank or wrong fallback.
+            var prefabGo = new GameObject("CardPrefab", typeof(RectTransform), typeof(Button), typeof(CardView));
+            CardView view = prefabGo.GetComponent<CardView>();
+            view.Setup(new Cards.CardInstance(ScriptableObject.CreateInstance<Cards.CardData>()));
+
+            GameDataLibrary.SetInstance(null); // worst case: no resolvable library
+
+            PlayedCardDisplay.SetCardPrefab(view);
+            PlayedCardDisplay.Show("Totally Unknown Card", "Foe", 3, "Deal 2 damage.");
+            yield return null;
+
+            GameObject card = VisibleCard();
+            Assert.IsNotNull(card);
+            var shownView = card.GetComponent<CardView>();
+            Assert.IsNotNull(shownView,
+                "With the broadcast payload present the popup must be a real card, not the name-only fallback.");
+            Assert.AreEqual("Totally Unknown Card", shownView.Instance.Data.CardName);
+            Assert.AreEqual(3, shownView.Instance.Data.Cost);
+            Assert.AreEqual("Deal 2 damage.", shownView.Instance.Data.Description);
+
+            Cards.CardData standIn = shownView.Instance.Data;
+            yield return new WaitForSeconds(2.5f);
+            Assert.IsTrue(standIn == null,
+                "The transient stand-in CardData must be destroyed after display, never leak.");
+        }
+
         private readonly List<ScriptableObject> trackAssets = new List<ScriptableObject>();
     }
 }

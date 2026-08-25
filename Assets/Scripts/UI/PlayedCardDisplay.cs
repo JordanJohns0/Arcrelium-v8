@@ -67,12 +67,17 @@ namespace UI
             public readonly CardData Data;
             public readonly string CardName;
             public readonly string ActorName;
+            public readonly int Cost;
+            public readonly string Description;
 
-            public DisplayRequest(CardData data, string cardName, string actorName)
+            public DisplayRequest(CardData data, string cardName, string actorName,
+                int cost = 0, string description = null)
             {
                 Data = data;
                 CardName = cardName;
                 ActorName = actorName;
+                Cost = cost;
+                Description = description;
             }
         }
 
@@ -90,18 +95,20 @@ namespace UI
 
         /// <summary>
         /// Name-only variant used when only the announced name is available (network
-        /// broadcasts from other machines). Resolves via GameDataLibrary; unknown names
-        /// fall back to a plain name-only card.
+        /// broadcasts from other machines). Resolves via GameDataLibrary; if that fails,
+        /// the cost/description carried by the broadcast render an accurate stand-in so
+        /// the popup can never show a wrong or blank card.
         /// </summary>
-        public static void Show(string cardName, string actorName)
+        public static void Show(string cardName, string actorName, int cost = 0, string description = null)
         {
-            ShowInternal(null, actorName, cardName);
+            ShowInternal(null, actorName, cardName, cost, description);
         }
 
-        private static void ShowInternal(CardData data, string actorName, string cardName = null)
+        private static void ShowInternal(CardData data, string actorName, string cardName = null,
+            int cost = 0, string description = null)
         {
             EnsureInstance();
-            instance.Display(new DisplayRequest(data, cardName, actorName));
+            instance.Display(new DisplayRequest(data, cardName, actorName, cost, description));
         }
 
         /// <summary>
@@ -172,10 +179,22 @@ namespace UI
         private IEnumerator PlayOne(DisplayRequest request)
         {
             CardData data = request.Data;
+            bool synthetic = false;
             if (data == null && !string.IsNullOrEmpty(request.CardName))
             {
                 var library = GameDataLibrary.Instance;
                 if (library != null) data = library.GetCardByName(request.CardName);
+            }
+            if (data == null && !string.IsNullOrEmpty(request.Description))
+            {
+                // The lookup failed but the host told us exactly what was played: build a
+                // transient stand-in carrying the real name/cost/description so the popup
+                // is accurate even when this machine can't resolve the asset.
+                data = ScriptableObject.CreateInstance<CardData>();
+                data.CardName = request.CardName;
+                data.Cost = request.Cost;
+                data.Description = request.Description;
+                synthetic = true;
             }
 
             string name = data != null && !string.IsNullOrEmpty(data.CardName) ? data.CardName : request.CardName;
@@ -218,6 +237,7 @@ namespace UI
 
             yield return Animate(rect, group);
             Destroy(card);
+            if (synthetic) Destroy(data);
         }
 
         private static void DisableRaycasts(GameObject root)

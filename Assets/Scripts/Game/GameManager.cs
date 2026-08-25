@@ -706,6 +706,8 @@ namespace Game
             Networking.NetworkManager.Instance.BroadcastCardPlayed(new Networking.CardPlayedDisplay
             {
                 cardName = card.Data.CardName,
+                cost = card.Data.Cost,
+                description = card.Data.Description,
                 actorName = actorName,
                 actorPlayerId = actor != null ? actor.OwnerPlayerId : -1
             });
@@ -722,7 +724,8 @@ namespace Game
             Debug.Log($"[PlayPopup] Broadcast card='{display.cardName}' " +
                       $"actorPlayerId={display.actorPlayerId} local={GameState.LocalPlayerId}");
             if (display.actorPlayerId == GameState.LocalPlayerId) return;
-            UI.PlayedCardDisplay.Show(display.cardName, display.actorName);
+            UI.PlayedCardDisplay.Show(display.cardName, display.actorName,
+                display.cost, display.description);
         }
 
         internal void HandlePlayCardRequest(ulong senderSteamId, Networking.PlayCardRequest request)
