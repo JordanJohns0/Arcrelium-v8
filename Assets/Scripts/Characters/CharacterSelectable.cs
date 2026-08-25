@@ -22,6 +22,12 @@ namespace Characters
         public static event System.Action<Character> AnyCharacterHovered;
         public static event System.Action AnyCharacterHoverEnded;
 
+        /// <summary>
+        /// Raises AnyCharacterClicked from outside this type — used by the stats HUD
+        /// so clicking a character's name behaves exactly like clicking its model.
+        /// </summary>
+        public static void NotifyClicked(Character character) => AnyCharacterClicked?.Invoke(character);
+
         private Character character;
         private static bool processedThisFrame;
 

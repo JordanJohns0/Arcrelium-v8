@@ -12,8 +12,8 @@ namespace UI
     /// Lists every card in the player's deck (all cards from the equipped loadout), with
     /// duplicate cards condensed into "Nx Name" entries, sorted by cost ascending then
     /// alphabetically on ties. Built entirely in code as a child of the equipment UI, so no
-    /// scene wiring is needed. Right-clicking a row opens a tooltip with that card's cost
-    /// and description.
+    /// scene wiring is needed. Hovering a row previews that card as a real Card prefab
+    /// instance (see CardPreview).
     /// </summary>
     public class DeckListUI : MonoBehaviour
     {
@@ -37,14 +37,26 @@ namespace UI
 
         [Header("Rows")]
         [SerializeField] private Color rowColor = new Color(0.2f, 0.2f, 0.2f, 0.9f);
-        [SerializeField] private float rowHeight = 26f;
-        [SerializeField] private int rowFontSize = 17;
+        [SerializeField] private float rowHeight = 52f;
+
+        // Upper bound for row text auto-sizing so labels fill the doubled row height.
+        [SerializeField] private int rowFontSize = 32;
         [SerializeField] private Color rowTextColor = new Color(0.9f, 0.9f, 0.9f, 1f);
         [SerializeField] private float rowTextPadding = 8f;
 
         private RectTransform listContent;
         private readonly List<GameObject> rows = new List<GameObject>();
+        private CardView cardPrefab;
         private static GameObject staticPrefab;
+
+        /// <summary>
+        /// Card prefab used for hover previews. Normally injected by EquipmentUI from the
+        /// inventory slot prefab so there is exactly one place the Card prefab is assigned.
+        /// </summary>
+        public void SetCardPrefab(CardView prefab)
+        {
+            cardPrefab = prefab;
+        }
 
         private void Awake()
         {
@@ -148,7 +160,9 @@ namespace UI
 
         private GameObject CreateRow(CardData card, int count)
         {
-            var row = new GameObject("CardRow", typeof(Image), typeof(RectTransform), typeof(RowClickHandler));
+            // RectTransform must come first — adding a UGUI component before it makes
+            // Unity auto-create a RectTransform and then reject the explicit one.
+            var row = new GameObject("CardRow", typeof(RectTransform), typeof(Image), typeof(RowHoverHandler));
             row.transform.SetParent(listContent, false);
 
             var image = row.GetComponent<Image>();
@@ -162,8 +176,11 @@ namespace UI
             var textObj = new GameObject("Text", typeof(TextMeshProUGUI));
             textObj.transform.SetParent(row.transform, false);
             var text = textObj.GetComponent<TextMeshProUGUI>();
-            text.text = $"{count}x {card.CardName} ({card.Cost})";
-            text.fontSize = rowFontSize;
+            text.text = $"{count}x {card.CardName}";
+            // Auto-size so the label fills the row height regardless of length.
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 10;
+            text.fontSizeMax = rowFontSize;
             text.alignment = TextAlignmentOptions.Left;
             text.color = rowTextColor;
             var textRect = text.rectTransform;
@@ -172,25 +189,52 @@ namespace UI
             textRect.offsetMin = new Vector2(rowTextPadding, 0);
             textRect.offsetMax = new Vector2(-rowTextPadding, 0);
 
-            row.GetComponent<RowClickHandler>().Setup(card);
+            row.GetComponent<RowHoverHandler>().Setup(card, cardPrefab);
             return row;
         }
 
-        /// <summary>Right-clicking a deck entry opens the card tooltip (name, cost, description).</summary>
-        private class RowClickHandler : MonoBehaviour, IPointerClickHandler
+        /// <summary>
+        /// Hovering or right-clicking a deck entry previews that card as a real Card
+        /// prefab instance shown beside the row.
+        /// </summary>
+        private class RowHoverHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
+            IPointerClickHandler
         {
             private CardData card;
+            private CardView cardPrefab;
 
-            public void Setup(CardData card)
+            public void Setup(CardData card, CardView cardPrefab)
             {
                 this.card = card;
+                this.cardPrefab = cardPrefab;
+            }
+
+            public void OnPointerEnter(PointerEventData eventData)
+            {
+                ShowPreview();
+            }
+
+            public void OnPointerExit(PointerEventData eventData)
+            {
+                CardPreview.Hide(this);
             }
 
             public void OnPointerClick(PointerEventData eventData)
             {
                 if (eventData.button != PointerEventData.InputButton.Right) return;
-                if (card == null) return;
-                Tooltip.ShowCard(card, eventData.position);
+                ShowPreview();
+            }
+
+            private void ShowPreview()
+            {
+                if (card == null)
+                {
+                    Debug.LogWarning("[DeckPreview] Row preview skipped: row has no card.");
+                    return;
+                }
+                // Anchor to the row itself so the preview sits beside it instead of
+                // following the cursor.
+                CardPreview.Show(cardPrefab, new[] { card }, (RectTransform)transform, this);
             }
         }
     }

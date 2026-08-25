@@ -43,6 +43,9 @@ namespace UI
         public CardInstance Instance { get; private set; }
         public CardData Card => Instance?.Data;
 
+        /// <summary>True while the pointer is over this card (and it is interactable).</summary>
+        public bool Hovered => hovered;
+
         public event System.Action<CardView> OnClicked;
 
         private void Awake()

@@ -13,9 +13,12 @@ namespace UI
     /// every machine. The host displays its own and AI plays directly and broadcasts a
     /// CardPlayedDisplay message so clients show them too.
     ///
-    /// Plays are queued and shown strictly one at a time: each played card pops up, stays
-    /// on screen while its action resolves, then fades out before the next play appears,
-    /// so rapid plays (e.g. an enemy playing several cards) never overlap.
+    /// Plays made by other players (and AI) are queued and shown strictly one at a
+    /// time, each visible for at least MinVisibleSeconds before the next appears — so a
+    /// card played right after another still gets read instead of flashing by. The
+    /// local player's own plays are never displayed (they just played them). This is
+    /// purely visual: playing cards is never blocked or slowed by the queue;
+    /// resolution stays instant while the display catches up in the background.
     /// </summary>
     public class PlayedCardDisplay : MonoBehaviour
     {
@@ -54,45 +57,88 @@ namespace UI
 
         private Canvas canvas;
         private readonly Queue<DisplayRequest> queue = new Queue<DisplayRequest>();
-        private bool playing;
+        private Coroutine playRoutine;
+
+        /// <summary>Each played card stays on screen at least this long, in seconds.</summary>
+        internal const float MinVisibleSeconds = 1f;
 
         private struct DisplayRequest
         {
+            public readonly CardData Data;
             public readonly string CardName;
             public readonly string ActorName;
+            public readonly int Cost;
+            public readonly string Description;
 
-            public DisplayRequest(string cardName, string actorName)
+            public DisplayRequest(CardData data, string cardName, string actorName,
+                int cost = 0, string description = null)
             {
+                Data = data;
                 CardName = cardName;
                 ActorName = actorName;
+                Cost = cost;
+                Description = description;
             }
         }
 
         /// <summary>
-        /// Enqueues a played card to be shown. <paramref name="cardName"/> is resolved to
-        /// CardData via the GameDataLibrary; if this machine lacks the card it falls back to
-        /// a plain card showing just the name so every player still sees what was played.
+        /// Enqueues a played card to be shown, rendering it with the injected Card prefab.
+        /// The CardData is used directly — no name lookup — so every card (present and
+        /// future) shows as the real card. Foreign plays (anyone who is not this
+        /// machine's player) are queued and shown sequentially, each visible for at
+        /// least MinVisibleSeconds.
         /// </summary>
-        public static void Show(string cardName, string actorName)
+        public static void Show(CardData card, string actorName)
         {
-            if (instance == null)
+            ShowInternal(card, actorName);
+        }
+
+        /// <summary>
+        /// Name-only variant used when only the announced name is available (network
+        /// broadcasts from other machines). Resolves via GameDataLibrary; if that fails,
+        /// the cost/description carried by the broadcast render an accurate stand-in so
+        /// the popup can never show a wrong or blank card.
+        /// </summary>
+        public static void Show(string cardName, string actorName, int cost = 0, string description = null)
+        {
+            ShowInternal(null, actorName, cardName, cost, description);
+        }
+
+        private static void ShowInternal(CardData data, string actorName, string cardName = null,
+            int cost = 0, string description = null)
+        {
+            EnsureInstance();
+            instance.Display(new DisplayRequest(data, cardName, actorName, cost, description));
+        }
+
+        /// <summary>
+        /// Injects the Card prefab used to render plays visually (same prefab as the
+        /// deck-window hover previews). Without it only the plain name fallback shows.
+        /// </summary>
+        public static void SetCardPrefab(CardView prefab)
+        {
+            EnsureInstance();
+            instance.cardPrefab = prefab != null ? prefab.gameObject : null;
+        }
+
+        private static void EnsureInstance()
+        {
+            if (instance != null) return;
+
+            var existing = FindAnyObjectByType<PlayedCardDisplay>();
+            if (existing != null)
             {
-                var existing = FindAnyObjectByType<PlayedCardDisplay>();
-                if (existing != null)
-                {
-                    instance = existing;
-                }
-                else if (staticPrefab != null)
-                {
-                    instance = Object.Instantiate(staticPrefab).GetComponent<PlayedCardDisplay>();
-                }
-                else
-                {
-                    var go = new GameObject("PlayedCardDisplay");
-                    instance = go.AddComponent<PlayedCardDisplay>();
-                }
+                instance = existing;
             }
-            instance.Display(cardName, actorName);
+            else if (staticPrefab != null)
+            {
+                instance = Object.Instantiate(staticPrefab).GetComponent<PlayedCardDisplay>();
+            }
+            else
+            {
+                var go = new GameObject("PlayedCardDisplay");
+                instance = go.AddComponent<PlayedCardDisplay>();
+            }
         }
 
         private void Awake()
@@ -110,29 +156,46 @@ namespace UI
             if (instance == this) instance = null;
         }
 
-        private void Display(string cardName, string actorName)
+        private void Display(DisplayRequest request)
         {
-            queue.Enqueue(new DisplayRequest(cardName, actorName));
-            if (!playing)
-                StartCoroutine(PlayQueue());
+            // Foreign plays are paced so observers can register each one; actual
+            // resolution is never blocked by this — it is purely visual. The local
+            // player's own plays are not displayed at all (they just watched themselves
+            // play it), which GameManager enforces by not routing them here.
+            queue.Enqueue(request);
+            if (playRoutine == null)
+                playRoutine = StartCoroutine(PlayQueue());
         }
 
         private IEnumerator PlayQueue()
         {
-            playing = true;
             while (queue.Count > 0)
             {
-                DisplayRequest request = queue.Dequeue();
-                yield return ShowOne(request);
+                yield return PlayOne(queue.Dequeue());
             }
-            playing = false;
+            playRoutine = null;
         }
 
-        private IEnumerator ShowOne(DisplayRequest request)
+        private IEnumerator PlayOne(DisplayRequest request)
         {
-            CardData data = null;
-            var library = GameDataLibrary.Instance;
-            if (library != null) data = library.GetCardByName(request.CardName);
+            CardData data = request.Data;
+            bool synthetic = false;
+            if (data == null && !string.IsNullOrEmpty(request.CardName))
+            {
+                var library = GameDataLibrary.Instance;
+                if (library != null) data = library.GetCardByName(request.CardName);
+            }
+            if (data == null && !string.IsNullOrEmpty(request.Description))
+            {
+                // The lookup failed but the host told us exactly what was played: build a
+                // transient stand-in carrying the real name/cost/description so the popup
+                // is accurate even when this machine can't resolve the asset.
+                data = ScriptableObject.CreateInstance<CardData>();
+                data.CardName = request.CardName;
+                data.Cost = request.Cost;
+                data.Description = request.Description;
+                synthetic = true;
+            }
 
             string name = data != null && !string.IsNullOrEmpty(data.CardName) ? data.CardName : request.CardName;
             if (string.IsNullOrEmpty(name)) yield break;
@@ -156,6 +219,10 @@ namespace UI
                 card = BuildFallbackCard(name);
             }
 
+            // The popup is purely informational: it must never eat mouse clicks aimed
+            // at the board or hand while it is on screen.
+            DisableRaycasts(card);
+
             if (!string.IsNullOrEmpty(request.ActorName))
                 AttachCaption(card, $"{request.ActorName} played");
 
@@ -170,12 +237,23 @@ namespace UI
 
             yield return Animate(rect, group);
             Destroy(card);
+            if (synthetic) Destroy(data);
+        }
+
+        private static void DisableRaycasts(GameObject root)
+        {
+            foreach (Graphic graphic in root.GetComponentsInChildren<Graphic>(true))
+                graphic.raycastTarget = false;
         }
 
         private IEnumerator Animate(RectTransform rect, CanvasGroup group)
         {
             Vector2 from = basePosition;
             Vector2 to = endPosition;
+
+            // Guarantee the minimum visible time even if the serialized timings are
+            // tuned shorter: stretch the hold to make up the difference.
+            float hold = Mathf.Max(holdTime, MinVisibleSeconds - riseTime - fadeTime);
 
             group.alpha = 0f;
             rect.anchoredPosition = from;
@@ -196,7 +274,7 @@ namespace UI
             rect.anchoredPosition = to;
             rect.localScale = Vector3.one * baseScale;
 
-            yield return new WaitForSeconds(holdTime);
+            yield return new WaitForSeconds(hold);
 
             t = 0f;
             while (t < fadeTime)

@@ -8,14 +8,18 @@ namespace UI
 {
     /// <summary>
     /// Represents one piece of equipment in the inventory panel. Draggable — can be dropped
-    /// onto an EquipmentSlotUI to equip it.
+    /// onto an EquipmentSlotUI to equip it. Right-clicking shows the classic text tooltip;
+    /// actual-card hover previews live on the deck list rows instead (see DeckListUI).
     /// </summary>
-    public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
+    public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler,
+        IPointerClickHandler
     {
         [SerializeField] private Image iconImage;
         [SerializeField] private TMP_Text nameLabel;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private float dragAlpha = 0.6f;
+        [Tooltip("Shared Card prefab for hover previews. Storage point only — EquipmentUI hands this to the deck list; slots themselves never render previews.")]
+        [SerializeField] private CardView cardPreviewPrefab;
 
         private Equipment.EquipmentData equipmentData;
         private Transform originalParent;
@@ -24,6 +28,9 @@ namespace UI
 
         public Equipment.EquipmentData EquipmentData => equipmentData;
         public Equipment.EquipmentSlotType SlotType => equipmentData != null ? equipmentData.SlotType : default;
+
+        /// <summary>Shared Card preview prefab (storage point for EquipmentUI → DeckListUI).</summary>
+        public CardView CardPreviewPrefab => cardPreviewPrefab;
 
         public void SetVisible(bool visible)
         {

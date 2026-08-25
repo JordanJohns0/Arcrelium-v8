@@ -44,9 +44,24 @@ namespace Equipment
         public CardData GetCardByName(string cardName)
         {
             if (string.IsNullOrEmpty(cardName)) return null;
-            foreach (var c in allCards)
+
+            // Prefer this asset's own list (standalone/tested instances behave exactly
+            // as before), then fall back to the global instance.
+            CardData direct = FindCard(this, cardName);
+            if (direct != null) return direct;
+
+            var lib = Instance;
+            if (!ReferenceEquals(lib, this))
             {
-                if (c != null && c.CardName == cardName) return c;
+                if (lib == null)
+                {
+                    // One retry: a stale SetInstance(null) (test seam) or an earlier failed
+                    // load must not permanently blind name resolution for the session.
+                    instanceSearched = false;
+                    lib = Instance;
+                }
+                CardData global = FindCard(lib, cardName);
+                if (global != null) return global;
             }
             return null;
         }
@@ -54,7 +69,38 @@ namespace Equipment
         public EquipmentData GetEquipmentByName(string equipmentName)
         {
             if (string.IsNullOrEmpty(equipmentName)) return null;
-            foreach (var e in allEquipment)
+
+            EquipmentData direct = FindEquipment(this, equipmentName);
+            if (direct != null) return direct;
+
+            var lib = Instance;
+            if (!ReferenceEquals(lib, this))
+            {
+                if (lib == null)
+                {
+                    instanceSearched = false;
+                    lib = Instance;
+                }
+                EquipmentData global = FindEquipment(lib, equipmentName);
+                if (global != null) return global;
+            }
+            return null;
+        }
+
+        private static CardData FindCard(GameDataLibrary lib, string cardName)
+        {
+            if (lib == null || lib.allCards == null) return null;
+            foreach (var c in lib.allCards)
+            {
+                if (c != null && c.CardName == cardName) return c;
+            }
+            return null;
+        }
+
+        private static EquipmentData FindEquipment(GameDataLibrary lib, string equipmentName)
+        {
+            if (lib == null || lib.allEquipment == null) return null;
+            foreach (var e in lib.allEquipment)
             {
                 if (e != null && e.EquipmentName == equipmentName) return e;
             }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Metal Fist
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Metal Fist
-  Description: When you take damage, deal 1 damage to all adjacent enemies.
+  Description: When you take damage during your turn, deal 1 damage to all adjacent enemies.
   Icon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
   SlotType: 3
   Cards:
@@ -22,3 +22,4 @@ MonoBehaviour:
   Triggers:
   - Timing: 4
     Effect: {fileID: 11400000, guid: 788c39ca47dc80848b2f2c1b8aed16cc, type: 2}
+    OnlyOnWearersTurn: 1

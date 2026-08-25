@@ -342,7 +342,10 @@ namespace UI
             switch (card.TargetType)
             {
                 case TargetType.HexCell:
-                    if (!cell.IsWalkable) return false;
+                    // Blocked terrain is never targetable; occupancy only matters for
+                    // Empty-constrained cards. Using IsWalkable here used to un-highlight
+                    // occupied cells that clicks still allowed (e.g. AoE like Fireball).
+                    if (cell.IsBlocked) return false;
                     if (card.CellConstraint == CellConstraint.Empty && cell.Occupant != null) return false;
                     return true;
                 case TargetType.EnemyCharacter:

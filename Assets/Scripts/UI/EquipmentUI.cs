@@ -197,6 +197,19 @@ namespace UI
                 deckList = DeckListUI.Create();
                 deckList.transform.SetParent(transform, false);
             }
+            // The Card prefab is stored on the inventory slot prefab; hand it to the deck
+            // list so its rows can preview cards, and to the played-card notifications so
+            // plays render as the real card (like the deck-window hover previews).
+            if (inventorySlotPrefab != null)
+            {
+                CardView cardView = inventorySlotPrefab.CardPreviewPrefab;
+                deckList.SetCardPrefab(cardView);
+                PlayedCardDisplay.SetCardPrefab(cardView);
+            }
+            else
+            {
+                Debug.LogWarning("[DeckPreview] EnsureDeckList: inventorySlotPrefab is NULL, no card prefab injected.");
+            }
 
             LayoutForDeckList();
         }

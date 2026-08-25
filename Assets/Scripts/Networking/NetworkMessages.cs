@@ -24,6 +24,7 @@ namespace Networking
         public int currentTurnIndex;
         public int activeCharacterId;
         public bool victory;
+        public bool gameOver;
     }
 
     [System.Serializable]
@@ -110,12 +111,15 @@ namespace Networking
     /// <summary>
     /// Host -> all clients. Announced after the host resolves a card play, so every machine
     /// can show the played card on screen. cardName is resolved to CardData locally via the
-    /// GameDataLibrary (falling back to rendering just the name if this machine lacks it).
+    /// GameDataLibrary; cost/description ride along so even if that lookup fails this
+    /// machine still renders an accurate stand-in instead of a wrong or blank popup.
     /// </summary>
     [System.Serializable]
     public class CardPlayedDisplay
     {
         public string cardName;
+        public int cost;
+        public string description;
         public string actorName;
         public int actorPlayerId = -1;
     }

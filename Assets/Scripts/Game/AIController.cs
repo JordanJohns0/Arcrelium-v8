@@ -15,6 +15,14 @@ namespace Game
         [SerializeField] private HexGridManager grid;
         [SerializeField] private float aiDelay = 0.4f;
 
+        /// <summary>
+        /// Minimum real seconds between AI card plays so everyone can follow each
+        /// resolution. Human players are never throttled by this.
+        /// </summary>
+        internal const float MinPlayIntervalSeconds = 1f;
+
+        [SerializeField] private float aiPlayInterval = 1f;
+
         private struct Candidate
         {
             public CardInstance Card;
@@ -71,7 +79,9 @@ namespace Game
                     yield break;
                 }
 
-                yield return new WaitForSeconds(0.3f);
+                // Pace the turn: each card resolves visibly for at least one second
+                // before the next play goes in.
+                yield return new WaitForSeconds(Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval));
 
                 if (turnManager.Busy)
                     yield return null;

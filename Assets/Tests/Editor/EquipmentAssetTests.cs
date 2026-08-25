@@ -519,6 +519,49 @@ namespace Tests.Equipment
             }
         }
 
+        /// <summary>
+        /// Metal Fist's trigger is flagged OnlyOnWearersTurn: damage taken during someone
+        /// else's turn must NOT trigger the AOE; damage taken on the wearer's own turn still does.
+        /// </summary>
+        [Test]
+        public void MetalFist_OnlyOnWearersTurn_SuppressedOnOtherTurns()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var turnGo = new GameObject("TestTurnManager");
+            var turnManager = turnGo.AddComponent<global::Game.TurnManager>();
+            var manager = BuildManager(grid, source); // Initialize finds the TurnManager
+            try
+            {
+                EquipmentData fist = LoadAsset("Metal Fist");
+                Assert.IsTrue(fist.Triggers[0].OnlyOnWearersTurn,
+                    "Metal Fist asset must flag its OnDamageTaken trigger as wearer-turn-only.");
+                Assert.IsTrue(manager.Equip(fist));
+
+                Character enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0); // adjacent to source
+                turnManager.SetTurnOrder(new List<Character> { enemy, source });
+
+                // Enemy's turn: taking damage must not retaliate.
+                turnManager.SetTurn(0);
+                source.TakeDamage(1);
+                Assert.AreEqual(10, enemy.Stats.CurrentHealth,
+                    "Metal Fist must not fire when damage is taken on another character's turn.");
+
+                // Wearer's own turn: the AOE fires again.
+                turnManager.SetTurn(1);
+                source.TakeDamage(1);
+                Assert.AreEqual(9, enemy.Stats.CurrentHealth,
+                    "Metal Fist should fire when damage is taken during the wearer's own turn.");
+
+                UnityEngine.Object.DestroyImmediate(enemy.gameObject);
+            }
+            finally
+            {
+                DestroyAll(grid, source, manager);
+                UnityEngine.Object.DestroyImmediate(turnGo);
+            }
+        }
+
         private static EquipmentManager BuildManager(HexGridManager grid, Character character)
         {
             var go = new GameObject("TestEquipmentManager");
