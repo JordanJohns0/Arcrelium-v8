@@ -445,7 +445,21 @@ namespace Equipment
 
         private void HandleDamageTaken(int amount)
         {
-            FireTriggers(TriggerTiming.OnDamageTaken);
+            var context = new EquipmentContext
+            {
+                Source = character,
+                Grid = grid,
+                TurnManager = turnManager,
+                Timing = TriggerTiming.OnDamageTaken
+            };
+
+            foreach (var trigger in GetTriggers(TriggerTiming.OnDamageTaken))
+            {
+                if (trigger.Effect == null) continue;
+                if (trigger.OnlyOnWearersTurn && turnManager != null &&
+                    turnManager.ActiveCharacter != character) continue;
+                trigger.Effect.Execute(context);
+            }
         }
 
         public void FireTriggers(TriggerTiming timing)

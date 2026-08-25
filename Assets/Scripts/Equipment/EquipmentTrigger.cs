@@ -12,5 +12,8 @@ namespace Equipment
     {
         public TriggerTiming Timing;
         public EquipmentEffect Effect;
+
+        [Tooltip("When true, the trigger only fires while it is the wearer's own turn.")]
+        public bool OnlyOnWearersTurn;
     }
 }
