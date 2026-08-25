@@ -17,6 +17,8 @@ namespace Tests.UI
             typeof(Tooltip).GetField("instance", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo createUiMethod =
             typeof(Tooltip).GetMethod("CreateUI", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo panelSizeField =
+            typeof(Tooltip).GetField("panelSize", BindingFlags.NonPublic | BindingFlags.Instance);
 
         private GameObject tooltipGo;
         private Tooltip tooltip;
@@ -29,6 +31,10 @@ namespace Tests.UI
             tooltipGo = new GameObject("Tooltip", typeof(Tooltip));
             tooltip = tooltipGo.GetComponent<Tooltip>();
             instanceField.SetValue(null, tooltip);
+            // The editor Game view can be arbitrarily small; use a panel that always fits
+            // so the tests exercise clamping, not "panel wider than the screen".
+            panelSizeField.SetValue(tooltip,
+                new Vector2(Mathf.Min(200f, Screen.width * 0.4f), Mathf.Min(120f, Screen.height * 0.4f)));
             // Awake/CreateUI don't run automatically in edit mode — build the UI directly.
             createUiMethod.Invoke(tooltip, null);
         }
@@ -86,7 +92,7 @@ namespace Tests.UI
         [Test]
         public void Show_MidScreen_KeepsOffsetPosition()
         {
-            var requested = new Vector2(200f, 500f);
+            var requested = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
             Tooltip.Show(MakeEquipment(), requested);
 
             Rect rect = PanelScreenRect();
