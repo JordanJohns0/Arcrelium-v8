@@ -32,6 +32,10 @@ public class SteamManager : MonoBehaviour
             instance = this;
             DontDestroyOnLoad(gameObject);
 
+            // Keep simulating and pumping Steam callbacks while unfocused — otherwise an
+            // alt-tabbed host stops answering clients and solo runs stall entirely.
+            Application.runInBackground = true;
+
             try
             {
                 SteamClient.Init(2308170, asyncCallbacks: true);

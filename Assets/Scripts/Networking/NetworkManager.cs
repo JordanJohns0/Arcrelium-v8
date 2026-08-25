@@ -46,6 +46,11 @@ namespace Networking
             }
             instance = this;
             DontDestroyOnLoad(gameObject);
+
+            // Safety net for sessions that skip SteamManager: an unfocused host must keep
+            // processing P2P traffic or clients hang.
+            Application.runInBackground = true;
+
             SteamNetworking.OnP2PSessionRequest = OnP2PSessionRequest;
         }
 
