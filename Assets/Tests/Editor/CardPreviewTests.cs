@@ -138,6 +138,40 @@ namespace Tests.UI
         }
 
         [Test]
+        public void Show_AnchorNearBottom_ClampsPreviewInsideScreen()
+        {
+            var prefab = CreateCardPrefab();
+            // Row hugging the bottom edge: a purely centred preview hangs off-screen.
+            RectTransform anchor = CreateAnchor(new Vector2(60f, 20f), 160f, 48f);
+
+            CardPreview.Show(prefab, new List<CardData> { MakeCard("A") }, anchor, NextOwner());
+
+            RectTransform column = GetColumnRect();
+            Assert.IsNotNull(column);
+            Vector3[] corners = new Vector3[4];
+            column.GetWorldCorners(corners);
+            // ScreenMargin is a private const of 8 — keep this in sync if it changes.
+            Assert.GreaterOrEqual(corners[0].y, 7.5f,
+                "A preview beside a bottom-edge row must stay fully on-screen.");
+        }
+
+        [Test]
+        public void Show_AnchorNearTop_ClampsPreviewInsideScreen()
+        {
+            var prefab = CreateCardPrefab();
+            RectTransform anchor = CreateAnchor(new Vector2(60f, Screen.height - 20f), 160f, 48f);
+
+            CardPreview.Show(prefab, new List<CardData> { MakeCard("A") }, anchor, NextOwner());
+
+            RectTransform column = GetColumnRect();
+            Assert.IsNotNull(column);
+            Vector3[] corners = new Vector3[4];
+            column.GetWorldCorners(corners);
+            Assert.LessOrEqual(corners[2].y, Screen.height - 7.5f,
+                "A preview beside a top-edge row must stay fully on-screen.");
+        }
+
+        [Test]
         public void Hide_ByOwner_DestroysPreview()
         {
             var prefab = CreateCardPrefab();

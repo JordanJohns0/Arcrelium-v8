@@ -25,8 +25,8 @@ namespace UI
         /// <summary>
         /// Shows <paramref name="cards"/> as instantiations of <paramref name="cardPrefab"/>,
         /// placed beside <paramref name="anchorRect"/> (its right edge by default, left edge
-        /// when that would run off-screen) and vertically centred on it, so the hovered
-        /// element itself stays fully visible.
+        /// when that would run off-screen) and vertically centred on it, clamped to stay
+        /// within the screen bounds.
         /// </summary>
         public static void Show(CardView cardPrefab, IReadOnlyList<CardData> cards, RectTransform anchorRect,
             Object owner)
@@ -90,10 +90,18 @@ namespace UI
             // Resolve layout now so we know the real size for placement.
             LayoutRebuilder.ForceRebuildLayoutImmediate(columnRect);
 
-            // Sit beside the source box, vertically centred, never covering it. Flip to
-            // its left edge when the right side would run past the screen.
+            // Sit beside the source box, never covering it. Flip to its left edge when
+            // the right side would run past the screen, and clamp vertically so tall
+            // previews stay on-screen when the row sits near the bottom or top edge.
             Rect box = ScreenRectOf(anchorRect);
             float centreY = box.center.y;
+            float halfHeight = columnRect.rect.height * 0.5f;
+            float minCentreY = ScreenMargin + halfHeight;
+            float maxCentreY = Screen.height - ScreenMargin - halfHeight;
+            centreY = maxCentreY >= minCentreY
+                ? Mathf.Clamp(centreY, minCentreY, maxCentreY)
+                : maxCentreY; // taller than the screen: keep the top edge visible
+
             bool overflowsRight = box.xMax + RowGap + columnRect.rect.width > Screen.width - ScreenMargin;
             if (overflowsRight)
             {

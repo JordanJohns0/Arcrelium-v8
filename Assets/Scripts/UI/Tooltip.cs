@@ -9,6 +9,8 @@ namespace UI
 {
     public class Tooltip : MonoBehaviour
     {
+        private const float ScreenMargin = 8f;
+
         [Header("Prefab")]
         [SerializeField] private GameObject uiPrefab;
 
@@ -170,6 +172,27 @@ namespace UI
             return instance;
         }
 
+        /// <summary>
+        /// Places the panel near the requested screen point but clamps it fully on-screen
+        /// (pivot is the panel's top-left), so tooltips for rows near a screen edge never
+        /// run off the display.
+        /// </summary>
+        private void PlacePanel(Vector2 screenPosition)
+        {
+            Vector2 pos = screenPosition + screenOffset;
+            float width = panel.rect.width;
+            float height = panel.rect.height;
+
+            float minX = ScreenMargin;
+            float maxX = Screen.width - ScreenMargin - width;
+            float minY = ScreenMargin + height; // pivot sits at the panel's TOP edge
+            float maxY = Screen.height - ScreenMargin;
+
+            pos.x = Mathf.Clamp(pos.x, minX, Mathf.Max(minX, maxX));
+            pos.y = Mathf.Clamp(pos.y, minY, Mathf.Max(minY, maxY));
+            panel.anchoredPosition = pos;
+        }
+
         public static void Show(EquipmentData data, Vector2 screenPosition)
         {
             var tip = GetOrCreate();
@@ -196,7 +219,7 @@ namespace UI
                 tip.cardsText.text = "";
             }
 
-            tip.panel.anchoredPosition = screenPosition + tip.screenOffset;
+            tip.PlacePanel(screenPosition);
             tip.canvasRoot.SetActive(true);
         }
 
@@ -215,7 +238,7 @@ namespace UI
             tip.cardsHeader.gameObject.SetActive(false);
             tip.cardsText.text = "";
 
-            tip.panel.anchoredPosition = screenPosition + tip.screenOffset;
+            tip.PlacePanel(screenPosition);
             tip.canvasRoot.SetActive(true);
         }
 
