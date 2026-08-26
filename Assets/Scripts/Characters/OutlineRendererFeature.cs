@@ -86,7 +86,7 @@ namespace Characters
                 builder.SetRenderFunc((PassData _, RasterGraphContext ctx) =>
                 {
                     foreach ((Renderer r, Material mat) in drawList)
-                        ctx.cmd.DrawRenderer(r, mat, 0, -1);
+                        ctx.cmd.DrawRenderer(r, mat);
                 });
             }
         }
@@ -102,7 +102,7 @@ namespace Characters
             cmd.SetRenderTarget(renderingData.cameraData.renderer.cameraColorTargetHandle);
 
             foreach ((Renderer r, Material mat) in drawList)
-                cmd.DrawRenderer(r, mat, 0, -1);
+                cmd.DrawRenderer(r, mat);
 
             context.ExecuteCommandBuffer(cmd);
             cmd.Release();

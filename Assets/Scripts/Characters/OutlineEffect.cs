@@ -19,6 +19,7 @@ namespace Characters
         private static readonly int widthID = Shader.PropertyToID("_OutlineWidth");
 
         public bool IsOutlined => outlineOn;
+        public Color OutlineColor => outlineColor;
 
         public void SetOutline(bool on)
         {

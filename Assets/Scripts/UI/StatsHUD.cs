@@ -12,12 +12,10 @@ namespace UI
     {
         [SerializeField] private GameObject statEntryPrefab;
         [SerializeField] private Color allyColor = new Color(0.15f, 0.25f, 0.50f, 0.7f);
-        [SerializeField] private Color enemyColor = new Color(0.50f, 0.15f, 0.15f, 0.7f);
+        [SerializeField] private Color enemyColor = new Color(0.35f, 0.30f, 0.28f, 0.7f);
 
         [Header("Hover Highlight")]
         [SerializeField] private Color entryHoverHighlight = new Color(1f, 1f, 1f, 0.15f);
-        [SerializeField] private Color outlineHoverColor = Color.white;
-        [SerializeField, Range(0f, 0.05f)] private float outlineHoverWidth = 0.025f;
 
         [Header("Canvas")]
         [SerializeField] private int sortingOrder = -1;
@@ -217,10 +215,8 @@ namespace UI
 
         private void SetOutline(Character character, bool on)
         {
-            OutlineEffect outline = character.GetComponent<OutlineEffect>();
+            OutlineEffect outline = character.GetComponentInChildren<OutlineEffect>();
             if (outline == null) return;
-            outline.SetOutlineColor(outlineHoverColor);
-            outline.SetOutlineWidth(outlineHoverWidth);
             outline.SetOutline(on);
         }
 

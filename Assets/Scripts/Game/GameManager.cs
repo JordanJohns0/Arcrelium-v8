@@ -17,7 +17,7 @@ namespace Game
 
     public class GameManager : MonoBehaviour
     {
-        private static readonly Color EnemyColor = new Color(0.85f, 0.30f, 0.25f);
+        private static readonly Color EnemyColor = Color.white;
 
         private static readonly HexCoordinates[] MultiplayerAllySpawns =
         {
