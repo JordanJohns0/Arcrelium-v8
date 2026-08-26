@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 81c8e1307002eed4fb5a9ee62472f1a3
+timeCreated: 1526419383
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 118399
+  packageName: POLYGON - Fantasy Rivals Pack - Art by Synty
+  packageVersion: 1.4.2
+  assetPath: Assets/Synty/PolygonFantasyRivals/Materials/Alts/FantasyRivals_03_A.mat
+  uploadId: 975906

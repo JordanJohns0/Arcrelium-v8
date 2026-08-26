@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0c172f9117886f944bab91b6a991617d
+timeCreated: 1526513548
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 118399
+  packageName: POLYGON - Fantasy Rivals Pack - Art by Synty
+  packageVersion: 1.4.2
+  assetPath: Assets/Synty/PolygonFantasyRivals/Prefabs/Props/SM_Prop_Backharness_03.prefab
+  uploadId: 975906

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 7e3f339bdcb7ca946a2ad800d523a739
+timeCreated: 1517362105
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 118399
+  packageName: POLYGON - Fantasy Rivals Pack - Art by Synty
+  packageVersion: 1.4.2
+  assetPath: Assets/Synty/PolygonFantasyRivals/Prefabs/FX/FX_Smoke_Small_Dark_01.prefab
+  uploadId: 975906

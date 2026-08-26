@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 5b79331349652d74ba36bcc89b72073e
+timeCreated: 1526441720
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 118399
+  packageName: POLYGON - Fantasy Rivals Pack - Art by Synty
+  packageVersion: 1.4.2
+  assetPath: Assets/Synty/PolygonFantasyRivals/Prefabs/Props/SM_Prop_Pouch_Bag_01.prefab
+  uploadId: 975906

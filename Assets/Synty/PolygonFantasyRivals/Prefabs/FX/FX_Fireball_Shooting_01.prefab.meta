@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: bfd7a4775b570ab45990b027e6ba389b
+timeCreated: 1526435345
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 118399
+  packageName: POLYGON - Fantasy Rivals Pack - Art by Synty
+  packageVersion: 1.4.2
+  assetPath: Assets/Synty/PolygonFantasyRivals/Prefabs/FX/FX_Fireball_Shooting_01.prefab
+  uploadId: 975906
