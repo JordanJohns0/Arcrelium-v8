@@ -84,6 +84,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9b9c6e08bea5c44cb875d7b237d2de3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Arcrelium.Game::Characters.OutlineEffect
+  outlineMat: {fileID: 2100000, guid: c3171eb2792782f428498cb681b63500, type: 2}
   outlineColor: {r: 0.7264151, g: 0, b: 0, a: 1}
   outlineWidth: 0.05
 --- !u!136 &4000000000000000001
@@ -156,7 +157,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: stats.CharacterName
-      value: Enemy
+      value: Orc
       objectReference: {fileID: 0}
     - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: deck.startingCards.Array.size

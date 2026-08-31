@@ -308,6 +308,15 @@ namespace Characters
             stats.NotifyChanged();
         }
 
+        /// <summary>
+        /// Sets the color used by the HUD (e.g. name label) without tinting the model's renderers.
+        /// </summary>
+        public void SetNameColor(Color color)
+        {
+            PlayerColor = color;
+            stats.NotifyChanged();
+        }
+
         private void ApplyColor(Color color)
         {
             foreach (Renderer r in renderers)
