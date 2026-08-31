@@ -32,6 +32,7 @@ namespace Characters
         public int TeamId { get; private set; }
         public Team Team => TeamId == 0 ? Team.Ally : Team.Enemy;
         public Color? PlayerColor { get; private set; }
+        public Color? NameColor { get; private set; }
 
         /// <summary>
         /// Two characters are allies iff their TeamIds match. In PvE all human players
@@ -59,7 +60,7 @@ namespace Characters
         private const float MoveSpeed = 8f;
         private const float ArrivalThreshold = 0.05f;
         private readonly List<Renderer> renderers = new List<Renderer>();
-        private readonly List<(Renderer renderer, Color originalColor)> originalColors = new List<(Renderer, Color)>();
+        private readonly List<(Renderer renderer, Color originalColor, Color originalBaseColor)> originalColors = new List<(Renderer, Color, Color)>();
         private static readonly int colorID = Shader.PropertyToID("_Color");
         private static readonly int baseColorID = Shader.PropertyToID("_BaseColor");
 
@@ -338,7 +339,7 @@ namespace Characters
         /// </summary>
         public void SetNameColor(Color color)
         {
-            PlayerColor = color;
+            NameColor = color;
             stats.NotifyChanged();
         }
 
@@ -363,8 +364,9 @@ namespace Characters
             foreach (Renderer r in renderers)
             {
                 if (r == null) continue;
-                Color original = PlayerColor ?? r.material.color;
-                originalColors.Add((r, original));
+                Color originalColor = r.material.GetColor(colorID);
+                Color originalBaseColor = r.material.GetColor(baseColorID);
+                originalColors.Add((r, originalColor, originalBaseColor));
 
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
                 r.GetPropertyBlock(block);
@@ -381,9 +383,8 @@ namespace Characters
                 if (entry.renderer == null) continue;
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
                 entry.renderer.GetPropertyBlock(block);
-                Color restore = PlayerColor ?? entry.originalColor;
-                block.SetColor(colorID, restore);
-                block.SetColor(baseColorID, restore);
+                block.SetColor(colorID, entry.originalColor);
+                block.SetColor(baseColorID, entry.originalBaseColor);
                 entry.renderer.SetPropertyBlock(block);
             }
             originalColors.Clear();
