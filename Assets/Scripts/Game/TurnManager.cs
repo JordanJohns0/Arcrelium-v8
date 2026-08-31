@@ -85,6 +85,11 @@ namespace Game
             if (CurrentPhase != TurnPhase.Act) return false;
             if (Busy) return false;
 
+            if (targetCharacter != null)
+                ActiveCharacter.FaceTarget(targetCharacter);
+            else if (targetCell != null)
+                ActiveCharacter.FaceTarget(targetCell);
+
             bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter);
             if (!played) return false;
 

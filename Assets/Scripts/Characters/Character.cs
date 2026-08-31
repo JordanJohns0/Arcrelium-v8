@@ -213,6 +213,31 @@ namespace Characters
             moveAnimation = null;
         }
 
+        /// <summary>
+        /// Rotates the character to face the given target (a character or a board cell),
+        /// yaw-only so the model stays upright. Cosmetic; does not affect logic.
+        /// </summary>
+        public void FaceTarget(Character target)
+        {
+            if (target != null) FaceTarget(target.transform.position);
+        }
+
+        public void FaceTarget(HexCell target)
+        {
+            if (target != null) FaceTarget(target.transform.position);
+        }
+
+        public void FaceTarget(Vector3 targetPosition)
+        {
+            Vector3 direction = targetPosition - transform.position;
+            if (direction.sqrMagnitude < 0.0001f) return;
+
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f) return;
+
+            transform.rotation = Quaternion.LookRotation(direction.normalized);
+        }
+
         public void DrawCards(int count)
         {
             if (deck == null) return;
