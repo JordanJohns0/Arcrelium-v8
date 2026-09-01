@@ -29,7 +29,10 @@ namespace Equipment.Effects
             if (validCells.Count > 0)
             {
                 HexCell destination = validCells[Random.Range(0, validCells.Count)];
-                context.Source.PlaceOnCell(destination);
+                context.Source.SetCellOnly(destination);
+
+                if (Application.isPlaying)
+                    context.Source.AnimateToCell(destination);
             }
         }
     }
