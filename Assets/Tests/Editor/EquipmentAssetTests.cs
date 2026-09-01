@@ -169,35 +169,35 @@ namespace Tests.Equipment
             },
             new Spec
             {
-                Name = "Broadsword",
+                Name = "Iron Broadsword",
                 Slot = EquipmentSlotType.Hand,
                 Cards = new[] { "Heavy Slash", "Slash", "Parry" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
             {
-                Name = "Claymore",
+                Name = "Iron Cleaver",
                 Slot = EquipmentSlotType.Hand,
                 Cards = new[] { "Heavy Slash", "Heavy Slash", "Heavy Slash" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
             {
-                Name = "Greatsword",
+                Name = "Iron Greatsword",
                 Slot = EquipmentSlotType.Hand,
                 Cards = new[] { "Heavy Slash", "Slash", "Slash" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
             {
-                Name = "Khopesh",
+                Name = "Iron Khopesh",
                 Slot = EquipmentSlotType.Hand,
                 Cards = new[] { "Slash", "Slash", "Disarming Slash" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
             {
-                Name = "Shortsword",
+                Name = "Iron Shortsword",
                 Slot = EquipmentSlotType.Hand,
                 Cards = new[] { "Slash" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
