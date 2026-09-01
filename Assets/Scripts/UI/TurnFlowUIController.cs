@@ -335,6 +335,24 @@ namespace UI
                 }
             }
             Debug.Log($"[TurnFlow] Highlighted {count} valid targets for {pendingCard.Data.CardName} (type={pendingCard.Data.TargetType}, range={pendingCard.Data.Range})");
+
+            TryAutoSelectSoleAllyTarget(count);
+        }
+
+        private void TryAutoSelectSoleAllyTarget(int validTargetCount)
+        {
+            CardData card = pendingCard?.Data;
+            Character source = turnManager.ActiveCharacter;
+            if (card == null || source == null) return;
+
+            if (card.TargetType != TargetType.AllyCharacter) return;
+            if (validTargetCount > 0) return;
+
+            if (IsValidCharacterTarget(card, source, source))
+            {
+                Debug.Log($"[TurnFlow] Auto-selecting self as the only valid ally target for {card.CardName}");
+                SubmitPlay(targetCharacter: source);
+            }
         }
 
         private static bool IsValidTarget(CardData card, Character source, HexCell cell)
