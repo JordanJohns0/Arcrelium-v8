@@ -21,6 +21,7 @@ namespace Characters
         [SerializeField] private Deck deck = new Deck();
         [SerializeField] private EquipmentManager equipmentManager;
         [SerializeField] private int maxHandSize = 5;
+        [SerializeField] private Animator modelAnimator;
 
         public CharacterStats Stats => stats;
         public Deck Deck => deck;
@@ -64,6 +65,12 @@ namespace Characters
         private readonly List<(Renderer renderer, Color originalColor, Color originalBaseColor)> originalColors = new List<(Renderer, Color, Color)>();
         private static readonly int colorID = Shader.PropertyToID("_Color");
         private static readonly int baseColorID = Shader.PropertyToID("_BaseColor");
+
+        private void Awake()
+        {
+            if (modelAnimator == null)
+                modelAnimator = GetComponentInChildren<Animator>();
+        }
 
         public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1, EquipmentLoadout loadout = null)
         {
@@ -182,12 +189,14 @@ namespace Characters
             if (this == null || target == null) yield break;
             Vector3 destination = target.transform.position;
 
+            SetWalking(true);
             while (this != null && Vector3.Distance(transform.position, destination) > ArrivalThreshold)
             {
-                transform.position = Vector3.MoveTowards(transform.position, destination, MoveSpeed * Time.deltaTime);
+                StepTowards(destination);
                 yield return null;
             }
 
+            SetWalking(false);
             if (this != null)
                 transform.position = destination;
             moveAnimation = null;
@@ -197,14 +206,15 @@ namespace Characters
         {
             if (this == null || path == null) yield break;
 
+            SetWalking(true);
             foreach (HexCell cell in path)
             {
-                if (this == null || cell == null) yield break;
+                if (this == null || cell == null) break;
                 Vector3 destination = cell.transform.position;
 
                 while (this != null && Vector3.Distance(transform.position, destination) > ArrivalThreshold)
                 {
-                    transform.position = Vector3.MoveTowards(transform.position, destination, MoveSpeed * Time.deltaTime);
+                    StepTowards(destination);
                     yield return null;
                 }
 
@@ -212,7 +222,37 @@ namespace Characters
                     transform.position = destination;
             }
 
-            moveAnimation = null;
+            SetWalking(false);
+            if (this != null)
+                moveAnimation = null;
+        }
+
+        /// <summary>
+        /// Advances the character toward the destination. The fixed-speed transform lerp is always
+        /// the movement driver so arrival is guaranteed regardless of the model Animator. When an
+        /// Animator is configured, its walk clip plays as a cosmetic overlay (the DoubleL walk clips
+        /// carry no usable root translation, so they animate the legs while the transform carries the
+        /// character across the board).
+        /// </summary>
+        private void StepTowards(Vector3 destination)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, destination, MoveSpeed * Time.deltaTime);
+        }
+
+        private void SetWalking(bool walking)
+        {
+            if (modelAnimator != null)
+                modelAnimator.SetBool("IsWalking", walking);
+        }
+
+        /// <summary>
+        /// Plays the model's attack animation if an Animator is configured. Gameplay-cosmetic only;
+        /// damage/effects are resolved through the card system regardless of animation availability.
+        /// </summary>
+        public void PlayAttack()
+        {
+            if (modelAnimator != null)
+                modelAnimator.SetTrigger("Attack");
         }
 
         /// <summary>

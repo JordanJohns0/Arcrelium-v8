@@ -93,6 +93,9 @@ namespace Game
             bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter);
             if (!played) return false;
 
+            if (targetCharacter != null || targetCell != null)
+                ActiveCharacter.PlayAttack();
+
             OnCardPlayed?.Invoke(card, ActiveCharacter);
             OnActionResolved?.Invoke();
             return true;
