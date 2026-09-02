@@ -65,6 +65,7 @@ namespace Equipment
 
             character.OnMovedToCell += HandleMovedToCell;
             character.OnDamageTaken += HandleDamageTaken;
+            character.OnBlockGained += HandleBlockGained;
         }
 
         private void LoadFromInspector()
@@ -401,8 +402,31 @@ namespace Equipment
 
         private void HandleTurnEnded(Character turnCharacter)
         {
-            if (turnCharacter != character) return;
-            FireTriggers(TriggerTiming.EndOfTurn);
+            if (turnCharacter == character)
+            {
+                FireTriggers(TriggerTiming.EndOfTurn);
+                return;
+            }
+
+            // An enemy's turn ended. Fire OnEnemyTurnEnded with that enemy as Other so
+            // effects like Terrifying Mask can react to adjacent enemies.
+            if (turnCharacter.IsEnemyOf(character))
+            {
+                var context = new EquipmentContext
+                {
+                    Source = character,
+                    Grid = grid,
+                    TurnManager = turnManager,
+                    Timing = TriggerTiming.OnEnemyTurnEnded,
+                    Other = turnCharacter
+                };
+
+                foreach (var trigger in GetTriggers(TriggerTiming.OnEnemyTurnEnded))
+                {
+                    if (trigger.Effect != null)
+                        trigger.Effect.Execute(context);
+                }
+            }
         }
 
         private void HandleBeforeCardPlay(CardContext cardContext)
@@ -459,6 +483,24 @@ namespace Equipment
                 if (trigger.OnlyOnWearersTurn && turnManager != null &&
                     turnManager.ActiveCharacter != character) continue;
                 trigger.Effect.Execute(context);
+            }
+        }
+
+        private void HandleBlockGained(int amount)
+        {
+            var context = new EquipmentContext
+            {
+                Source = character,
+                Grid = grid,
+                TurnManager = turnManager,
+                Timing = TriggerTiming.OnGainBlock,
+                Amount = amount
+            };
+
+            foreach (var trigger in GetTriggers(TriggerTiming.OnGainBlock))
+            {
+                if (trigger.Effect != null)
+                    trigger.Effect.Execute(context);
             }
         }
 
@@ -519,6 +561,7 @@ namespace Equipment
             {
                 character.OnMovedToCell -= HandleMovedToCell;
                 character.OnDamageTaken -= HandleDamageTaken;
+                character.OnBlockGained -= HandleBlockGained;
             }
         }
     }

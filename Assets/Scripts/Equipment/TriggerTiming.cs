@@ -10,6 +10,8 @@ namespace Equipment
         OnDealDamage,
         OnDraw,
         OnDiscard,
-        OnMovedToCell
+        OnMovedToCell,
+        OnGainBlock,
+        OnEnemyTurnEnded
     }
 }

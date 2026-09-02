@@ -202,6 +202,27 @@ namespace Tests.Equipment
                 Cards = new[] { "Slash" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
+            new Spec
+            {
+                Name = "Fingerless Glove",
+                Slot = EquipmentSlotType.Head,
+                Cards = new[] { "Bonk" },
+                Triggers = new[] { (TriggerTiming.StartOfTurn, typeof(GrantBlockEffect)) }
+            },
+            new Spec
+            {
+                Name = "Restorative Shield",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Fortify", "Reinforce", "Reinforce" },
+                Triggers = new[] { (TriggerTiming.OnGainBlock, typeof(HealEffect)) }
+            },
+            new Spec
+            {
+                Name = "Terrifying Mask",
+                Slot = EquipmentSlotType.Head,
+                Cards = Array.Empty<string>(),
+                Triggers = new[] { (TriggerTiming.OnEnemyTurnEnded, typeof(PushAwayEnemyEffect)) }
+            },
         };
 
         // Timings EquipmentManager actually fires during gameplay (see EquipmentManager.Initialize
@@ -212,7 +233,9 @@ namespace Tests.Equipment
             TriggerTiming.EndOfTurn,
             TriggerTiming.OnBeforeCardPlay,
             TriggerTiming.OnMovedToCell,
-            TriggerTiming.OnDamageTaken
+            TriggerTiming.OnDamageTaken,
+            TriggerTiming.OnGainBlock,
+            TriggerTiming.OnEnemyTurnEnded
         };
 
         private static IEnumerable<EquipmentData> AllEquipmentAssets()
@@ -559,6 +582,50 @@ namespace Tests.Equipment
             {
                 DestroyAll(grid, source, manager);
                 UnityEngine.Object.DestroyImmediate(turnGo);
+            }
+        }
+
+        /// <summary>
+        /// GrantBlockEffect grants block to the owner and routes through Character.GainBlock,
+        /// so an OnGainBlock trigger (e.g. Restorative Shield's heal-on-gain-block) reacts to
+        /// equipment-sourced block the same way it reacts to block from a card.
+        /// </summary>
+        [Test]
+        public void GrantBlockEffect_GrantsBlock_AndFiresOnGainBlock()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            try
+            {
+                var heal = ScriptableObject.CreateInstance<HealEffect>();
+                heal.Amount = 1;
+
+                var grantBlock = ScriptableObject.CreateInstance<GrantBlockEffect>();
+                grantBlock.Amount = 2;
+
+                var grantedData = ScriptableObject.CreateInstance<EquipmentData>();
+                grantedData.SlotType = EquipmentSlotType.Trinket;
+                grantedData.Triggers.Add(new EquipmentTrigger { Timing = TriggerTiming.OnGainBlock, Effect = heal });
+                Assert.IsTrue(manager.Equip(grantedData, EquipmentSlotType.Trinket, 0));
+
+                // Damage the owner so the heal is observable.
+                source.Stats.ApplyDamage(2); // 10 -> 8
+
+                // Equipment-sourced block grants block and fires OnGainBlock -> heal 1.
+                grantBlock.Execute(new EquipmentContext
+                {
+                    Source = source,
+                    Grid = grid,
+                    Timing = TriggerTiming.OnGainBlock
+                });
+
+                Assert.AreEqual(2, source.Stats.Block, "GrantBlockEffect should grant its Amount as block.");
+                Assert.AreEqual(9, source.Stats.CurrentHealth, "OnGainBlock trigger should fire when block is gained from equipment, healing the owner.");
+            }
+            finally
+            {
+                DestroyAll(grid, source, manager);
             }
         }
 

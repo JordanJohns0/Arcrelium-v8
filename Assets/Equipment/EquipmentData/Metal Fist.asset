@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
+  m_Name: Metal Fist
+  m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
+  EquipmentName: Metal Fist
+  Description: When you take damage during your turn, deal 1 damage to all adjacent
+    enemies.
+  Icon: {fileID: 21300000, guid: 8e0e89a350a44e74db3c78f989621057, type: 3}
+  SlotType: 3
+  Cards:
+  - {fileID: 11400000, guid: a20710a5778400249a96ec84b9416f8f, type: 2}
+  - {fileID: 11400000, guid: fef01527983b00b41b3a8bc774f9ae63, type: 2}
+  Triggers:
+  - Timing: 4
+    Effect: {fileID: 11400000, guid: 788c39ca47dc80848b2f2c1b8aed16cc, type: 2}
+    OnlyOnWearersTurn: 1
+  Enchantments: []

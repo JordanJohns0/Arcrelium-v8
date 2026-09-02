@@ -52,6 +52,7 @@ namespace Characters
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
         public event Action<int> OnDamageTaken;
+        public event Action<int> OnBlockGained;
 
         public static event Action<Character> OnCharacterCreated;
         public static event Action<Character> OnCharacterDestroyed;
@@ -278,6 +279,17 @@ namespace Characters
             {
                 Die();
             }
+        }
+
+        /// <summary>
+        /// Grants block and fires OnBlockGained so equipment triggers (e.g. Restorative
+        /// Shield) can react. Used instead of Stats.GainBlock directly so the event flows
+        /// through the same pattern as TakeDamage/OnDamageTaken.
+        /// </summary>
+        public void GainBlock(int amount)
+        {
+            stats.GainBlock(amount);
+            OnBlockGained?.Invoke(amount);
         }
 
         private void Die()
