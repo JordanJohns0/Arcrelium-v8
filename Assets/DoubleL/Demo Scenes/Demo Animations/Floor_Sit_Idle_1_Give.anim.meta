@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 80a9379a29f99104e9775dc8a4bf80f1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animations/Floor_Sit_Idle_1_Give.anim
+  uploadId: 936120

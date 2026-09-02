@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f68ad4ce063e7444905af75ede74147, type: 3}
   m_Name: Gain 1 Block
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.Effects.GrantBlockEffect
-  Description: 
+  Description: Gain 1 Block
   Amount: 1

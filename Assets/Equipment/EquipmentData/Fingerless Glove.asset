@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Fingerless Glove
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Fingerless Glove
-  Description: It makes your fingers fall off! Just kidding.
+  Description: At the start of your turn, gain 1 block.
   Icon: {fileID: 21300000, guid: 3ed45d8af01cf104bace1f323207f253, type: 3}
   SlotType: 0
   Cards:
   - {fileID: 11400000, guid: fef01527983b00b41b3a8bc774f9ae63, type: 2}
   Triggers:
   - Timing: 0
-    Effect: {fileID: 0}
+    Effect: {fileID: 11400000, guid: 2cf2bef9feb4832409e06f67dd319e01, type: 2}
     OnlyOnWearersTurn: 0
   Enchantments: []

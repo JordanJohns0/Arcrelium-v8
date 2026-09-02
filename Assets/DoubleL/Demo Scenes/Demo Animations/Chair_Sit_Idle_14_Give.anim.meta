@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1f24d2a2bf60dd645992e09d76bb66c0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animations/Chair_Sit_Idle_14_Give.anim
+  uploadId: 936120

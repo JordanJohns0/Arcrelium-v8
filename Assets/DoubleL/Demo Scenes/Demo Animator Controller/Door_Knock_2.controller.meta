@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6d1f9583241e7e7469c13539a3120456
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animator Controller/Door_Knock_2.controller
+  uploadId: 936120

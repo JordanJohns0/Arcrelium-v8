@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b62020edd9f38534ea8cadbaf26893ff
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animator Controller/Counter_Start_2.controller
+  uploadId: 936120

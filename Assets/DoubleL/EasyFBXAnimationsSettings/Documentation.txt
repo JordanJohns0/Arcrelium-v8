@@ -1,0 +1,37 @@
+Get started
+
+1. From the top menu
+Tools -> DoubleL -> Easy FBX Animations Settings Modifier
+
+2. Set your desired settings.
+Select the FBX files you want to change. You can select multiple files.
+
+3. To change the settings, click the "Apply settings" button.
+
+4. To duplicate a clip file, click the "Animation Duplication" button.
+
+thank you
+
+
+If you see the following error during build, check this.
+
+ArgumentException: The Assembly UnityEditor is referenced by Easy FBX Anim Modifier ('Assets/DoubleL/EasyFBXAnimationsSettings/Easy FBX Anim Modifier.dll'). But the dll is not allowed to be included or could not be found.
+
+1. Go to the EasyFBXAnimationsSettings folder.
+2. Select the Easy FBX Anim Modifier file.
+3. Check the Inspector window.
+4. In the Select platforms for plugin setting,
+5. Uncheck Any Platform if it is checked.
+6. In the Exclude Platforms setting,
+7. Check Editor.
+
+If you set it this way, the error will disappear during build.
+
+
+YouTube Tutorial
+
+Easy FBX Anim Modifier
+https://youtu.be/hW_FO8IV5os
+
+Weapon Bone Retargeter
+https://youtu.be/3T3t8bbSDCU
