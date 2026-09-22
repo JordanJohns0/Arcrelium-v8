@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Characters;
 using HexGrid;
 
@@ -28,6 +29,13 @@ namespace Cards
         public int Range;
         public int BonusRange;
         public int BonusDamage;
+
+        /// <summary>
+        /// The exact cells to walk when this is a movement play (starts adjacent to Source's
+        /// current cell, ends on TargetCell). When set, the move step walks this route rather
+        /// than re-pathfinding a shortest route, so the player picks exactly where they move.
+        /// </summary>
+        public List<HexCell> MovePath;
 
         public int EffectiveRange => Range + BonusRange;
     }

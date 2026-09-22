@@ -80,7 +80,8 @@ namespace Game
             CardInstance card,
             List<CardInstance> costCards = null,
             HexCell targetCell = null,
-            Character targetCharacter = null)
+            Character targetCharacter = null,
+            List<HexCell> movePath = null)
         {
             if (CurrentPhase != TurnPhase.Act) return false;
             if (Busy) return false;
@@ -90,7 +91,7 @@ namespace Game
             else if (targetCell != null)
                 ActiveCharacter.FaceTarget(targetCell);
 
-            bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter);
+            bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter, movePath);
             if (!played) return false;
 
             // Only offensive cards swing: move/block/heal cards may have a target but shouldn't

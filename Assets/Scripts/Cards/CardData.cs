@@ -68,5 +68,24 @@ namespace Cards
                 return false;
             }
         }
+
+        /// <summary>
+        /// Whether any step in this card moves the character. Used by the UI to enable
+        /// path-building: movement-style picks let the player click a chain of cells with
+        /// leftover distance, as opposed to a single-click AoE/attack hex target.
+        /// </summary>
+        public bool IsMove
+        {
+            get
+            {
+                if (Steps == null) return false;
+                foreach (CardEffectStep step in Steps)
+                {
+                    if (step != null && step.Effect != null && step.Effect.IsMove)
+                        return true;
+                }
+                return false;
+            }
+        }
     }
 }

@@ -759,8 +759,25 @@ namespace Game
                 ? activeCharacters.Find(c => c.OwnerPlayerId == request.targetOwnerPlayerId)
                 : null;
 
+            List<HexCell> movePath = null;
+            if (request.pathQ != null && request.pathR != null
+                && request.pathQ.Count > 0 && request.pathQ.Count == request.pathR.Count)
+            {
+                movePath = new List<HexCell>(request.pathQ.Count);
+                for (int i = 0; i < request.pathQ.Count; i++)
+                {
+                    HexCell cell = grid.GetCell(new HexCoordinates(request.pathQ[i], request.pathR[i]));
+                    if (cell == null)
+                    {
+                        movePath = null;
+                        break;
+                    }
+                    movePath.Add(cell);
+                }
+            }
+
             Debug.Log($"[GameManager] Client {senderSteamId} plays '{card.Data?.CardName}'");
-            bool played = turnManager.PlayCard(card, costCards, targetCell, targetCharacter);
+            bool played = turnManager.PlayCard(card, costCards, targetCell, targetCharacter, movePath);
             if (!played)
                 BroadcastGameState();
         }

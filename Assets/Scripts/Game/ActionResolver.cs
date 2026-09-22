@@ -37,7 +37,8 @@ namespace Game
             CardInstance card,
             List<CardInstance> costCards = null,
             HexCell targetCell = null,
-            Character targetCharacter = null)
+            Character targetCharacter = null,
+            List<HexCell> movePath = null)
         {
             if (source == null || card == null) return false;
             if (!source.Hand.Contains(card)) return false;
@@ -52,7 +53,7 @@ namespace Game
             var executions = new List<(CardEffectStep Step, CardContext Context)>(card.Data.Steps.Count);
             foreach (CardEffectStep step in card.Data.Steps)
             {
-                CardContext context = MakeContext(source, card.Data, step, targetCell, targetCharacter);
+                CardContext context = MakeContext(source, card.Data, step, targetCell, targetCharacter, movePath);
                 if (!step.Effect.CanExecute(context)) return false;
                 executions.Add((step, context));
             }
@@ -132,7 +133,7 @@ namespace Game
         }
 
         private CardContext MakeContext(Character source, CardData card, CardEffectStep step,
-            HexCell targetCell, Character targetCharacter)
+            HexCell targetCell, Character targetCharacter, List<HexCell> movePath = null)
         {
             return new CardContext
             {
@@ -140,7 +141,8 @@ namespace Game
                 Grid = grid,
                 TargetCell = targetCell,
                 TargetCharacter = targetCharacter,
-                Range = step.Range
+                Range = step.Range,
+                MovePath = movePath
             };
         }
 

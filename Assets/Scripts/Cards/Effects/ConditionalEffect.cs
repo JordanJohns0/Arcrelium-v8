@@ -19,6 +19,16 @@ namespace Cards.Effects
             }
         }
 
+        public override bool IsMove
+        {
+            get
+            {
+                if (TrueEffect != null && TrueEffect.IsMove) return true;
+                if (FalseEffect != null && FalseEffect.IsMove) return true;
+                return false;
+            }
+        }
+
         public override bool CanExecute(CardContext context)
         {
             if (Condition == null) return true;

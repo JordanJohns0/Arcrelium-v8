@@ -28,6 +28,20 @@ namespace Cards.Effects
             }
         }
 
+        public override bool IsMove
+        {
+            get
+            {
+                if (Effects == null) return false;
+                foreach (CardEffectSO effect in Effects)
+                {
+                    if (effect != null && effect.IsMove)
+                        return true;
+                }
+                return false;
+            }
+        }
+
         public override bool CanExecute(CardContext context)
         {
             foreach (CardEffectSO effect in Effects)

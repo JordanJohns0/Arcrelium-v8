@@ -55,6 +55,9 @@ namespace Networking
         public int targetQ;
         public int targetR;
         public int targetOwnerPlayerId = -1;
+        /// <summary>Optional exact move route for movement-style plays (client -> host).</summary>
+        public List<int> pathQ = new List<int>();
+        public List<int> pathR = new List<int>();
     }
 
     [System.Serializable]

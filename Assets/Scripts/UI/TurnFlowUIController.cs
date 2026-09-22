@@ -37,6 +37,12 @@ namespace UI
         private readonly List<CardInstance> pendingCostCards = new List<CardInstance>();
         private bool requestPending;
 
+        // Move-path building: while a movement card awaits a target, clicks append cells to
+        // movePath (each hop must fit the remaining distance) instead of resolving immediately.
+        // Clicking the character's own cell ends the move and submits the accumulated path.
+        private readonly List<HexCell> movePath = new List<HexCell>();
+        private int moveRemaining;
+
         [Header("Board Highlighting")]
         [SerializeField] private HexGridManager grid;
         [SerializeField] private Color validTargetColor = new Color(0.4f, 0.85f, 0.4f, 1f);
@@ -189,7 +195,91 @@ namespace UI
                 return;
             }
 
+            if (IsMoveCard(pendingCard.Data))
+            {
+                HandleMovePathStep(cell);
+                return;
+            }
+
             SubmitPlay(targetCell: cell);
+        }
+
+        /// <summary>
+        /// Movement cards build a path instead of resolving on the first click. The player can
+        /// move up to the card's range, spending leftover distance per hop; clicking their own
+        /// character ends the move early. The whole route resolves as a single card play.
+        /// </summary>
+        private void HandleMovePathStep(HexCell cell)
+        {
+            Character source = turnManager.ActiveCharacter;
+            if (source == null || source.CurrentCell == null) return;
+
+            // Clicking the character's own cell (or the start cell) ends the move here.
+            if (cell == source.CurrentCell)
+            {
+                if (movePath.Count == 0)
+                {
+                    ResetSelection();
+                    return;
+                }
+                SubmitPlay(targetCell: movePath[movePath.Count - 1], movePath: new List<HexCell>(movePath));
+                return;
+            }
+
+            HexCell endpoint = movePath.Count > 0 ? movePath[movePath.Count - 1] : source.CurrentCell;
+
+            // Clicking the current end position again ends the move here (selecting that cell).
+            if (cell == endpoint)
+            {
+                if (movePath.Count == 0)
+                {
+                    ResetSelection();
+                    return;
+                }
+                SubmitPlay(targetCell: movePath[movePath.Count - 1], movePath: new List<HexCell>(movePath));
+                return;
+            }
+
+            List<HexCell> segment = grid.FindPath(endpoint.Coordinates, cell.Coordinates, moveRemaining);
+            if (segment == null || segment.Count > moveRemaining)
+            {
+                if (promptText != null) promptText.text = $"You can't reach that cell with {moveRemaining} movement left.";
+                return;
+            }
+
+            if (movePath.Contains(cell))
+            {
+                if (promptText != null) promptText.text = "You can't step onto a cell you already moved through.";
+                return;
+            }
+
+            foreach (HexCell step in segment)
+            {
+                if (step == null || step.IsBlocked) { return; }
+                if (movePath.Contains(step))
+                {
+                    if (promptText != null) promptText.text = "You can't step onto a cell you already moved through.";
+                    return;
+                }
+                if (step.Occupant != null && step.Occupant != source)
+                {
+                    if (promptText != null) promptText.text = "A character blocks that path.";
+                    return;
+                }
+            }
+
+            movePath.AddRange(segment);
+            moveRemaining -= segment.Count;
+            Debug.Log($"[TurnFlow] Move path now {movePath.Count} cells, {moveRemaining} distance left, " +
+                      $"target {cell.Coordinates}");
+
+            HighlightMoveTargets();
+            UpdatePrompt();
+
+            if (moveRemaining <= 0)
+            {
+                SubmitPlay(targetCell: movePath[movePath.Count - 1], movePath: new List<HexCell>(movePath));
+            }
         }
 
         private void HandleCharacterClicked(Character character)
@@ -197,6 +287,18 @@ namespace UI
             if (!IsLocalTurn) return;
             if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
+
+            // Clicking your own character ends a move-path build and submits the walked route.
+            if (IsMoveCard(pendingCard.Data) && character != null && character == turnManager.ActiveCharacter)
+            {
+                if (movePath.Count == 0)
+                {
+                    ResetSelection();
+                    return;
+                }
+                SubmitPlay(targetCell: movePath[movePath.Count - 1], movePath: new List<HexCell>(movePath));
+                return;
+            }
 
             bool wantsCharacterTarget =
                 pendingCard.Data.TargetType == TargetType.EnemyCharacter ||
@@ -234,7 +336,7 @@ namespace UI
             }
         }
 
-        private void SubmitPlay(HexCell targetCell = null, Character targetCharacter = null)
+        private void SubmitPlay(HexCell targetCell = null, Character targetCharacter = null, List<HexCell> movePath = null)
         {
             if (IsClient)
             {
@@ -247,14 +349,16 @@ namespace UI
                     hasBoardTarget = targetCell != null,
                     targetQ = targetCell != null ? targetCell.Coordinates.Q : 0,
                     targetR = targetCell != null ? targetCell.Coordinates.R : 0,
-                    targetOwnerPlayerId = targetCharacter != null ? targetCharacter.OwnerPlayerId : -1
+                    targetOwnerPlayerId = targetCharacter != null ? targetCharacter.OwnerPlayerId : -1,
+                    pathQ = ToQList(movePath),
+                    pathR = ToRList(movePath)
                 });
                 requestPending = true;
                 ResetSelection();
                 return;
             }
 
-            bool success = turnManager.PlayCard(pendingCard, new List<CardInstance>(pendingCostCards), targetCell, targetCharacter);
+            bool success = turnManager.PlayCard(pendingCard, new List<CardInstance>(pendingCostCards), targetCell, targetCharacter, movePath);
 
             Debug.Log($"[TurnFlow] SubmitPlay: card={pendingCard.Data.CardName}, success={success}, phase={turnManager.CurrentPhase}, busy={turnManager.Busy}");
 
@@ -264,11 +368,35 @@ namespace UI
                 if (state == SelectionState.SelectingCost || RequiresBoardTarget(pendingCard.Data))
                 {
                     state = SelectionState.SelectingTarget;
+                    if (IsMoveCard(pendingCard.Data))
+                    {
+                        movePath.Clear();
+                        moveRemaining = pendingCard.Data.Range;
+                        HighlightMoveTargets();
+                    }
                 }
                 return;
             }
 
             ResetSelection();
+        }
+
+        private static List<int> ToQList(List<HexCell> movePath)
+        {
+            var result = new List<int>();
+            if (movePath == null) return result;
+            foreach (HexCell cell in movePath)
+                if (cell != null) result.Add(cell.Coordinates.Q);
+            return result;
+        }
+
+        private static List<int> ToRList(List<HexCell> movePath)
+        {
+            var result = new List<int>();
+            if (movePath == null) return result;
+            foreach (HexCell cell in movePath)
+                if (cell != null) result.Add(cell.Coordinates.R);
+            return result;
         }
 
         private static int FindCardIndex(IReadOnlyList<CardInstance> cards, CardInstance card)
@@ -300,6 +428,8 @@ namespace UI
             state = SelectionState.Idle;
             pendingCard = null;
             pendingCostCards.Clear();
+            movePath.Clear();
+            moveRemaining = 0;
             handView.ClearHighlights();
             ClearBoardHighlights();
             UpdatePrompt();
@@ -313,6 +443,14 @@ namespace UI
 
             Character source = turnManager.ActiveCharacter;
             HexCoordinates origin = source.CurrentCell.Coordinates;
+
+            if (IsMoveCard(pendingCard.Data))
+            {
+                movePath.Clear();
+                moveRemaining = pendingCard.Data.Range;
+                HighlightMoveTargets();
+                return;
+            }
 
             int count = 0;
             foreach (HexCell cell in grid.GetCellsInRange(origin, pendingCard.Data.Range))
@@ -353,6 +491,46 @@ namespace UI
                 Debug.Log($"[TurnFlow] Auto-selecting self as the only valid ally target for {card.CardName}");
                 SubmitPlay(targetCharacter: source);
             }
+        }
+
+        private static bool IsMoveCard(CardData card)
+        {
+            return card != null && card.TargetType == TargetType.HexCell && card.IsMove;
+        }
+
+        /// <summary>
+        /// Highlights every cell the active character could step onto from the current move-path
+        /// endpoint within the remaining movement, honoring walkability and the card's target
+        /// constraint. Skipping cells already in the path prevents backtracking loops.
+        /// </summary>
+        private void HighlightMoveTargets()
+        {
+            ClearBoardHighlights();
+            Character source = turnManager.ActiveCharacter;
+            if (pendingCard == null || source == null || source.CurrentCell == null) return;
+
+            HexCell origin = movePath.Count > 0 ? movePath[movePath.Count - 1] : source.CurrentCell;
+            if (origin == null) return;
+
+            int count = 0;
+            foreach (HexCell cell in grid.GetCellsInRange(origin.Coordinates, moveRemaining))
+            {
+                if (cell == origin) continue;
+                if (movePath.Contains(cell)) continue;
+                if (!IsValidTarget(pendingCard.Data, source, cell)) continue;
+
+                if (grid.FindPath(origin.Coordinates, cell.Coordinates, moveRemaining) == null) continue;
+
+                count++;
+
+                HexMeshGenerator meshGen = cell.GetComponent<HexMeshGenerator>();
+                if (meshGen != null)
+                {
+                    meshGen.SetHighlight(true, validTargetColor);
+                    highlightedCells.Add(meshGen);
+                }
+            }
+            Debug.Log($"[TurnFlow] Move highlight: {count} cells from {origin.Coordinates} with {moveRemaining} left");
         }
 
         private static bool IsValidTarget(CardData card, Character source, HexCell cell)
@@ -433,7 +611,9 @@ namespace UI
             switch (card.TargetType)
             {
                 case TargetType.HexCell:
-                    return $"Select a cell to move to (range {card.Range}).";
+                    if (card.IsMove)
+                        return $"Move {card.CardName}: click cells to walk (up to {card.Range}). Click your character to stop.";
+                    return $"Select a cell to target with {card.CardName} (range {card.Range}).";
                 case TargetType.EnemyCharacter:
                     return $"Select an enemy to target with {card.CardName} (range {card.Range}).";
                 case TargetType.AllyCharacter:
