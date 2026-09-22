@@ -49,5 +49,24 @@ namespace Cards
 
         /// <summary>Whether the targeted hex cell must be empty (e.g. movement) or may be occupied (e.g. AoE).</summary>
         public CellConstraint CellConstraint => PrimaryTargetStep != null ? PrimaryTargetStep.CellConstraint : CellConstraint.Any;
+
+        /// <summary>
+        /// Whether any step in this card deals damage to an enemy (offensive attack). Used for
+        /// cosmetic pacing like playing the attack animation, which should not fire for move,
+        /// block, heal or other targeted-but-non-attacking cards.
+        /// </summary>
+        public bool IsAttack
+        {
+            get
+            {
+                if (Steps == null) return false;
+                foreach (CardEffectStep step in Steps)
+                {
+                    if (step != null && step.Effect != null && step.Effect.IsAttack)
+                        return true;
+                }
+                return false;
+            }
+        }
     }
 }

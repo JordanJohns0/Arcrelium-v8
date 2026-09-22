@@ -11,6 +11,8 @@ namespace Cards.Effects
     {
         public CardValue Damage = CardValue.MakeConstant(1);
 
+        public override bool IsAttack => true;
+
         public override bool CanExecute(CardContext context)
         {
             if (context.TargetCharacter == null) return false;

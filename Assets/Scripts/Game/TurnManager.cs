@@ -93,12 +93,30 @@ namespace Game
             bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter);
             if (!played) return false;
 
-            if (targetCharacter != null || targetCell != null)
+            // Only offensive cards swing: move/block/heal cards may have a target but shouldn't
+            // play the attack animation. The play stays busy through the card's actual visual
+            // (walk or attack) so the next card never starts on top of an unfinished animation.
+            if (card.Data != null && card.Data.IsAttack)
                 ActiveCharacter.PlayAttack();
+
+            if (ActiveCharacter.IsAnimating)
+                turnCoroutine = StartCoroutine(WaitForAnimationsToFinish());
 
             OnCardPlayed?.Invoke(card, ActiveCharacter);
             OnActionResolved?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// Holds new plays (Busy) until the active character's cosmetic animation for the just-played
+        /// card has finished. Effects are already committed when PlayCard returns; this only paces the
+        /// next play so the swing/walk visibly plays out before another card can be submitted.
+        /// </summary>
+        private IEnumerator WaitForAnimationsToFinish()
+        {
+            while (ActiveCharacter != null && ActiveCharacter.IsAnimating)
+                yield return null;
+            turnCoroutine = null;
         }
 
         public void Pass()

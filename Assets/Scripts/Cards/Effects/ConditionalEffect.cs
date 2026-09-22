@@ -9,6 +9,16 @@ namespace Cards.Effects
         public CardEffectSO TrueEffect;
         public CardEffectSO FalseEffect;
 
+        public override bool IsAttack
+        {
+            get
+            {
+                if (TrueEffect != null && TrueEffect.IsAttack) return true;
+                if (FalseEffect != null && FalseEffect.IsAttack) return true;
+                return false;
+            }
+        }
+
         public override bool CanExecute(CardContext context)
         {
             if (Condition == null) return true;

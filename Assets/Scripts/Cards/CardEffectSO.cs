@@ -13,5 +13,12 @@ namespace Cards
         public virtual bool CanExecute(CardContext context) => true;
 
         public abstract void Execute(CardContext context);
+
+        /// <summary>
+        /// Whether this effect represents an offensive attack (deals damage to one or more
+        /// enemies). Used to decide cosmetic behavior such as playing the attack animation:
+        /// move/block/heal cards that merely have a target should not swing.
+        /// </summary>
+        public virtual bool IsAttack => false;
     }
 }

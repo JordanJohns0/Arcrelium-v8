@@ -66,6 +66,10 @@ namespace Game
                 Candidate best = ChooseBestPlay(character);
                 if (best.Card == null || best.Score <= AICardScoring.PassThreshold)
                 {
+                    // The previous card's animation must finish before passing, otherwise the
+                    // Pass would be rejected while the turn is busy and the turn would stall.
+                    while (turnManager.Busy)
+                        yield return null;
                     turnManager.Pass();
                     yield break;
                 }
@@ -75,15 +79,16 @@ namespace Game
                     // Every candidate is pre-validated, so a rejection means the turn
                     // is no longer playable (e.g. a state change mid-AI). End the turn
                     // cleanly instead of soft-locking on an unplayable hand.
+                    while (turnManager.Busy)
+                        yield return null;
                     turnManager.Pass();
                     yield break;
                 }
 
-                // Pace the turn: each card resolves visibly for at least one second
-                // before the next play goes in.
-                yield return new WaitForSeconds(Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval));
-
-                if (turnManager.Busy)
+                // Pace the turn: wait for this card's animation to finish (and keep a readable
+                // minimum gap between plays) before the next one is submitted.
+                float minGapEnd = Time.time + Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval);
+                while (Time.time < minGapEnd || turnManager.Busy)
                     yield return null;
             }
         }

@@ -14,6 +14,20 @@ namespace Cards.Effects
         [Tooltip("Effects to execute in order when this card is played.")]
         public List<CardEffectSO> Effects = new List<CardEffectSO>();
 
+        public override bool IsAttack
+        {
+            get
+            {
+                if (Effects == null) return false;
+                foreach (CardEffectSO effect in Effects)
+                {
+                    if (effect != null && effect.IsAttack)
+                        return true;
+                }
+                return false;
+            }
+        }
+
         public override bool CanExecute(CardContext context)
         {
             foreach (CardEffectSO effect in Effects)

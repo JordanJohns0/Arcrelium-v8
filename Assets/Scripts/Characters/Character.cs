@@ -59,7 +59,12 @@ namespace Characters
         public static event Action<Character> OnCharacterDestroyed;
 
         private Coroutine moveAnimation;
-        private const float MoveSpeed = 8f;
+        private Coroutine attackAnimationTracker;
+        private bool isAttacking; // true while the attack state is playing on the model
+        // Walking travel pace (world units/sec). Deliberately slow so the walk stance reads clearly
+        // while the transform lerp carries the character cell-to-cell. Chosen so a ~1.3s walk gait
+        // cycle lands on roughly one board space, keeping the legs in step with the travel.
+        private const float WalkPace = 2f;
         private const float ArrivalThreshold = 0.05f;
         private readonly List<Renderer> renderers = new List<Renderer>();
         private readonly List<(Renderer renderer, Color originalColor, Color originalBaseColor)> originalColors = new List<(Renderer, Color, Color)>();
@@ -70,6 +75,15 @@ namespace Characters
         {
             if (modelAnimator == null)
                 modelAnimator = GetComponentInChildren<Animator>();
+
+            if (modelAnimator != null)
+            {
+                // Movement is transform-driven (see StepTowards), so any root motion on the model
+                // must stay off. With applyRootMotion on, the Animator (a child Armature) applies
+                // root deltas to its own local transform, making the model lunge past the target
+                // and snap back when the state returns to Idle.
+                modelAnimator.applyRootMotion = false;
+            }
         }
 
         public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1, EquipmentLoadout loadout = null)
@@ -189,14 +203,14 @@ namespace Characters
             if (this == null || target == null) yield break;
             Vector3 destination = target.transform.position;
 
-            SetWalking(true);
+            BeginWalking();
             while (this != null && Vector3.Distance(transform.position, destination) > ArrivalThreshold)
             {
                 StepTowards(destination);
                 yield return null;
             }
 
-            SetWalking(false);
+            EndWalking();
             if (this != null)
                 transform.position = destination;
             moveAnimation = null;
@@ -206,7 +220,7 @@ namespace Characters
         {
             if (this == null || path == null) yield break;
 
-            SetWalking(true);
+            BeginWalking();
             foreach (HexCell cell in path)
             {
                 if (this == null || cell == null) break;
@@ -222,27 +236,37 @@ namespace Characters
                     transform.position = destination;
             }
 
-            SetWalking(false);
+            EndWalking();
             if (this != null)
                 moveAnimation = null;
         }
 
         /// <summary>
-        /// Advances the character toward the destination. The fixed-speed transform lerp is always
-        /// the movement driver so arrival is guaranteed regardless of the model Animator. When an
-        /// Animator is configured, its walk clip plays as a cosmetic overlay (the DoubleL walk clips
-        /// carry no usable root translation, so they animate the legs while the transform carries the
-        /// character across the board).
+        /// Advances the character toward the destination. The transform lerp is always the movement
+        /// driver so arrival is guaranteed regardless of the model Animator. Walking uses WalkPace
+        /// (slow enough to actually read on screen) so the gait keeps in step with the travel.
         /// </summary>
         private void StepTowards(Vector3 destination)
         {
-            transform.position = Vector3.MoveTowards(transform.position, destination, MoveSpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, destination, WalkPace * Time.deltaTime);
         }
 
-        private void SetWalking(bool walking)
+        /// <summary>
+        /// Turns the walk stance on.
+        /// </summary>
+        private void BeginWalking()
         {
             if (modelAnimator != null)
-                modelAnimator.SetBool("IsWalking", walking);
+                modelAnimator.SetBool("IsWalking", true);
+        }
+
+        /// <summary>
+        /// Turns the walk stance off.
+        /// </summary>
+        private void EndWalking()
+        {
+            if (modelAnimator != null)
+                modelAnimator.SetBool("IsWalking", false);
         }
 
         /// <summary>
@@ -251,9 +275,43 @@ namespace Characters
         /// </summary>
         public void PlayAttack()
         {
-            if (modelAnimator != null)
-                modelAnimator.SetTrigger("Attack");
+            if (modelAnimator == null) return;
+            modelAnimator.SetTrigger("Attack");
+            isAttacking = true;
+            if (attackAnimationTracker != null)
+                StopCoroutine(attackAnimationTracker);
+            attackAnimationTracker = StartCoroutine(TrackAttackAnimationEnd());
         }
+
+        /// <summary>
+        /// Tracks when the model leaves the Attack state and clears the flag, so animation-driven
+        /// pacing (TurnManager Busy / AI inter-card waits) uses the real clip length rather than a
+        /// hardcoded delay. Timeouts guard against an unbound model halting the turn.
+        /// </summary>
+        private IEnumerator TrackAttackAnimationEnd()
+        {
+            float entered = Time.time;
+            // The trigger transitions the model into Attack over a frame or two; wait for it.
+            while (modelAnimator != null && Time.time - entered < 2f
+                && !modelAnimator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+                yield return null;
+
+            // Now wait until the swing finishes and the model leaves Attack.
+            float deadline = Time.time + 5f;
+            while (modelAnimator != null && Time.time < deadline
+                && modelAnimator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+                yield return null;
+
+            isAttacking = false;
+            attackAnimationTracker = null;
+        }
+
+        /// <summary>
+        /// True while the character's cosmetic animation (walk move-in or attack swing) is still
+        /// playing. TurnManager and the AI wait on this before allowing further card plays, so a
+        /// card is never submitted on top of an unfinished animation.
+        /// </summary>
+        public bool IsAnimating => moveAnimation != null || isAttacking;
 
         /// <summary>
         /// Rotates the character to face the given target (a character or a board cell),
