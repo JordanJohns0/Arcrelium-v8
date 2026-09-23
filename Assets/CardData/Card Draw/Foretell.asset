@@ -10,14 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
-  m_Name: Inspire
-  m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
-  CardName: Inspire
-  Description: Draw a card
+  m_Name: Foretell
+  m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
+  CardName: Foretell
+  Description: Draw a card. Set its cost to 1.
   Artwork: {fileID: 0}
   Cost: 0
   Steps:
-  - Effect: {fileID: 11400000, guid: 1414dbd31e75d5d4fa8f9e4298d8db75, type: 2}
-    TargetType: 1
+  - Effect: {fileID: 11400000, guid: 295a352f040fd8c49afd922636b2469c, type: 2}
+    TargetType: 0
     Range: 0
     CellConstraint: 0
+  OnDrawnEffect: {fileID: 0}
+  PlaysOnDiscard: 0

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
+  m_Name: Mystic Wand
+  m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
+  EquipmentName: Mystic Scroll
+  Description: 
+  Icon: {fileID: 21300000, guid: 087c7c637794716438c4ebfa60c3e171, type: 3}
+  SlotType: 3
+  Cards:
+  - {fileID: 11400000, guid: 81f3475fbc193e344bb65d09c739c4ec, type: 2}
+  Triggers: []
+  Enchantments: []
