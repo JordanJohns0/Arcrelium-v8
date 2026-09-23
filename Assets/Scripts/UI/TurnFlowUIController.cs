@@ -49,11 +49,25 @@ namespace UI
         private readonly List<HexMeshGenerator> highlightedCells = new List<HexMeshGenerator>();
         private readonly List<Character> highlightedCharacters = new List<Character>();
 
+        [Header("Move Path Preview")]
+        [Tooltip("Height above the tiles at which the planned move-route line is drawn.")]
+        [SerializeField] private float pathLineHeight = 0.4f;
+        [SerializeField] private float pathLineWidth = 0.2f;
+        [SerializeField] private Color pathLineColor = new Color(1f, 1f, 1f, 0.9f);
+        [SerializeField] private Color hoverPathColor = new Color(0.6f, 1f, 0.6f, 0.6f);
+        [SerializeField] private Material pathLineMaterial;
+        private LineRenderer pathLineRenderer;
+        private LineRenderer hoverPathRenderer;
+        private Material ownedPathLineMaterial;
+        private HexCell hoveredCell;
+
         private void OnEnable()
         {
             turnManager.OnTurnStarted += HandleTurnStarted;
             handView.OnCardClicked += HandleCardClicked;
             HexCellSelectable.AnyCellClicked += HandleCellClicked;
+            HexCellSelectable.AnyCellHovered += HandleCellHovered;
+            HexCellSelectable.AnyCellHoverEnded += HandleCellHoverEnded;
             CharacterSelectable.AnyCharacterClicked += HandleCharacterClicked;
 
             if (passButton != null) passButton.onClick.AddListener(HandlePassClicked);
@@ -65,12 +79,15 @@ namespace UI
             turnManager.OnTurnStarted -= HandleTurnStarted;
             handView.OnCardClicked -= HandleCardClicked;
             HexCellSelectable.AnyCellClicked -= HandleCellClicked;
+            HexCellSelectable.AnyCellHovered -= HandleCellHovered;
+            HexCellSelectable.AnyCellHoverEnded -= HandleCellHoverEnded;
             CharacterSelectable.AnyCharacterClicked -= HandleCharacterClicked;
 
             if (passButton != null) passButton.onClick.RemoveListener(HandlePassClicked);
             if (cancelButton != null) cancelButton.onClick.RemoveListener(ResetSelection);
 
             ClearBoardHighlights();
+            ClearPathLine();
         }
 
         private void HandleTurnStarted(Character character)
@@ -273,13 +290,36 @@ namespace UI
             Debug.Log($"[TurnFlow] Move path now {movePath.Count} cells, {moveRemaining} distance left, " +
                       $"target {cell.Coordinates}");
 
+            RefreshPathLine();
             HighlightMoveTargets();
             UpdatePrompt();
+            RefreshHoverPathLine();
 
             if (moveRemaining <= 0)
             {
                 SubmitPlay(targetCell: movePath[movePath.Count - 1], movePath: new List<HexCell>(movePath));
             }
+        }
+
+        /// <summary>
+        /// While building a move path, hovering a reachable cell previews the exact route the
+        /// character will walk (from the current path endpoint through every intermediate hex).
+        /// </summary>
+        private void HandleCellHovered(HexCell cell)
+        {
+            if (!IsLocalTurn) return;
+            if (turnManager.Busy) return;
+            if (state != SelectionState.SelectingTarget) return;
+            if (pendingCard == null || !IsMoveCard(pendingCard.Data)) return;
+
+            hoveredCell = cell;
+            RefreshHoverPathLine();
+        }
+
+        private void HandleCellHoverEnded()
+        {
+            hoveredCell = null;
+            RefreshHoverPathLine();
         }
 
         private void HandleCharacterClicked(Character character)
@@ -373,6 +413,7 @@ namespace UI
                         movePath.Clear();
                         moveRemaining = pendingCard.Data.Range;
                         HighlightMoveTargets();
+                        RefreshPathLine();
                     }
                 }
                 return;
@@ -430,8 +471,10 @@ namespace UI
             pendingCostCards.Clear();
             movePath.Clear();
             moveRemaining = 0;
+            hoveredCell = null;
             handView.ClearHighlights();
             ClearBoardHighlights();
+            ClearPathLine();
             UpdatePrompt();
         }
 
@@ -449,6 +492,8 @@ namespace UI
                 movePath.Clear();
                 moveRemaining = pendingCard.Data.Range;
                 HighlightMoveTargets();
+                RefreshPathLine();
+                RefreshHoverPathLine();
                 return;
             }
 
@@ -531,6 +576,145 @@ namespace UI
                 }
             }
             Debug.Log($"[TurnFlow] Move highlight: {count} cells from {origin.Coordinates} with {moveRemaining} left");
+        }
+
+        private void EnsurePathLine()
+        {
+            if (pathLineRenderer != null && hoverPathRenderer != null) return;
+            if (grid == null) return;
+
+            if (pathLineRenderer == null)
+                pathLineRenderer = CreatePathLineRenderer("MovePathLine", pathLineWidth, pathLineColor);
+            if (hoverPathRenderer == null)
+                hoverPathRenderer = CreatePathLineRenderer("MovePathHoverLine", pathLineWidth * 0.7f, hoverPathColor);
+        }
+
+        private LineRenderer CreatePathLineRenderer(string name, float width, Color color)
+        {
+            var lineGO = new GameObject(name);
+            lineGO.transform.SetParent(grid.transform, false);
+            lineGO.transform.localPosition = Vector3.zero;
+
+            var renderer = lineGO.AddComponent<LineRenderer>();
+
+            Material mat = pathLineMaterial;
+            if (mat == null)
+            {
+                Shader shader = Shader.Find("Sprites/Default");
+                if (shader != null)
+                {
+                    ownedPathLineMaterial = new Material(shader);
+                    mat = ownedPathLineMaterial;
+                }
+            }
+
+            renderer.sharedMaterial = mat;
+            renderer.useWorldSpace = true;
+            renderer.startWidth = width;
+            renderer.endWidth = width;
+            renderer.numCornerVertices = 4;
+            renderer.numCapVertices = 4;
+            renderer.startColor = color;
+            renderer.endColor = color;
+            renderer.positionCount = 0;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return renderer;
+        }
+
+        /// <summary>
+        /// Updates the preview line to trace from the active character's current cell through
+        /// every cell in the accumulated move path. Called whenever movePath changes and at the
+        /// start of move-path building so the line stays in sync.
+        /// </summary>
+        private void RefreshPathLine()
+        {
+            if (grid == null) return;
+            EnsurePathLine();
+            if (pathLineRenderer == null) return;
+
+            Character source = turnManager.ActiveCharacter;
+            if (source == null || source.CurrentCell == null
+                || pendingCard == null || !IsMoveCard(pendingCard.Data))
+            {
+                pathLineRenderer.positionCount = 0;
+                return;
+            }
+
+            int count = movePath.Count + 1;
+            pathLineRenderer.positionCount = count;
+            pathLineRenderer.SetPosition(0, source.CurrentCell.transform.position + Vector3.up * pathLineHeight);
+
+            for (int i = 0; i < movePath.Count; i++)
+            {
+                if (movePath[i] == null)
+                {
+                    pathLineRenderer.positionCount = 0;
+                    return;
+                }
+                pathLineRenderer.SetPosition(i + 1, movePath[i].transform.position + Vector3.up * pathLineHeight);
+            }
+        }
+
+        /// <summary>
+        /// While the mouse hovers a reachable hex during move-path building, extends the line
+        /// from the current path endpoint through every cell the character would walk to get
+        /// there, so the player can preview the exact route before committing a click.
+        /// </summary>
+        private void RefreshHoverPathLine()
+        {
+            if (grid == null) return;
+            EnsurePathLine();
+            if (hoverPathRenderer == null) return;
+
+            Character source = turnManager.ActiveCharacter;
+            if (source == null || source.CurrentCell == null
+                || pendingCard == null || !IsMoveCard(pendingCard.Data)
+                || hoveredCell == null || state != SelectionState.SelectingTarget)
+            {
+                hoverPathRenderer.positionCount = 0;
+                return;
+            }
+
+            HexCell origin = movePath.Count > 0 ? movePath[movePath.Count - 1] : source.CurrentCell;
+
+            // Confirm-clicking is what commits; hovering a cell already in the path, the start,
+            // or the workspace itself just clears the preview (same rules as the click handler).
+            if (hoveredCell == origin
+                || hoveredCell == source.CurrentCell
+                || movePath.Contains(hoveredCell)
+                || hoveredCell.IsWalkable == false)
+            {
+                hoverPathRenderer.positionCount = 0;
+                return;
+            }
+
+            List<HexCell> segment = grid.FindPath(origin.Coordinates, hoveredCell.Coordinates, moveRemaining);
+            if (segment == null || segment.Count == 0 || segment.Count > moveRemaining)
+            {
+                hoverPathRenderer.positionCount = 0;
+                return;
+            }
+
+            // Draw from the current endpoint through every intermediate hex to the hovered cell.
+            int pointCount = segment.Count + 1;
+            hoverPathRenderer.positionCount = pointCount;
+            hoverPathRenderer.SetPosition(0, origin.transform.position + Vector3.up * pathLineHeight);
+            for (int i = 0; i < segment.Count; i++)
+            {
+                if (segment[i] == null)
+                {
+                    hoverPathRenderer.positionCount = 0;
+                    return;
+                }
+                hoverPathRenderer.SetPosition(i + 1, segment[i].transform.position + Vector3.up * pathLineHeight);
+            }
+        }
+
+        private void ClearPathLine()
+        {
+            if (pathLineRenderer != null) pathLineRenderer.positionCount = 0;
+            if (hoverPathRenderer != null) hoverPathRenderer.positionCount = 0;
         }
 
         private static bool IsValidTarget(CardData card, Character source, HexCell cell)
