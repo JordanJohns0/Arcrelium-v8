@@ -149,7 +149,7 @@ namespace UI
             pendingCard = card;
             pendingCostCards.Clear();
 
-            if (card.Data.Cost > 0)
+            if (pendingCard.Cost > 0)
             {
                 state = SelectionState.SelectingCost;
                 UpdatePrompt();
@@ -176,7 +176,7 @@ namespace UI
             {
                 pendingCostCards.Remove(card);
             }
-            else if (pendingCostCards.Count < pendingCard.Data.Cost)
+            else if (pendingCostCards.Count < pendingCard.Cost)
             {
                 pendingCostCards.Add(card);
             }
@@ -184,7 +184,7 @@ namespace UI
             RefreshHandHighlights();
             UpdatePrompt();
 
-            if (pendingCostCards.Count == pendingCard.Data.Cost)
+            if (pendingCostCards.Count == pendingCard.Cost)
             {
                 if (RequiresBoardTarget(pendingCard.Data))
                 {
@@ -780,7 +780,7 @@ namespace UI
                     break;
 
                 case SelectionState.SelectingCost:
-                    int remaining = pendingCard.Data.Cost - pendingCostCards.Count;
+                    int remaining = pendingCard.Cost - pendingCostCards.Count;
                     promptText.text = $"Choose {remaining} more card(s) to discard as cost for {pendingCard.Data.CardName}.";
                     break;
 

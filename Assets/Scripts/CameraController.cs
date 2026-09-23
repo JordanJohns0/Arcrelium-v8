@@ -11,12 +11,15 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float zoomSpeed = 8f;
 
     private CinemachineOrbitalFollow orbitalFollow;
+    private CinemachineCamera cinemachineCamera;
+    private Transform followTarget;
     private InputAction horizontalAction;
     private InputAction verticalAction;
     private InputAction zoomAction;
 
     private void Awake()
     {
+        cinemachineCamera = GetComponent<CinemachineCamera>();
         orbitalFollow = GetComponent<CinemachineOrbitalFollow>();
 
         if (inputActions == null)
@@ -69,6 +72,19 @@ public class CameraController : MonoBehaviour
             orbitalFollow.RadialAxis.Value = ClampValue(
                 orbitalFollow.RadialAxis.Value - zoom * zoomSpeed * Time.deltaTime,
                 orbitalFollow.RadialAxis);
+    }
+
+    private void LateUpdate()
+    {
+        if (cinemachineCamera == null) return;
+        if (followTarget != null) return;
+
+        Game.GameManager gameManager = FindFirstObjectByType<Game.GameManager>();
+        Characters.Character local = gameManager != null ? gameManager.LocalCharacter : null;
+        if (local == null) return;
+
+        followTarget = local.transform;
+        cinemachineCamera.Follow = followTarget;
     }
 
     private static float ClampValue(float value, InputAxis axis)

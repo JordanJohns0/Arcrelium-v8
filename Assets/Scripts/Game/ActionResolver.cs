@@ -38,14 +38,16 @@ namespace Game
             List<CardInstance> costCards = null,
             HexCell targetCell = null,
             Character targetCharacter = null,
-            List<HexCell> movePath = null)
+            List<HexCell> movePath = null,
+            bool ignoreCost = false,
+            bool ignoreHandMembership = false)
         {
             if (source == null || card == null) return false;
-            if (!source.Hand.Contains(card)) return false;
+            if (!ignoreHandMembership && !source.Hand.Contains(card)) return false;
             if (!HasBoundSteps(card.Data)) return false;
 
             costCards ??= new List<CardInstance>();
-            if (!IsCostValid(source, card, costCards)) return false;
+            if (!ignoreCost && !IsCostValid(source, card, costCards)) return false;
             if (!IsTargetValid(source, card.Data, targetCell, targetCharacter)) return false;
 
             // Validate every step against its own context (its own range and target type)
@@ -53,7 +55,7 @@ namespace Game
             var executions = new List<(CardEffectStep Step, CardContext Context)>(card.Data.Steps.Count);
             foreach (CardEffectStep step in card.Data.Steps)
             {
-                CardContext context = MakeContext(source, card.Data, step, targetCell, targetCharacter, movePath);
+                CardContext context = MakeContext(source, card, step, targetCell, targetCharacter, movePath);
                 if (!step.Effect.CanExecute(context)) return false;
                 executions.Add((step, context));
             }
@@ -79,14 +81,17 @@ namespace Game
             }
 
             // Pay cost: discard the other cards, then the played card itself. Must happen
-            // before effects execute so draw effects see the freed hand slots.
-            foreach (CardInstance costCard in costCards)
+            // before effects execute so draw effects see the freed hand slots. A card played
+            // from outside the hand (free "when discarded, play it") was already discarded,
+            // so its membership/hand state is left untouched.
+            if (!ignoreHandMembership)
             {
-                source.Hand.RemoveCard(costCard);
-                source.Deck.Discard(costCard);
+                foreach (CardInstance costCard in costCards)
+                {
+                    source.DiscardFromHand(costCard);
+                }
+                source.DiscardFromHand(card);
             }
-            source.Hand.RemoveCard(card);
-            source.Deck.Discard(card);
 
             foreach (var (step, context) in executions)
                 step.Effect.Execute(context);
@@ -96,12 +101,12 @@ namespace Game
         }
 
         /// <summary>
-        /// Cost cards must: be exactly card.Cost in count, all currently in the source's hand,
-        /// all distinct, and none of them the card being played.
+        /// Cost cards must: be exactly the card's (instance) cost in count, all currently in
+        /// the source's hand, all distinct, and none of them the card being played.
         /// </summary>
         private bool IsCostValid(Character source, CardInstance card, List<CardInstance> costCards)
         {
-            if (costCards.Count != card.Data.Cost) return false;
+            if (costCards.Count != card.Cost) return false;
 
             var seen = new HashSet<CardInstance>();
             foreach (CardInstance costCard in costCards)
@@ -132,12 +137,13 @@ namespace Game
             return true;
         }
 
-        private CardContext MakeContext(Character source, CardData card, CardEffectStep step,
+        private CardContext MakeContext(Character source, CardInstance card, CardEffectStep step,
             HexCell targetCell, Character targetCharacter, List<HexCell> movePath = null)
         {
             return new CardContext
             {
                 Source = source,
+                Card = card,
                 Grid = grid,
                 TargetCell = targetCell,
                 TargetCharacter = targetCharacter,

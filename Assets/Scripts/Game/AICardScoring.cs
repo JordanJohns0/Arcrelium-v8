@@ -86,8 +86,18 @@ namespace Game
         /// Rates a candidate card play against the given target (may be null for
         /// self/cell plays). distanceToNearestEnemy is -1 when no enemies exist; it is
         /// used to decide whether defensive block is worthwhile.
+        /// Uses the card's base cost.
         /// </summary>
         public static float Score(CardData card, Character source, Character target, int distanceToNearestEnemy)
+        {
+            return Score(card, source, target, distanceToNearestEnemy, card != null ? card.Cost : 0);
+        }
+
+        /// <summary>
+        /// Same as the base-cost overload but with the candidate instance's live cost, so the
+        /// AI accounts for in-hand cost modifications (cost lowered/raised while held).
+        /// </summary>
+        public static float Score(CardData card, Character source, Character target, int distanceToNearestEnemy, int cost)
         {
             if (card == null || card.Steps == null || card.Steps.Count == 0 || source == null || source.Stats == null)
                 return float.MinValue;
@@ -100,7 +110,7 @@ namespace Game
             }
 
             float score = 0f;
-            score -= card.Cost * CostPenalty;
+            score -= cost * CostPenalty;
 
             if (target != null && damage > 0)
             {

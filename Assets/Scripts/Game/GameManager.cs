@@ -700,13 +700,13 @@ namespace Game
             // Everyone else gets the real CardData (no name lookup) so any card,
             // present or future, renders as a proper card.
             if (actor == null || actor.OwnerPlayerId != GameState.LocalPlayerId)
-                UI.PlayedCardDisplay.Show(card.Data, actorName);
+                UI.PlayedCardDisplay.Show(card.Data, actorName, card.Cost);
 
             if (GameState.ActiveMode != GameMode.Host) return;
             Networking.NetworkManager.Instance.BroadcastCardPlayed(new Networking.CardPlayedDisplay
             {
                 cardName = card.Data.CardName,
-                cost = card.Data.Cost,
+                cost = card.Cost,
                 description = card.Data.Description,
                 actorName = actorName,
                 actorPlayerId = actor != null ? actor.OwnerPlayerId : -1
@@ -897,6 +897,20 @@ namespace Game
         public ActionResolver ActionResolver => actionResolver;
         public TurnManager TurnManager => turnManager;
         public HexGridManager Grid => grid;
+
+        /// <summary>The character owned by this machine's local player, or null.</summary>
+        public Characters.Character LocalCharacter
+        {
+            get
+            {
+                foreach (Characters.Character c in activeCharacters)
+                {
+                    if (c != null && c.OwnerPlayerId == GameState.LocalPlayerId)
+                        return c;
+                }
+                return null;
+            }
+        }
 
         internal void HandleGameStateReceived(Networking.GameStateSync state)
         {

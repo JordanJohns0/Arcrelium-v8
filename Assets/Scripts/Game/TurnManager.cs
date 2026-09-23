@@ -35,6 +35,8 @@ namespace Game
 
         private int currentIndex = 0;
         private Coroutine turnCoroutine;
+        private readonly HashSet<Character> discardSubscribed = new HashSet<Character>();
+        private readonly HashSet<CardInstance> discardPlaying = new HashSet<CardInstance>();
 
         public Character ActiveCharacter => turnOrder.Count > 0 ? turnOrder[currentIndex] : null;
         public TurnPhase CurrentPhase { get; private set; } = TurnPhase.Act;
@@ -51,6 +53,12 @@ namespace Game
         {
             turnOrder = characters;
             currentIndex = 0;
+
+            foreach (Character character in turnOrder)
+            {
+                if (character == null || !discardSubscribed.Add(character)) continue;
+                character.OnCardDiscarded += HandleCardDiscarded;
+            }
         }
 
         /// <summary>
@@ -81,7 +89,9 @@ namespace Game
             List<CardInstance> costCards = null,
             HexCell targetCell = null,
             Character targetCharacter = null,
-            List<HexCell> movePath = null)
+            List<HexCell> movePath = null,
+            bool ignoreCost = false,
+            bool ignoreHandMembership = false)
         {
             if (CurrentPhase != TurnPhase.Act) return false;
             if (Busy) return false;
@@ -91,7 +101,7 @@ namespace Game
             else if (targetCell != null)
                 ActiveCharacter.FaceTarget(targetCell);
 
-            bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter, movePath);
+            bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter, movePath, ignoreCost, ignoreHandMembership);
             if (!played) return false;
 
             // Only offensive cards swing: move/block/heal cards may have a target but shouldn't
@@ -160,6 +170,27 @@ namespace Game
         {
             turnOrder.Remove(character);
             if (currentIndex >= turnOrder.Count) currentIndex = 0;
+        }
+
+        /// <summary>
+        /// "When this card is discarded, play it." A card leaving the hand into the discard
+        /// pile is re-played for free while the owner's Act phase is live. Cards that need a
+        /// board pick are left discarded (nothing can ask for a target mid-discard), and the
+        /// card is tracked so its own resolve can't loop. Host-authoritative: clients only
+        /// display what the host broadcasts.
+        /// </summary>
+        private void HandleCardDiscarded(Character character, CardInstance card)
+        {
+            if (character == null || card == null || card.Data == null) return;
+            if (!card.Data.PlaysOnDiscard) return;
+            if (GameState.ActiveMode == GameMode.Client) return;
+            if (CurrentPhase != TurnPhase.Act || Busy) return;
+            if (card.Data.NeedsPick) return;
+            if (!discardPlaying.Add(card)) return;
+
+            PlayCard(card, ignoreCost: true, ignoreHandMembership: true);
+
+            discardPlaying.Remove(card);
         }
     }
 }

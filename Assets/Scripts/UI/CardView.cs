@@ -66,7 +66,8 @@ namespace UI
             if (nameText != null) nameText.text = data.CardName;
             if (descriptionText != null) descriptionText.text = data.Description;
             // Cost of 0 still displays "0" — free cards are common, this isn't hidden.
-            if (costText != null) costText.text = data.Cost.ToString();
+            // Uses the instance's cost so in-hand cost modifications show immediately.
+            if (costText != null) costText.text = instance.Cost.ToString();
 
             // Range badge: show only for non-movement cards that actually need a target pick.
             // Movement cards don't show a range value — distance is implied by the move step.

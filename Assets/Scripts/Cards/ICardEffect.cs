@@ -37,6 +37,19 @@ namespace Cards
         /// </summary>
         public List<HexCell> MovePath;
 
+        /// <summary>
+        /// The card instance this context resolves (the played card, the card just drawn for
+        /// OnDrawnEffect, or the just-discarded card). Lets effects mutate an instance's own
+        /// state, e.g. "when this card is drawn, set its cost to 0, 1, or 2 at random".
+        /// </summary>
+        public CardInstance Card;
+
+        /// <summary>
+        /// Cards drawn while this effect chain is resolving. Filled by DrawCardsEffect so a
+        /// later effect in the same chain can modify them, e.g. "Draw a card. Set its cost to 1".
+        /// </summary>
+        public List<CardInstance> DrawnCards;
+
         public int EffectiveRange => Range + BonusRange;
     }
 

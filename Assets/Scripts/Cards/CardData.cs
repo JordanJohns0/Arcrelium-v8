@@ -22,6 +22,14 @@ namespace Cards
         [Tooltip("Effects to perform when played, in order. Each step has its own target type and range.")]
         public List<CardEffectStep> Steps = new List<CardEffectStep>();
 
+        [Tooltip("Executed once when this card is drawn into a hand. Used for draw-triggers e.g. " +
+                 "'when this card is drawn, set its cost to 0, 1, or 2 at random'.")]
+        public CardEffectSO OnDrawnEffect;
+
+        [Tooltip("When true, discarding this card from hand plays it for free. Cards that need a " +
+                 "board target pick are left discarded (there's no way to pick a target mid-discard).")]
+        public bool PlaysOnDiscard;
+
         /// <summary>
         /// The step whose target the player/AI must pick for this card (the first step that
         /// requires a board target). Null when the card needs no pick (self/untargeted steps only).
@@ -43,6 +51,9 @@ namespace Cards
 
         /// <summary>The target type of the pick this card requires, or None for untargeted cards.</summary>
         public TargetType TargetType => PrimaryTargetStep != null ? PrimaryTargetStep.TargetType : TargetType.None;
+
+        /// <summary>Whether this card needs a board pick to be played (targeted, not self).</summary>
+        public bool NeedsPick => TargetType != TargetType.None && TargetType != TargetType.Self;
 
         /// <summary>The range of the pick this card requires.</summary>
         public int Range => PrimaryTargetStep != null ? PrimaryTargetStep.Range : 0;

@@ -54,6 +54,7 @@ namespace Characters
         public event Action<HexCell> OnMovedToCell;
         public event Action<int> OnDamageTaken;
         public event Action<int> OnBlockGained;
+        public event Action<Character, CardInstance> OnCardDiscarded;
 
         public static event Action<Character> OnCharacterCreated;
         public static event Action<Character> OnCharacterDestroyed;
@@ -338,18 +339,33 @@ namespace Characters
             transform.rotation = Quaternion.LookRotation(direction.normalized);
         }
 
-        public void DrawCards(int count)
+        /// <summary>
+        /// Draws cards and returns the instances actually drawn (up to the hand limit).
+        /// Each drawn card's OnDrawnEffect runs before the card enters the hand, so draw
+        /// triggers can set up the copy (e.g. randomize its cost) before it is displayed.
+        /// </summary>
+        public List<CardInstance> DrawCards(int count)
         {
-            if (deck == null) return;
+            var drawn = new List<CardInstance>();
+            if (deck == null) return drawn;
             for (int i = 0; i < count; i++)
             {
                 if (Hand.IsFull) break;
                 CardInstance card = deck.Draw();
                 if (card != null)
                 {
+                    TriggerOnDrawn(card);
                     Hand.AddCard(card);
+                    drawn.Add(card);
                 }
             }
+            return drawn;
+        }
+
+        private void TriggerOnDrawn(CardInstance card)
+        {
+            if (card == null || card.Data == null || card.Data.OnDrawnEffect == null) return;
+            card.Data.OnDrawnEffect.Execute(new CardContext { Source = this, Card = card });
         }
 
         /// <summary>Draws cards until the hand reaches the character's max hand size.</summary>
@@ -364,9 +380,20 @@ namespace Characters
             if (Hand == null || deck == null) return;
             foreach (CardInstance card in new List<CardInstance>(Hand.Cards))
             {
-                deck.Discard(card);
-                Hand.RemoveCard(card);
+                DiscardFromHand(card);
             }
+        }
+
+        /// <summary>
+        /// Removes a card from the hand into the discard pile and fires OnCardDiscarded so
+        /// discard-triggers (e.g. "when this card is discarded, play it") can react.
+        /// </summary>
+        public void DiscardFromHand(CardInstance card)
+        {
+            if (Hand == null || deck == null) return;
+            if (!Hand.RemoveCard(card)) return;
+            deck.Discard(card);
+            OnCardDiscarded?.Invoke(this, card);
         }
 
         public void TakeDamage(int amount)

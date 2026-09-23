@@ -30,5 +30,11 @@ namespace Cards
         }
 
         public bool Contains(CardInstance card) => cards.Contains(card);
+
+        /// <summary>
+        /// Fires OnHandChanged without changing the card list. Used when a property of the
+        /// cards changed in place (e.g. a cost effect) so bound UI refreshes.
+        /// </summary>
+        public void NotifyChanged() => OnHandChanged?.Invoke();
     }
 }
