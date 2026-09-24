@@ -205,7 +205,7 @@ namespace Tests.Equipment
             new Spec
             {
                 Name = "Fingerless Glove",
-                Slot = EquipmentSlotType.Head,
+                Slot = EquipmentSlotType.Hand,
                 Cards = new[] { "Bonk" },
                 Triggers = new[] { (TriggerTiming.StartOfTurn, typeof(GrantBlockEffect)) }
             },
