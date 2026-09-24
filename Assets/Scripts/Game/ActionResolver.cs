@@ -93,8 +93,22 @@ namespace Game
                 source.DiscardFromHand(card);
             }
 
+            // Cards drawn by one step are visible to later steps via context.DrawnCards,
+            // so chains like "Draw a card." then "Set its cost to 1." work across steps.
+            List<CardInstance> chainDrawn = null;
             foreach (var (step, context) in executions)
+            {
+                if (chainDrawn != null && chainDrawn.Count > 0)
+                {
+                    context.DrawnCards ??= new List<CardInstance>();
+                    context.DrawnCards.AddRange(chainDrawn);
+                }
+
                 step.Effect.Execute(context);
+
+                if (context.DrawnCards != null && context.DrawnCards.Count > 0)
+                    chainDrawn = context.DrawnCards;
+            }
 
             OnCardPlayed?.Invoke(source, card.Data);
             return true;

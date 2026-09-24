@@ -223,6 +223,34 @@ namespace Tests.Equipment
                 Cards = Array.Empty<string>(),
                 Triggers = new[] { (TriggerTiming.OnEnemyTurnEnded, typeof(PushAwayEnemyEffect)) }
             },
+            new Spec
+            {
+                Name = "Backpack",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Prepare" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Cursed Ring",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Transmute", "Transmute" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Mystic Scroll",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Mystic Bolt" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Ring of Clarity",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Foretell" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
         };
 
         // Timings EquipmentManager actually fires during gameplay (see EquipmentManager.Initialize

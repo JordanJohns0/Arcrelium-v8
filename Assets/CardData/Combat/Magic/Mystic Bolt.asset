@@ -19,7 +19,7 @@ MonoBehaviour:
   Cost: 0
   Steps:
   - Effect: {fileID: 11400000, guid: 606fcb0e0449e634ab7eb5f345576883, type: 2}
-    TargetType: 0
+    TargetType: 3
     Range: 2
     CellConstraint: 0
   OnDrawnEffect: {fileID: 11400000, guid: 90817e86607d1f04392a7f463fe3b740, type: 2}

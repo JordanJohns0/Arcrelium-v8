@@ -13,10 +13,14 @@ MonoBehaviour:
   m_Name: Foretell
   m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
   CardName: Foretell
-  Description: Draw a card. Set its cost to 1.
+  Description: 'Draw a card. Set its cost to 1.'
   Artwork: {fileID: 0}
   Cost: 0
   Steps:
+  - Effect: {fileID: 11400000, guid: f08f9f6e55a21e243a8fdf504d998f5a, type: 2}
+    TargetType: 0
+    Range: 0
+    CellConstraint: 0
   - Effect: {fileID: 11400000, guid: 295a352f040fd8c49afd922636b2469c, type: 2}
     TargetType: 0
     Range: 0

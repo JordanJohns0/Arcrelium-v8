@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Backpack
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
-  EquipmentName: New Equipment
+  EquipmentName: Backpack
   Description: 
   Icon: {fileID: 0}
-  SlotType: 0
-  Cards: []
+  SlotType: 4
+  Cards:
+  - {fileID: 11400000, guid: f350f8c420e937547bab7a27615a1992, type: 2}
   Triggers: []
   Enchantments: []
