@@ -279,7 +279,10 @@ namespace Tests.AI
                 typeof(ConditionalEffect),
                 typeof(SetRandomCostEffect),
                 typeof(SetDrawnCardsCostEffect),
-                typeof(DecreaseHandCostsEffect)
+                typeof(DecreaseHandCostsEffect),
+                typeof(PlaceTileEffect),
+                typeof(FireWallEffect),
+                typeof(PushOccupantsEffect)
             };
 
             var unhandled = new List<string>();

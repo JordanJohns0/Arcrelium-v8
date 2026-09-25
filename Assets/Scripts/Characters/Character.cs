@@ -29,6 +29,11 @@ namespace Characters
         public EquipmentManager Equipment => equipmentManager;
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
+
+        /// <summary>The cell the character was on before the current one; used to infer travel
+        /// direction (e.g. which way to slide when entering an oil tile).</summary>
+        public HexCell LastCell { get; private set; }
+
         public int OwnerPlayerId { get; private set; }
         public int TeamId { get; private set; }
         public Team Team => TeamId == 0 ? Team.Ally : Team.Enemy;
@@ -147,6 +152,7 @@ namespace Characters
                 CurrentCell.ClearOccupant();
             }
 
+            LastCell = CurrentCell;
             CurrentCell = cell;
             cell.SetOccupant(this);
             OnMovedToCell?.Invoke(cell);

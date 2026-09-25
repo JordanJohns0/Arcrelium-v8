@@ -5,6 +5,7 @@ using Characters;
 using Cards;
 using Cards.Effects;
 using HexGrid;
+using TileEffects;
 
 namespace Game
 {
@@ -132,7 +133,8 @@ namespace Game
                             int after = DistanceToNearest(enemies, cell.Coordinates);
                             float score = AICardScoring.Score(card.Data, character, null, after, card.Cost)
                                 + AICardScoring.ScoreMove(before, after)
-                                + AreaDamageValue(card.Data, character, enemies, cell);
+                                + AreaDamageValue(card.Data, character, enemies, cell)
+                                + TileEffectValue(card.Data, character, cell);
                             AddCandidate(ref best, card, cost, cell, null, score);
                         }
                         break;
@@ -225,6 +227,55 @@ namespace Game
                         value += AICardScoring.LethalBonus;
                 }
             }
+            return value;
+        }
+
+        /// <summary>
+        /// Control value for cards that manipulate tile effects directly: a fire wall is worth
+        /// the burn damage of every enemy standing in it, and mould earth displacing or crushing
+        /// a standing enemy has matchup value. Grease (oil placement) has no direct payoff so it
+        /// scores nothing on its own.
+        /// </summary>
+        private float TileEffectValue(CardData card, Character source, HexCell cell)
+        {
+            if (card.Steps == null || grid == null) return 0f;
+            float value = 0f;
+
+            foreach (CardEffectStep step in card.Steps)
+            {
+                switch (step?.Effect)
+                {
+                    case FireWallEffect wall:
+                    {
+                        int burn = (wall.FireDefinition as FireTileEffectSO)?.FireDamage ?? 0;
+                        if (burn <= 0) break;
+                        foreach (HexCell burned in wall.BurningCells(grid, source.CurrentCell, cell))
+                        {
+                            if (burned?.Occupant == null || burned.Occupant.IsAllyOf(source)) continue;
+                            if (burned.Occupant.Stats == null || !burned.Occupant.Stats.IsAlive) continue;
+                            int needed = AICardScoring.EffectiveHpToKill(burned.Occupant);
+                            value += Mathf.Min(burn, needed) * AICardScoring.DamagePerHp;
+                            if (burn >= needed) value += AICardScoring.LethalBonus;
+                        }
+                        break;
+                    }
+                    case PushOccupantsEffect when cell.Occupant != null && cell.Occupant.IsEnemyOf(source):
+                    {
+                        bool hasExit = false;
+                        foreach (HexCell neighbor in grid.GetNeighbors(cell.Coordinates))
+                        {
+                            if (neighbor != null && neighbor.IsWalkable)
+                            {
+                                hasExit = true;
+                                break;
+                            }
+                        }
+                        value += hasExit ? 3f : AICardScoring.LethalBonus;
+                        break;
+                    }
+                }
+            }
+
             return value;
         }
 

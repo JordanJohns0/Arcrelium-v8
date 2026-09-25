@@ -430,6 +430,12 @@ namespace Tests.Cards
                     return Attack(4);
                 case "Parry":
                     return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 5, EnemyHealth = 10 };
+                case "Grease":
+                case "Fire Wall":
+                case "Mould Earth":
+                    // Tile-effect cards: no target standing in the generic fixture and no
+                    // TileEffectSystem present in the battery, so state is unchanged.
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10 };
                 default:
                     Assert.Fail($"No expected outcome defined for card '{card.CardName}' — add a SpecFor row.");
                     return default;

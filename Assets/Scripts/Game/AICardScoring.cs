@@ -72,6 +72,12 @@ namespace Game
                     if (conditional.FalseEffect != null)
                         Accumulate(conditional.FalseEffect, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
                     break;
+                // Board-state effects yield no direct damage/heal/block/draw here; their value is
+                // positional and scored by AIController.TileEffectValue against the candidate cell.
+                case PlaceTileEffect:
+                case FireWallEffect:
+                case PushOccupantsEffect:
+                    break;
             }
         }
 
