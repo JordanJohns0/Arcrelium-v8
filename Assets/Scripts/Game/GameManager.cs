@@ -36,6 +36,7 @@ namespace Game
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private Character playerCharacterPrefab;
         [SerializeField] private Character enemyCharacterPrefab;
+        [SerializeField] private Character structurePrefab;
         [SerializeField] private UnityEngine.InputSystem.InputActionAsset inputActions;
         [SerializeField] [Min(1)] private int baseEnemyCount = 2;
         [SerializeField] [Min(0)] private int extraEnemiesPerLevel = 1;
@@ -54,6 +55,10 @@ namespace Game
         [SerializeField] private List<CharacterSpawn> spawns = new List<CharacterSpawn>();
 
         internal List<Character> activeCharacters = new List<Character>();
+
+        /// <summary>Immovable board fixtures (rocks). Kept separate from activeCharacters so
+        /// they never join the turn order or the alive/dead match logic.</summary>
+        internal List<Character> structures = new List<Character>();
 
         /// <summary>
         /// Steam id → player index captured at match setup. Kept so requests and
@@ -392,6 +397,14 @@ namespace Game
                 Destroy(c.gameObject);
             }
             activeCharacters.Clear();
+
+            foreach (Character s in structures)
+            {
+                if (s == null) continue;
+                if (s.CurrentCell != null) s.CurrentCell.ClearOccupant();
+                Destroy(s.gameObject);
+            }
+            structures.Clear();
         }
 
         private void SetupDynamicMatch()
@@ -666,6 +679,20 @@ namespace Game
                     handCardNames = handNames.ToArray()
                 });
             }
+
+            structures.RemoveAll(s => s == null || s.Stats == null || !s.Stats.IsAlive);
+            foreach (var s in structures)
+            {
+                if (s.CurrentCell == null) continue;
+                sync.structures.Add(new Networking.StructureState
+                {
+                    q = s.CurrentCell.Coordinates.Q,
+                    r = s.CurrentCell.Coordinates.R,
+                    currentHp = s.Stats.CurrentHealth,
+                    maxHp = s.Stats.MaxHealth,
+                    block = s.Stats.Block
+                });
+            }
             return sync;
         }
 
@@ -898,6 +925,13 @@ namespace Game
         public TurnManager TurnManager => turnManager;
         public HexGridManager Grid => grid;
 
+        /// <summary>Registers a spawned structure (rock) so it is synced to clients.</summary>
+        public void RegisterStructure(Character structure)
+        {
+            if (structure == null) return;
+            if (!structures.Contains(structure)) structures.Add(structure);
+        }
+
         /// <summary>The character owned by this machine's local player, or null.</summary>
         public Characters.Character LocalCharacter
         {
@@ -971,6 +1005,38 @@ namespace Game
 
                 turnManager.SetTurnOrder(new List<Character>(activeCharacters));
                 turnManager.SetTurn(state.currentTurnIndex);
+            }
+
+            // Board structures (rocks) are rebuilt wholesale from the sync, like characters.
+            if (state.structures != null && (state.structures.Count > 0 || structures.Count > 0))
+            {
+                foreach (Character s in structures)
+                {
+                    if (s == null) continue;
+                    if (s.CurrentCell != null) s.CurrentCell.ClearOccupant();
+                    Destroy(s.gameObject);
+                }
+                structures.Clear();
+
+                foreach (var ss in state.structures)
+                {
+                    var coords = new HexCoordinates(ss.q, ss.r);
+                    if (!grid.TryGetCell(coords, out HexCell cell)) continue;
+                    if (structurePrefab == null) continue;
+
+                    Character structure = Instantiate(structurePrefab);
+                    structure.Initialize(GameState.EnemyOwnerPlayerId, cell, 0);
+                    structure.MarkAsStructure();
+                    structure.SetTeamId(-1);
+                    if (structure.Stats != null)
+                    {
+                        structure.Stats.MaxHealth = ss.maxHp;
+                        structure.Stats.CurrentHealth = ss.currentHp;
+                        structure.Stats.Block = ss.block;
+                        structure.Stats.NotifyChanged();
+                    }
+                    structures.Add(structure);
+                }
             }
 
             if (state.victory)

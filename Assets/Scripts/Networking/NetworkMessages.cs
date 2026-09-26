@@ -21,10 +21,25 @@ namespace Networking
     public class GameStateSync
     {
         public List<CharacterState> characterStates = new List<CharacterState>();
+        public List<StructureState> structures = new List<StructureState>();
         public int currentTurnIndex;
         public int activeCharacterId;
         public bool victory;
         public bool gameOver;
+    }
+
+    /// <summary>
+    /// A board structure (rock): an immovable, neutral blocking entity clients rebuild from
+    /// the same prefab as the host. Never in turn order and never owns cards.
+    /// </summary>
+    [System.Serializable]
+    public class StructureState
+    {
+        public int q;
+        public int r;
+        public int currentHp;
+        public int maxHp;
+        public int block;
     }
 
     [System.Serializable]

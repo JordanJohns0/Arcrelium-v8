@@ -282,7 +282,8 @@ namespace Tests.AI
                 typeof(DecreaseHandCostsEffect),
                 typeof(PlaceTileEffect),
                 typeof(FireWallEffect),
-                typeof(PushOccupantsEffect)
+                typeof(PushOccupantsEffect),
+                typeof(SpawnRockEffect)
             };
 
             var unhandled = new List<string>();

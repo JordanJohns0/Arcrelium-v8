@@ -22,6 +22,7 @@ namespace Characters
         [SerializeField] private EquipmentManager equipmentManager;
         [SerializeField] private int maxHandSize = 5;
         [SerializeField] private Animator modelAnimator;
+        [SerializeField] private bool isStructure;
 
         public CharacterStats Stats => stats;
         public Deck Deck => deck;
@@ -39,6 +40,12 @@ namespace Characters
         public Team Team => TeamId == 0 ? Team.Ally : Team.Enemy;
         public Color? PlayerColor { get; private set; }
         public Color? NameColor { get; private set; }
+
+        /// <summary>
+        /// True for immovable fixtures (rocks): never take turns, are never displaced by
+        /// pushes, and never move — but can still be damaged and destroyed.
+        /// </summary>
+        public bool IsStructure => isStructure;
 
         /// <summary>
         /// Two characters are allies iff their TeamIds match. In PvE all human players
@@ -441,6 +448,18 @@ namespace Characters
             if (string.IsNullOrEmpty(name)) return;
             stats.CharacterName = name;
             stats.NotifyChanged();
+        }
+
+        /// <summary>Marks this character as an immovable board fixture (a rock).</summary>
+        public void MarkAsStructure()
+        {
+            isStructure = true;
+        }
+
+        /// <summary>Forces the team id. A neutral (-1) structure is an enemy of every team.</summary>
+        public void SetTeamId(int teamId)
+        {
+            TeamId = teamId;
         }
 
         /// <summary>

@@ -13,13 +13,18 @@ MonoBehaviour:
   m_Name: Mould Earth
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
   CardName: Mould Earth
-  Description: A rocky pillar rises from the ground. Any enemy on the tile is hurled to a random adjacent tile — or crushed if there is nowhere to go. Leaves a rock behind.
+  Description: 'A rocky pillar rises from the ground. Any enemy on the tile is hurled
+    to a random adjacent tile. '
   Artwork: {fileID: 0}
   Cost: 2
   Steps:
   - Effect: {fileID: 11400000, guid: c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f8, type: 2}
     TargetType: 2
     Range: 3
-  - Effect: {fileID: 11400000, guid: c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f6, type: 2}
+    CellConstraint: 0
+  - Effect: {fileID: 11400000, guid: d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a9, type: 2}
     TargetType: 2
     Range: 3
+    CellConstraint: 0
+  OnDrawnEffect: {fileID: 0}
+  PlaysOnDiscard: 0

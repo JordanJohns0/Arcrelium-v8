@@ -20,5 +20,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 04b94fba1b3f7564aa8af4019e929e43, type: 2}
   - {fileID: 11400000, guid: 04b94fba1b3f7564aa8af4019e929e43, type: 2}
   - {fileID: 11400000, guid: 04b94fba1b3f7564aa8af4019e929e43, type: 2}
+  - {fileID: 11400000, guid: d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a6, type: 2}
+  - {fileID: 11400000, guid: d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5, type: 2}
+  - {fileID: 11400000, guid: d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a7, type: 2}
   Triggers: []
   Enchantments: []

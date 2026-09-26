@@ -2208,6 +2208,7 @@ MonoBehaviour:
   turnManager: {fileID: 531838723}
   playerCharacterPrefab: {fileID: 0}
   enemyCharacterPrefab: {fileID: 0}
+  structurePrefab: {fileID: 0}
   baseEnemyCount: 2
   extraEnemiesPerLevel: 1
   allySpawnQ: 0

@@ -273,6 +273,16 @@ namespace Game
                         value += hasExit ? 3f : AICardScoring.LethalBonus;
                         break;
                     }
+                    case SpawnRockEffect:
+                        // A rising rock walls adjacent enemies into place; worth a bit for each one caged.
+                        foreach (HexCell neighbor in grid.GetNeighbors(cell.Coordinates))
+                        {
+                            Character victim = neighbor == null ? null : neighbor.Occupant;
+                            if (victim != null && victim.IsEnemyOf(source)
+                                && victim.Stats != null && victim.Stats.IsAlive && !victim.IsStructure)
+                                value += AICardScoring.MovePerHex * 0.5f;
+                        }
+                        break;
                 }
             }
 

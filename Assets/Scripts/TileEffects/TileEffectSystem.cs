@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Characters;
+using Equipment;
 using Game;
 using HexGrid;
 
@@ -28,8 +29,11 @@ namespace TileEffects
 
         [SerializeField] private HexGridManager grid;
         [SerializeField] private TurnManager turnManager;
+        [SerializeField] private GameObject fireVisualPrefab;
+        [SerializeField] private GameObject oilVisualPrefab;
 
         private readonly HashSet<Character> subscribed = new HashSet<Character>();
+        private readonly Dictionary<TileEffectInstance, GameObject> visuals = new Dictionary<TileEffectInstance, GameObject>();
         private bool handlingEntry;
 
         private void Awake()
@@ -45,6 +49,13 @@ namespace TileEffects
             Instance = this;
             if (grid == null) grid = FindFirstObjectByType<HexGridManager>();
             if (turnManager == null) turnManager = FindFirstObjectByType<TurnManager>();
+
+            var library = GameDataLibrary.Instance;
+            if (library != null)
+            {
+                if (fireVisualPrefab == null) fireVisualPrefab = library.fireEffectVisualPrefab;
+                if (oilVisualPrefab == null) oilVisualPrefab = library.oilEffectVisualPrefab;
+            }
 
             Character.OnCharacterCreated += SubscribeCharacter;
             Character.OnCharacterDestroyed += UnsubscribeCharacter;
@@ -69,6 +80,15 @@ namespace TileEffects
             if (turnManager != null) turnManager.OnTurnStarted -= HandleTurnStartedBroadcast;
             foreach (Character character in subscribed) character.OnMovedToCell -= OnCharacterMoved;
             subscribed.Clear();
+            foreach (GameObject go in visuals.Values)
+            {
+                if (go != null)
+                {
+                    if (Application.isPlaying) Destroy(go);
+                    else DestroyImmediate(go);
+                }
+            }
+            visuals.Clear();
         }
 
         /// <summary>Bindings for tests; mirrors what Awake resolves in a real scene.</summary>
@@ -125,12 +145,14 @@ namespace TileEffects
             };
             cell.AddEffectInstance(instance);
             definition.OnEffectAddedToCell(MakeContext(cell, cell.Occupant, instance));
+            SpawnVisual(instance);
             return instance;
         }
 
         public void RemoveEffect(HexCell cell, TileEffectInstance instance)
         {
             if (cell != null) cell.RemoveEffectInstance(instance);
+            DestroyVisual(instance);
         }
 
         /// <summary>
@@ -203,6 +225,7 @@ namespace TileEffects
             foreach ((HexCell cell, TileEffectInstance effect) in expired)
             {
                 cell.RemoveEffectInstance(effect);
+                DestroyVisual(effect);
                 Debug.Log($"[TileEffects] {effect.Data.EffectName} on {cell.Coordinates} burnt out.");
             }
         }
@@ -226,7 +249,12 @@ namespace TileEffects
 
             for (int i = cell.Effects.Count - 1; i >= 0; i--)
             {
-                if (cell.Effects[i].Data.Slippery) cell.RemoveEffectInstance(cell.Effects[i]);
+                if (cell.Effects[i].Data.Slippery)
+                {
+                    TileEffectInstance consumed = cell.Effects[i];
+                    cell.RemoveEffectInstance(consumed);
+                    DestroyVisual(consumed);
+                }
             }
 
             DamageRadius(cell, amount, radius);
@@ -234,6 +262,28 @@ namespace TileEffects
         }
 
         // ------------------------------------------------------------ internals
+
+        private void SpawnVisual(TileEffectInstance effect)
+        {
+            if (effect == null || effect.Cell == null) return;
+            GameObject prefab = null;
+            if (effect.Data is FireTileEffectSO) prefab = fireVisualPrefab;
+            else if (effect.Data is OilTileEffectSO) prefab = oilVisualPrefab;
+            if (prefab == null) return;
+
+            GameObject go = Instantiate(prefab, effect.Cell.transform, false);
+            go.transform.localPosition = new Vector3(0f, 0.05f, 0f);
+            visuals[effect] = go;
+        }
+
+        private void DestroyVisual(TileEffectInstance effect)
+        {
+            if (effect == null || !visuals.TryGetValue(effect, out GameObject go)) return;
+            visuals.Remove(effect);
+            if (go == null) return;
+            if (Application.isPlaying) Destroy(go);
+            else DestroyImmediate(go);
+        }
 
         private void OnCharacterMoved(HexCell cell)
         {

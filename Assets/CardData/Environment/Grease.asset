@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: Grease
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
   CardName: Grease
-  Description: Cover a tile in oil. Any creature that moves onto it slides one tile further.
+  Description: Cover a tile in oil.
   Artwork: {fileID: 0}
   Cost: 1
   Steps:
   - Effect: {fileID: 11400000, guid: c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5, type: 2}
     TargetType: 2
     Range: 3
+    CellConstraint: 0
+  OnDrawnEffect: {fileID: 0}
+  PlaysOnDiscard: 0

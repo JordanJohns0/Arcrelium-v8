@@ -26,6 +26,7 @@ namespace Cards.Effects
                 return false;
 
             Character occupant = context.TargetCell.Occupant;
+            if (occupant != null && occupant.IsStructure) return false;
             return occupant == null || (occupant.Stats.IsAlive && occupant.IsEnemyOf(context.Source));
         }
 
@@ -35,6 +36,7 @@ namespace Cards.Effects
 
             Character occupant = context.TargetCell.Occupant;
             if (occupant == null || !occupant.Stats.IsAlive) return;
+            if (occupant.IsStructure) return; // fixtures can't be displaced, only targeted directly
 
             var exits = new List<HexCell>();
             foreach (HexCell neighbor in context.Grid.GetNeighbors(context.TargetCell.Coordinates))

@@ -77,6 +77,7 @@ namespace Game
                 case PlaceTileEffect:
                 case FireWallEffect:
                 case PushOccupantsEffect:
+                case SpawnRockEffect:
                     break;
             }
         }

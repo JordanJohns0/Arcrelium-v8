@@ -13,10 +13,13 @@ MonoBehaviour:
   m_Name: Fire Wall
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
   CardName: Fire Wall
-  Description: Light a wall of three tiles on fire — one adjacent hex and the two tiles flanking it. Fire lasts 2 full rounds and burns anyone who enters.
+  Description: Light a wall of three tiles on fire.
   Artwork: {fileID: 0}
   Cost: 1
   Steps:
   - Effect: {fileID: 11400000, guid: c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f7, type: 2}
     TargetType: 2
     Range: 1
+    CellConstraint: 0
+  OnDrawnEffect: {fileID: 0}
+  PlaysOnDiscard: 0

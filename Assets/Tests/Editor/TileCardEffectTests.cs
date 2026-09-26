@@ -259,22 +259,93 @@ namespace Tests.TileEffects
         {
             Character source = At(0, 0, 0);
             Character enemy = At(1, 2, -1);
-            RockTileEffectSO rock = Rock();
 
             var push = ScriptableObject.CreateInstance<PushOccupantsEffect>();
-            var place = ScriptableObject.CreateInstance<PlaceTileEffect>();
-            place.Definition = rock;
+            var spawn = ScriptableObject.CreateInstance<SpawnRockEffect>();
+            spawn.rockPrefab = MakeRockPrefab();
 
             CardContext ctx = Ctx(grid, source, Cell(2, -1), 3);
             Assert.IsTrue(push.CanExecute(ctx));
-            Assert.IsTrue(place.CanExecute(ctx));
+            Assert.IsTrue(spawn.CanExecute(ctx));
 
             push.Execute(ctx);
-            place.Execute(ctx);
+            spawn.Execute(ctx);
 
             Assert.AreEqual(1, enemy.CurrentCell.Coordinates.DistanceTo(new HexCoordinates(2, -1)),
                 "Enemy should be displaced to an adjacent tile.");
-            Assert.IsTrue(Haseffect(Cell(2, -1), rock), "A rock should now block the excavated tile.");
+            Assert.IsTrue(Cell(2, -1).Occupant != null && Cell(2, -1).Occupant.IsStructure,
+                "A rock entity should now block the excavated tile.");
+            Assert.IsFalse(Cell(2, -1).IsWalkable, "The rock-occupied tile is not walkable.");
+            Assert.AreEqual(0, Cell(2, -1).Effects.Count(effect => effect.Data.BlocksMovement),
+                "Rocks block by occupancy, not by a tile effect.");
+        }
+
+        private GameObject MakeRockPrefab()
+        {
+            var go = new GameObject("TestRock");
+            go.AddComponent<Character>();
+            objects.Add(go);
+            return go;
+        }
+
+        [Test]
+        public void PushOccupants_WontDisplaceAStructure()
+        {
+            Character source = At(0, 0, 0);
+
+            var spawn = ScriptableObject.CreateInstance<SpawnRockEffect>();
+            spawn.rockPrefab = MakeRockPrefab();
+            spawn.Execute(Ctx(grid, source, Cell(3, 0), 3));
+            Character rock = Cell(3, 0).Occupant;
+            Assert.IsNotNull(rock, "A rock should occupy the tile.");
+            Assert.IsTrue(rock.IsStructure);
+
+            var push = ScriptableObject.CreateInstance<PushOccupantsEffect>();
+            Assert.IsFalse(push.CanExecute(Ctx(grid, source, Cell(3, 0), 3)),
+                "Mould earth cannot excavate a standing rock.");
+            push.Execute(Ctx(grid, source, Cell(3, 0), 3));
+            Assert.AreSame(rock, Cell(3, 0).Occupant,
+                "The rock must stay put even if Execute is called directly.");
+            Assert.IsFalse(Cell(3, 0).IsWalkable);
+        }
+
+        [Test]
+        public void SpawnRock_CreatesImmovableDamageableRock()
+        {
+            Character source = At(0, 0, 0);
+            HexCell target = Cell(3, 0);
+
+            var spawn = ScriptableObject.CreateInstance<SpawnRockEffect>();
+            spawn.rockPrefab = MakeRockPrefab();
+            CardContext ctx = Ctx(grid, source, target, 3);
+            Assert.IsTrue(spawn.CanExecute(ctx));
+            spawn.Execute(ctx);
+
+            Character rock = target.Occupant;
+            Assert.IsNotNull(rock, "A rock should rise on the target tile.");
+            Assert.IsTrue(rock.IsStructure, "Rocks are immovable structures.");
+            Assert.IsFalse(target.IsWalkable, "The rock blocks the tile it stands on.");
+            Assert.IsTrue(rock.IsEnemyOf(source), "A neutral rock is attackable by every team.");
+
+            rock.TakeDamage(11);
+            Assert.IsFalse(rock.Stats.IsAlive, "The rock can be destroyed by damage.");
+            Assert.IsNull(target.Occupant, "Destroying the rock frees the tile.");
+            Assert.IsTrue(target.IsWalkable, "The tile is walkable again after the rock breaks.");
+        }
+
+        [Test]
+        public void MoveEffect_RefusesRockOccupiedTile()
+        {
+            Character source = At(0, 0, 0);
+
+            var spawn = ScriptableObject.CreateInstance<SpawnRockEffect>();
+            spawn.rockPrefab = MakeRockPrefab();
+            spawn.Execute(Ctx(grid, source, Cell(2, 0), 2));
+            Assert.IsNotNull(Cell(2, 0).Occupant);
+
+            var move = ScriptableObject.CreateInstance<MoveEffect>();
+            Assert.IsFalse(move.CanExecute(Ctx(grid, source, Cell(2, 0), 2)),
+                "A rock-occupied tile is not a legal move destination.");
         }
 
         private void rockOf(HexCell cell)
@@ -293,13 +364,29 @@ namespace Tests.TileEffects
             Assert.IsNotNull(library, "GameDataLibrary must exist in Resources.");
 
             AssertWiredAsPlace(library, "Grease", typeof(PlaceTileEffect), typeof(OilTileEffectSO));
-            AssertWiredAsPlace(library, "Mould Earth", typeof(PlaceTileEffect), typeof(RockTileEffectSO), stepIndex: 1);
+
+            CardData mouldEarth = library.GetCardByName("Mould Earth");
+            Assert.IsNotNull(mouldEarth, "Mould Earth missing from GameDataLibrary.");
+            AssertWiredAsSpawn(library, mouldEarth);
+            Assert.IsNotNull(mouldEarth.Steps[0].Effect as PushOccupantsEffect,
+                "Mould Earth must push before the rock rises.");
 
             CardData fireWall = library.GetCardByName("Fire Wall");
             Assert.IsNotNull(fireWall, "Fire Wall missing from GameDataLibrary.");
             FireWallEffect wall = fireWall.Steps[0].Effect as FireWallEffect;
             Assert.IsNotNull(wall, "Fire Wall must use FireWallEffect.");
             Assert.IsNotNull(wall.FireDefinition as FireTileEffectSO, "Fire Wall must reference the Fire tile effect.");
+        }
+
+        private static void AssertWiredAsSpawn(GameDataLibrary library, CardData mouldEarth)
+        {
+            CardData card = mouldEarth;
+            Assert.IsTrue(card.Steps.Count > 1, "Mould Earth must have a rock step.");
+            CardEffectSO effect = card.Steps[1].Effect;
+            Assert.IsNotNull(effect, "Mould Earth's rock step has no effect.");
+            SpawnRockEffect spawn = effect as SpawnRockEffect;
+            Assert.IsNotNull(spawn, "Mould Earth must rise a rock entity (SpawnRockEffect), not a tile effect.");
+            Assert.IsNotNull(spawn.rockPrefab, "SpawnRockEffect must reference the Big Rock prefab.");
         }
 
         private static void AssertWiredAsPlace(GameDataLibrary library, string cardName,
@@ -324,10 +411,11 @@ namespace Tests.TileEffects
 
             CardData card = library.GetCardByName("Mould Earth");
             Assert.IsNotNull(card, "Mould Earth missing from GameDataLibrary.");
-            Assert.AreEqual(2, card.Steps.Count, "Mould Earth must push, then place the rock.");
+            Assert.AreEqual(2, card.Steps.Count, "Mould Earth must push, then raise the rock.");
             Assert.IsInstanceOf(typeof(PushOccupantsEffect), card.Steps[0].Effect);
-            Assert.IsInstanceOf(typeof(PlaceTileEffect), card.Steps[1].Effect);
-            Assert.IsNotNull(((PlaceTileEffect)card.Steps[1].Effect).Definition as RockTileEffectSO);
+            SpawnRockEffect spawn = card.Steps[1].Effect as SpawnRockEffect;
+            Assert.IsNotNull(spawn, "Mould Earth's rock step must be a SpawnRockEffect.");
+            Assert.IsNotNull(spawn.rockPrefab, "SpawnRockEffect must reference the Big Rock prefab.");
         }
     }
 }
