@@ -32,7 +32,7 @@ namespace Tests.TileEffects
             {
                 if (go != null) Object.DestroyImmediate(go);
             }
-            foreach (Character character in Object.FindObjectsOfType<Character>())
+            foreach (Character character in Object.FindObjectsByType<Character>(FindObjectsSortMode.None))
             {
                 Object.DestroyImmediate(character.gameObject);
             }
