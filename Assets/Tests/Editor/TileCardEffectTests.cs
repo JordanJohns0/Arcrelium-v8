@@ -15,7 +15,7 @@ using Tests;
 namespace Tests.TileEffects
 {
     /// <summary>
-    /// Behavior tests for the three environment cards (Grease, Fire Wall, Mould Earth).
+    /// Behavior tests for the three environment cards (Grease, Wall of Flames, Mould Earth).
     /// Effects are exercised directly through CardContext so placement, wall shape and
     /// push/crush behavior are asserted precisely.
     /// </summary>
@@ -146,7 +146,7 @@ namespace Tests.TileEffects
             Assert.IsFalse(place.CanExecute(Ctx(grid, source, target, 3)));
         }
 
-        // ------------------------------------------------------------ Fire Wall
+        // ------------------------------------------------------------ Wall of Flames
 
         [Test]
         public void FireWall_BurnsTargetAndFlanksAdjacentToCaster()
@@ -159,7 +159,7 @@ namespace Tests.TileEffects
             wall.FireDefinition = fire;
 
             CardContext ctx = Ctx(grid, source, target, 1);
-            Assert.IsTrue(wall.CanExecute(ctx), "A Fire Wall must be playable on an adjacent hex.");
+            Assert.IsTrue(wall.CanExecute(ctx), "A Wall of Flames must be playable on an adjacent hex.");
             wall.Execute(ctx);
 
             Assert.IsTrue(Haseffect(target, fire), "Chosen hex must burn.");
@@ -182,7 +182,7 @@ namespace Tests.TileEffects
             Assert.IsTrue(wall.CanExecute(Ctx(grid, source, Cell(1, 0), 1)), "Adjacent pick is valid.");
             Assert.IsTrue(wall.CanExecute(Ctx(grid, source, Cell(-1, 1), 1)), "Any adjacent pick is valid.");
             Assert.IsFalse(wall.CanExecute(Ctx(grid, source, Cell(2, 0), 1)),
-                "A Fire Wall only ignites hexes directly around the caster.");
+                "A Wall of Flames only ignites hexes directly around the caster.");
         }
 
         [Test]
@@ -373,11 +373,11 @@ namespace Tests.TileEffects
             Assert.IsNotNull(mouldEarth.Steps[0].Effect as PushOccupantsEffect,
                 "Mould Earth must push before the rock rises.");
 
-            CardData fireWall = library.GetCardByName("Fire Wall");
-            Assert.IsNotNull(fireWall, "Fire Wall missing from GameDataLibrary.");
+            CardData fireWall = library.GetCardByName("Wall of Flames");
+            Assert.IsNotNull(fireWall, "Wall of Flames missing from GameDataLibrary.");
             FireWallEffect wall = fireWall.Steps[0].Effect as FireWallEffect;
-            Assert.IsNotNull(wall, "Fire Wall must use FireWallEffect.");
-            Assert.IsNotNull(wall.FireDefinition as FireTileEffectSO, "Fire Wall must reference the Fire tile effect.");
+            Assert.IsNotNull(wall, "Wall of Flames must use FireWallEffect.");
+            Assert.IsNotNull(wall.FireDefinition as FireTileEffectSO, "Wall of Flames must reference the Fire tile effect.");
         }
 
         private static void AssertWiredAsSpawn(GameDataLibrary library, CardData mouldEarth)

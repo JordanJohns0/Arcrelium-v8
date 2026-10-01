@@ -27,7 +27,7 @@ namespace Cards.Effects
         {
             // Enchantment bonus damage stacks on top of the card's own damage value.
             int damage = Damage.Evaluate(context.Source) + Mathf.Max(0, context.BonusDamage);
-            context.TargetCharacter.TakeDamage(damage);
+            context.TargetCharacter.TakeDamage(damage, context.Source);
         }
     }
 }

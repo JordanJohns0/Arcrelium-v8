@@ -10,6 +10,10 @@ using Equipment;
 using Equipment.Effects;
 using HexGrid;
 
+// Cards.Effects also defines a HealEffect, so alias the one card effect this file needs
+// instead of importing the whole namespace.
+using AttackEffect = Cards.Effects.AttackEffect;
+
 namespace Tests.Equipment
 {
     /// <summary>
@@ -78,6 +82,13 @@ namespace Tests.Equipment
             },
             new Spec
             {
+                Name = "Snake Oil Flask",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = Array.Empty<string>(),
+                Triggers = new[] { (TriggerTiming.OnDealDamage, typeof(ShuffleCardIntoDeckEffect)) }
+            },
+            new Spec
+            {
                 Name = "Null Amulet",
                 Slot = EquipmentSlotType.Trinket,
                 Cards = Array.Empty<string>(),
@@ -94,7 +105,21 @@ namespace Tests.Equipment
             {
                 Name = "Staff of Fire",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Fireball", "Fireball", "Bonk" },
+                Cards = new[] { "Fireball", "Wall of Flames" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Staff of Stone",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Mould Earth" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Bottle of Grease",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Grease" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -254,7 +279,8 @@ namespace Tests.Equipment
         };
 
         // Timings EquipmentManager actually fires during gameplay (see EquipmentManager.Initialize
-        // and its handlers: StartOfTurn, EndOfTurn, OnBeforeCardPlay, OnMovedToCell, OnDamageTaken).
+        // and its handlers: StartOfTurn, EndOfTurn, OnBeforeCardPlay, OnMovedToCell, OnDamageTaken,
+        // OnDealDamage, OnGainBlock, OnEnemyTurnEnded).
         private static readonly HashSet<TriggerTiming> WiredTimings = new HashSet<TriggerTiming>
         {
             TriggerTiming.StartOfTurn,
@@ -262,6 +288,7 @@ namespace Tests.Equipment
             TriggerTiming.OnBeforeCardPlay,
             TriggerTiming.OnMovedToCell,
             TriggerTiming.OnDamageTaken,
+            TriggerTiming.OnDealDamage,
             TriggerTiming.OnGainBlock,
             TriggerTiming.OnEnemyTurnEnded
         };
@@ -653,6 +680,152 @@ namespace Tests.Equipment
             }
             finally
             {
+                DestroyAll(grid, source, manager);
+            }
+        }
+
+        /// <summary>
+        /// Snake Oil Flask's trigger is OnDealDamage -> shuffle a Snake Oil into the damaged
+        /// enemy's deck. The owner and the victim must be distinct, and only the victim's
+        /// deck (not the owner's) gains the card.
+        /// </summary>
+        [Test]
+        public void SnakeOilFlask_OnDealDamage_ShufflesSnakeOilIntoVictimsDeck()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Snake Oil Flask")));
+
+                Character enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0);
+
+                Assert.AreEqual(10, enemy.Stats.CurrentHealth, "Enemy should start at full health.");
+                Assert.AreEqual(0, enemy.Deck.DrawPile.Count, "Victim's deck should start empty.");
+                Assert.AreEqual(0, source.Deck.DrawPile.Count, "Owner's deck should start empty.");
+
+                enemy.TakeDamage(2, source);
+
+                Assert.AreEqual(8, enemy.Stats.CurrentHealth, "Enemy should have taken the damage.");
+                Assert.AreEqual(1, enemy.Deck.DrawPile.Count,
+                    "Dealing damage should shuffle exactly one Snake Oil into the victim's deck.");
+                Assert.AreEqual(0, source.Deck.DrawPile.Count,
+                    "The card must go into the victim's deck, not the owner's.");
+
+                CardInstance shuffled = enemy.Deck.DrawPile[0];
+                Assert.AreEqual("Snake Oil", shuffled.Data.CardName,
+                    "The shuffled card should be Snake Oil.");
+
+                UnityEngine.Object.DestroyImmediate(enemy.gameObject);
+            }
+            finally
+            {
+                DestroyAll(grid, source, manager);
+            }
+        }
+
+        /// <summary>
+        /// The trigger fires once per hit, so repeated damage keeps bloating the victim's deck.
+        /// </summary>
+        [Test]
+        public void SnakeOilFlask_FiresOncePerHit()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Snake Oil Flask")));
+
+                Character enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0);
+                enemy.Stats.Heal(10); // survive three hits
+
+                enemy.TakeDamage(1, source);
+                Assert.AreEqual(1, enemy.Deck.DrawPile.Count, "First hit should add one Snake Oil.");
+
+                enemy.TakeDamage(1, source);
+                Assert.AreEqual(2, enemy.Deck.DrawPile.Count, "Second hit should add another.");
+
+                enemy.TakeDamage(1, source);
+                Assert.AreEqual(3, enemy.Deck.DrawPile.Count, "Third hit should add another.");
+
+                UnityEngine.Object.DestroyImmediate(enemy.gameObject);
+            }
+            finally
+            {
+                DestroyAll(grid, source, manager);
+            }
+        }
+
+        /// <summary>
+        /// Only the wearer that dealt the damage reacts: an ally dealing damage (or the
+        /// victim dealing it) must not shuffle cards into anyone's deck.
+        /// </summary>
+        [Test]
+        public void SnakeOilFlask_OnlyFiresForItsOwnWearer()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            Character ally = null;
+            Character enemy = null;
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Snake Oil Flask")));
+
+                ally = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 2);
+                enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0);
+
+                // The wearer hits an ally: damage still counts, but the ally is not an enemy,
+                // so the effect's enemy check must keep its deck clean.
+                ally.TakeDamage(1, source);
+                Assert.AreEqual(0, ally.Deck.DrawPile.Count,
+                    "Damaging an ally must not shuffle Snake Oil into the ally's deck.");
+
+                // The enemy damages the wearer: the wearer's own trigger must not fire for it.
+                source.TakeDamage(1, enemy);
+                Assert.AreEqual(0, enemy.Deck.DrawPile.Count,
+                    "Taking damage must not trigger OnDealDamage.");
+            }
+            finally
+            {
+                if (ally != null) UnityEngine.Object.DestroyImmediate(ally.gameObject);
+                if (enemy != null) UnityEngine.Object.DestroyImmediate(enemy.gameObject);
+                DestroyAll(grid, source, manager);
+            }
+        }
+
+        /// <summary>
+        /// Damage from an attack card is routed through Character.TakeDamage with the card's
+        /// source as the dealer, so an OnDealDamage trigger reacts to real card attacks too —
+        /// not just to direct TakeDamage calls.
+        /// </summary>
+        [Test]
+        public void SnakeOilFlask_ReactsToDamageFromAnAttackCard()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            Character enemy = null;
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Snake Oil Flask")));
+                enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0);
+
+                var attack = ScriptableObject.CreateInstance<AttackEffect>();
+                attack.Damage = CardValue.MakeConstant(1);
+                attack.Execute(new CardContext { Source = source, TargetCharacter = enemy });
+
+                Assert.AreEqual(9, enemy.Stats.CurrentHealth, "The attack card should deal its damage.");
+                Assert.AreEqual(1, enemy.Deck.DrawPile.Count,
+                    "Damage dealt by an attack card should shuffle a Snake Oil into the target's deck.");
+
+                UnityEngine.Object.DestroyImmediate(attack);
+            }
+            finally
+            {
+                if (enemy != null) UnityEngine.Object.DestroyImmediate(enemy.gameObject);
                 DestroyAll(grid, source, manager);
             }
         }

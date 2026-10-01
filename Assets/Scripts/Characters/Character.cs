@@ -65,6 +65,7 @@ namespace Characters
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
         public event Action<int> OnDamageTaken;
+        public event Action<int, Character> OnDamageDealt;
         public event Action<int> OnBlockGained;
         public event Action<Character, CardInstance> OnCardDiscarded;
 
@@ -409,9 +410,10 @@ namespace Characters
             OnCardDiscarded?.Invoke(this, card);
         }
 
-        public void TakeDamage(int amount)
+        public void TakeDamage(int amount, Character dealer = null)
         {
             stats.ApplyDamage(amount);
+            if (dealer != null) dealer.OnDamageDealt?.Invoke(amount, this);
             OnDamageTaken?.Invoke(amount);
             if (!stats.IsAlive)
             {

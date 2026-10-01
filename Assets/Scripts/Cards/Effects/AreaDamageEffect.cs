@@ -60,7 +60,7 @@ namespace Cards.Effects
                 Character occupant = cell.Occupant;
                 if (!MatchesFaction(context.Source, occupant, IncludeSelf)) continue;
                 int distance = cell.Coordinates.DistanceTo(context.TargetCell.Coordinates);
-                occupant.TakeDamage(DamageAt(context.Source, distance, context.BonusDamage));
+                occupant.TakeDamage(DamageAt(context.Source, distance, context.BonusDamage), context.Source);
             }
         }
 

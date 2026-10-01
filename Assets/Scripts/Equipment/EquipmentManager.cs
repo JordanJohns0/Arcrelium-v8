@@ -65,6 +65,7 @@ namespace Equipment
 
             character.OnMovedToCell += HandleMovedToCell;
             character.OnDamageTaken += HandleDamageTaken;
+            character.OnDamageDealt += HandleDamageDealt;
             character.OnBlockGained += HandleBlockGained;
         }
 
@@ -486,6 +487,27 @@ namespace Equipment
             }
         }
 
+        private void HandleDamageDealt(int amount, Character target)
+        {
+            var context = new EquipmentContext
+            {
+                Source = character,
+                Grid = grid,
+                TurnManager = turnManager,
+                Timing = TriggerTiming.OnDealDamage,
+                Amount = amount,
+                Other = target
+            };
+
+            foreach (var trigger in GetTriggers(TriggerTiming.OnDealDamage))
+            {
+                if (trigger.Effect == null) continue;
+                if (trigger.OnlyOnWearersTurn && turnManager != null &&
+                    turnManager.ActiveCharacter != character) continue;
+                trigger.Effect.Execute(context);
+            }
+        }
+
         private void HandleBlockGained(int amount)
         {
             var context = new EquipmentContext
@@ -561,6 +583,7 @@ namespace Equipment
             {
                 character.OnMovedToCell -= HandleMovedToCell;
                 character.OnDamageTaken -= HandleDamageTaken;
+                character.OnDamageDealt -= HandleDamageDealt;
                 character.OnBlockGained -= HandleBlockGained;
             }
         }
