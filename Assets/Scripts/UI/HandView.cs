@@ -48,6 +48,8 @@ namespace UI
 
         private void HandleCharacterCreated(Character character)
         {
+            // Board fixtures (rocks) are never players — they must not steal the hand view.
+            if (character == null || character.IsStructure) return;
             if (character.OwnerPlayerId == GameState.LocalPlayerId)
                 SetCharacter(character);
         }

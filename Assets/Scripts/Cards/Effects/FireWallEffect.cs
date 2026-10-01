@@ -41,8 +41,9 @@ namespace Cards.Effects
 
         /// <summary>
         /// The tiles a Fire Wall ignites: the chosen cell plus the two cells flanking the
-        /// caster-to-target axis. Shared by execution and the caster AI so it can value a
-        /// wall by how many enemies are standing in it.
+        /// caster-to-target axis, kept right next to the caster (one either side of where they
+        /// are facing). Shared by execution and the caster AI so it can value a wall by how
+        /// many enemies are standing in it.
         /// </summary>
         public List<HexCell> BurningCells(HexGridManager grid, HexCell sourceCell, HexCell target)
         {
@@ -70,9 +71,8 @@ namespace Cards.Effects
                 return result;
             }
 
-            HexCoordinates center = target.Coordinates;
-            AddIfExists(grid, result, center.Neighbor((direction + 1) % 6));
-            AddIfExists(grid, result, center.Neighbor((direction + 5) % 6));
+            AddIfExists(grid, result, from.Neighbor((direction + 1) % 6));
+            AddIfExists(grid, result, from.Neighbor((direction + 5) % 6));
             result.Add(target);
             return result;
         }

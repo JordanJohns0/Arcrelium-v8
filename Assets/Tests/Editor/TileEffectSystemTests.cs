@@ -202,7 +202,8 @@ namespace Tests.TileEffects
             Assert.AreEqual(10 - 3, victim.Stats.CurrentHealth);
             Assert.AreEqual(10 - 3, neighbor.Stats.CurrentHealth);
             Assert.IsFalse(victim.CurrentCell.HasEffect(effect => effect.Slippery), "Oil should be consumed by the blast.");
-            Assert.IsTrue(victim.CurrentCell.HasEffect(effect => effect is FireTileEffectSO), "Fire should stay lit.");
+            Assert.IsFalse(victim.CurrentCell.HasEffect(effect => effect is FireTileEffectSO), "The blast consumes the fire too.");
+            Assert.AreEqual(0, victim.CurrentCell.Effects.Count, "Fire on oil leaves nothing behind on the tile.");
         }
 
         [Test]
@@ -246,6 +247,117 @@ namespace Tests.TileEffects
             Assert.IsNull(
                 grid.FindPath(hero.CurrentCell.Coordinates, new HexCoordinates(1, 0), 5),
                 "The rock cell itself is never walkable.");
+        }
+
+        // ------------------------------------------------------- visual indicators
+
+        [Test]
+        public void GameDataLibrary_References_FireAndOilVisualPrefabs()
+        {
+            var library = Resources.Load<global::Equipment.GameDataLibrary>("GameDataLibrary");
+            Assert.IsNotNull(library, "The shared GameDataLibrary asset must exist in Resources.");
+            Assert.IsNotNull(library.fireEffectVisualPrefab, "The Fire visual prefab must be wired up.");
+            Assert.IsNotNull(library.oilEffectVisualPrefab, "The Oil visual prefab must be wired up.");
+            Assert.IsNotNull(library.fireEffectVisualPrefab.GetComponent<TileEffectVisual>());
+            Assert.IsNotNull(library.oilEffectVisualPrefab.GetComponent<TileEffectVisual>());
+        }
+
+        [Test]
+        public void PlacingFireAndOil_SpawnsRenderedVisuals_UnderTheirCells()
+        {
+            var library = Resources.Load<global::Equipment.GameDataLibrary>("GameDataLibrary");
+            system.BindVisualPrefabs(library.fireEffectVisualPrefab, library.oilEffectVisualPrefab);
+
+            HexCell fireCell = Cell(1, 0);
+            system.PlaceEffect(fireCell, Fire());
+            TileEffectVisual fireVisual = fireCell.transform.GetComponentInChildren<TileEffectVisual>();
+            Assert.IsNotNull(fireVisual, "Placing fire should instantiate its visual under the cell.");
+
+            HexCell oilCell = Cell(2, 1);
+            system.PlaceEffect(oilCell, Oil());
+            TileEffectVisual oilVisual = oilCell.transform.GetComponentInChildren<TileEffectVisual>();
+            Assert.IsNotNull(oilVisual, "Placing oil should instantiate its visual under the cell.");
+
+            foreach (TileEffectVisual visual in new[] { fireVisual, oilVisual })
+            {
+                Renderer renderer = visual.GetComponent<Renderer>();
+                Assert.IsNotNull(renderer, "The visual prefab must carry a renderer.");
+                MeshFilter meshFilter = visual.GetComponent<MeshFilter>();
+                Assert.IsNotNull(meshFilter, "The visual prefab must carry a mesh filter.");
+                visual.ConfigureRenderer();
+                Assert.IsNotNull(renderer.sharedMaterial, "The visual must be assigned a material so it shows in play.");
+                Assert.IsNotNull(renderer.sharedMaterial.shader, "The assigned material must resolve a real shader.");
+                Mesh mesh = meshFilter.sharedMesh;
+                Assert.IsNotNull(mesh, "The visual prefab's mesh must resolve (built-in Quad reference).");
+                Assert.Greater(mesh.vertexCount, 0, "The resolved mesh must actually have geometry to draw.");
+            }
+        }
+
+        [Test]
+        public void RemovingAnEffect_DestroysItsVisual()
+        {
+            var library = Resources.Load<global::Equipment.GameDataLibrary>("GameDataLibrary");
+            system.BindVisualPrefabs(library.fireEffectVisualPrefab, library.oilEffectVisualPrefab);
+
+            HexCell cell = Cell(1, 0);
+            TileEffectInstance fire = system.PlaceEffect(cell, Fire());
+            Assert.AreEqual(1, cell.transform.childCount, "A fresh fire effect should show exactly one visual child.");
+
+            system.RemoveEffect(cell, fire);
+            Assert.AreEqual(0, cell.transform.childCount, "Removing the effect must take its visual away too.");
+        }
+
+        [Test]
+        public void GreaseOnBurningTile_Explodes_DamagingTileAndAdjacentCharacters()
+        {
+            Character victim = At(0, 0);
+            Character neighbor = At(1, 0);
+
+            system.PlaceEffect(victim.CurrentCell, Fire());
+            system.PlaceEffect(victim.CurrentCell, Oil());
+
+            Assert.AreEqual(10 - 3, victim.Stats.CurrentHealth);
+            Assert.AreEqual(10 - 3, neighbor.Stats.CurrentHealth);
+            Assert.IsFalse(victim.CurrentCell.HasEffect(effect => effect.Slippery), "Oil should be consumed by the blast.");
+            Assert.IsFalse(victim.CurrentCell.HasEffect(effect => effect is FireTileEffectSO), "The blast consumes the fire too.");
+            Assert.AreEqual(0, victim.CurrentCell.Effects.Count, "Dumping oil on fire leaves nothing behind on the tile.");
+        }
+
+        [Test]
+        public void RealSpawnRockAsset_RockPrefabResolves_AndSpawnsABoardRock()
+        {
+            var spawn = UnityEditor.AssetDatabase.LoadAssetAtPath<global::Cards.Effects.SpawnRockEffect>(
+                "Assets/CardEffect/Environment/SpawnRock.asset");
+            Assert.IsNotNull(spawn, "The SpawnRock effect asset must exist.");
+            Assert.IsNotNull(spawn.rockPrefab, "SpawnRock.asset must reference the Big Rock prefab (GameObject field).");
+            var mainAsset = UnityEditor.AssetDatabase.LoadMainAssetAtPath("Assets/Prefabs/Environment/Big Rock.prefab");
+            Assert.AreEqual(mainAsset, spawn.rockPrefab,
+                "rockPrefab must point at the prefab's root GameObject, not the Character component inside it.");
+            Assert.IsNotNull(spawn.rockPrefab.GetComponent<Character>(),
+                "The referenced prefab must carry a Character on its root so the rock lane spawns a structure.");
+
+            System.Console.WriteLine($"Resolved rockPrefab: {spawn.rockPrefab.name}");
+
+            Character source = At(0, 0);
+            HexCell target = Cell(1, 0);
+            Assert.IsTrue(target.IsWalkable, "Empty cell must be walkable (rock lane).");
+
+            spawn.Execute(new global::Cards.CardContext
+            {
+                Source = source,
+                Grid = grid,
+                TargetCell = target,
+                Range = 3
+            });
+
+            Assert.IsNotNull(target.Occupant, "Playing Mould Earth's rock step must spawn a structure on the tile.");
+            Assert.IsTrue(target.Occupant.IsStructure, "The spawned object must be registered as a structure.");
+            Assert.AreNotEqual(global::Game.GameState.LocalPlayerId, target.Occupant.OwnerPlayerId,
+                "The rock must never be owned by the local player or it steals the hand view.");
+            Assert.AreEqual(global::Game.GameState.EnemyOwnerPlayerId, target.Occupant.OwnerPlayerId,
+                "The rock is owned like a board fixture, matching the network rebuild.");
+            Assert.AreEqual(-1, target.Occupant.TeamId, "The rock is neutral, so every team can attack it.");
+            Assert.IsFalse(target.IsWalkable, "The structure blocks foot traffic.");
         }
     }
 }

@@ -43,9 +43,11 @@ namespace Cards.Effects
             }
 
             // Initialize resets Block (and build) from the prefab, so capture the desired
-            // block up front and restore it after.
+            // block up front and restore it after. The rock is a neutral board fixture: it is
+            // owned like an enemy (never the local player, or the hand/HUD would treat the
+            // rock as the player) and set to team -1 so every team sees it as a valid target.
             int block = rock.Stats != null ? rock.Stats.Block : 0;
-            rock.Initialize(context.Source.OwnerPlayerId, context.TargetCell, 0);
+            rock.Initialize(GameState.EnemyOwnerPlayerId, context.TargetCell, 0);
             rock.MarkAsStructure();
             rock.SetTeamId(-1); // neutral: an enemy of every team, so anyone can attack it
             if (rock.Stats != null && block > 0) rock.Stats.Block = block;

@@ -149,7 +149,7 @@ namespace Tests.TileEffects
         // ------------------------------------------------------------ Fire Wall
 
         [Test]
-        public void FireWall_BurnsTargetAndItsTwoFlanks()
+        public void FireWall_BurnsTargetAndFlanksAdjacentToCaster()
         {
             Character source = At(0, 0, 0);
             HexCell target = Cell(1, 0); // east of source
@@ -163,10 +163,12 @@ namespace Tests.TileEffects
             wall.Execute(ctx);
 
             Assert.IsTrue(Haseffect(target, fire), "Chosen hex must burn.");
-            Assert.IsTrue(Haseffect(Cell(2, -1), fire), "Flank hex (NE of target) must burn.");
-            Assert.IsTrue(Haseffect(Cell(1, 1), fire), "Flank hex (SE of target) must burn.");
+            Assert.IsTrue(Haseffect(Cell(1, -1), fire), "Flank hex (NE of caster) must burn.");
+            Assert.IsTrue(Haseffect(Cell(0, 1), fire), "Flank hex (SE of caster) must burn.");
 
             Assert.IsFalse(Cell(0, 0).HasEffect(effect => effect is FireTileEffectSO), "Caster tile must stay clear.");
+            Assert.IsFalse(Haseffect(Cell(2, -1), fire), "The wall hugs the caster; the far NE hex must stay cold.");
+            Assert.IsFalse(Haseffect(Cell(1, 1), fire), "The wall hugs the caster; the far SE hex must stay cold.");
             Assert.IsFalse(Cell(2, 0).HasEffect(effect => effect is FireTileEffectSO), "Only the wall burns.");
         }
 

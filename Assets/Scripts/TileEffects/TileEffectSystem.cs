@@ -102,6 +102,13 @@ namespace TileEffects
             if (turnManager != null) turnManager.OnTurnStarted += HandleTurnStartedBroadcast;
         }
 
+        /// <summary>Test seam for supplying the effect visuals; mirrors the GameDataLibrary resolution in Awake.</summary>
+        public void BindVisualPrefabs(GameObject firePrefab, GameObject oilPrefab)
+        {
+            fireVisualPrefab = firePrefab;
+            oilVisualPrefab = oilPrefab;
+        }
+
         private void SubscribeCharacter(Character character)
         {
             if (character != null && subscribed.Add(character))
@@ -145,7 +152,11 @@ namespace TileEffects
             };
             cell.AddEffectInstance(instance);
             definition.OnEffectAddedToCell(MakeContext(cell, cell.Occupant, instance));
-            SpawnVisual(instance);
+
+            // The add-trigger may have consumed the effect itself (fire igniting oil) —
+            // don't leave a visual floating over a hex that no longer holds the effect.
+            if (cell.Effects.Contains(instance))
+                SpawnVisual(instance);
             return instance;
         }
 
@@ -242,16 +253,16 @@ namespace TileEffects
             }
         }
 
-        /// <summary>Fire meeting oil: consumes every oil effect on the tile and detonates an AoE.</summary>
+        /// <summary>Fire meeting oil: consumes every oil and fire effect on the tile and detonates an AoE.</summary>
         public void IgniteOil(HexCell cell, int amount, int radius)
         {
             if (cell == null) return;
 
             for (int i = cell.Effects.Count - 1; i >= 0; i--)
             {
-                if (cell.Effects[i].Data.Slippery)
+                TileEffectInstance consumed = cell.Effects[i];
+                if (consumed.Data.Slippery || consumed.Data is FireTileEffectSO)
                 {
-                    TileEffectInstance consumed = cell.Effects[i];
                     cell.RemoveEffectInstance(consumed);
                     DestroyVisual(consumed);
                 }

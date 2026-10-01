@@ -133,6 +133,7 @@ namespace UI
 
         private void HandleCharacterCreated(Character character)
         {
+            if (character == null || character.IsStructure) return;
             if (character.Stats == null) return;
             if (!initialized)
             {

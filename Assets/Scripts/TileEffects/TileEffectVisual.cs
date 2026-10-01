@@ -21,6 +21,15 @@ namespace TileEffects
 
         private void Start()
         {
+            ConfigureRenderer();
+        }
+
+        /// <summary>
+        /// Assigns a runtime material backed by whatever shader exists in the active pipeline.
+        /// Kept public so edit-mode tests can drive the exact play-mode setup.
+        /// </summary>
+        public void ConfigureRenderer()
+        {
             cachedRenderer = GetComponent<Renderer>();
             if (cachedRenderer == null) return;
 
@@ -32,6 +41,8 @@ namespace TileEffects
             material = new Material(shader);
             baseColor = tint;
             ApplyColor(baseColor);
+            if (material.HasProperty("_Cull"))
+                material.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
             cachedRenderer.sharedMaterial = material;
         }
 
