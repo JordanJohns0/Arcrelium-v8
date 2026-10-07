@@ -23,5 +23,4 @@ MonoBehaviour:
     CellConstraint: 0
     CardModifiers:
     - {fileID: 11400000, guid: 236b5192bffcec082f6be7137a042d7b, type: 2}
-  OnDrawnEffect: {fileID: 0}
   PlaysOnDiscard: 0

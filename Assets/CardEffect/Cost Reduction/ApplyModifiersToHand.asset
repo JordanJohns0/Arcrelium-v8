@@ -9,8 +9,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 04c7f0cebd85ab245ab84f034808f818, type: 3}
-  m_Name: Decrease Cost of Cards in Hand by 1
-  m_EditorClassIdentifier: Arcrelium.Game::Cards.Effects.DecreaseHandCostsEffect
-  Amount: 1
-  MinCost: 0
+  m_Script: {fileID: 11500000, guid: e11660ce196b4db9bd9d56dba9162bab, type: 3}
+  m_Name: ApplyModifiersToHand
+  m_EditorClassIdentifier: Arcrelium.Game::Cards.Effects.ApplyModifiersToHandEffect

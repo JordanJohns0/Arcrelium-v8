@@ -52,13 +52,22 @@ namespace Game
 
             // Validate every step against its own context (its own range and target type)
             // before any step executes, so a multi-step card never partially resolves.
+            // Steps whose condition fails are skipped entirely (never validated, never run).
             var executions = new List<(CardEffectStep Step, CardContext Context)>(card.Data.Steps.Count);
+            CardContext firstContext = null;
             foreach (CardEffectStep step in card.Data.Steps)
             {
                 CardContext context = MakeContext(source, card, step, targetCell, targetCharacter, movePath);
+                firstContext ??= context;
+                if (StepConditionFails(step, context)) continue;
                 if (!step.Effect.CanExecute(context)) return false;
                 executions.Add((step, context));
             }
+
+            // When every step was skipped by its condition (e.g. Parry with no adjacent enemy),
+            // keep the first step's context so equipment still sees a target/range on play.
+            if (executions.Count == 0 && firstContext != null)
+                executions.Add((card.Data.Steps[0], firstContext));
 
             // Equipment may boost range before execution; the bonus applies to every step.
             CardContext equipmentContext = PrimaryContext(executions);
@@ -95,6 +104,7 @@ namespace Game
 
             foreach (var (step, context) in executions)
             {
+                if (StepConditionFails(step, context)) continue;
                 step.Effect.Execute(context);
             }
 
@@ -137,6 +147,12 @@ namespace Game
                 }
             }
             return true;
+        }
+
+        /// <summary>True when the step carries a condition that currently fails (step is skipped).</summary>
+        private static bool StepConditionFails(CardEffectStep step, CardContext context)
+        {
+            return step.Condition != null && !step.Condition.Evaluate(context);
         }
 
         private CardContext MakeContext(Character source, CardInstance card, CardEffectStep step,

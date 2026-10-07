@@ -297,11 +297,9 @@ namespace Tests.AI
                 typeof(SelfDamageEffect),
                 typeof(MoveEffect),
                 typeof(AreaDamageEffect),
-                typeof(ConditionalEffect),
-                typeof(SetRandomCostEffect),
-                typeof(DecreaseHandCostsEffect),
                 typeof(PlaceTileEffect),
-                typeof(FireWallEffect),
+                typeof(TilePatternEffect),
+                typeof(ApplyModifiersToHandEffect),
                 typeof(PushOccupantsEffect),
                 typeof(SpawnRockEffect)
             };
@@ -337,13 +335,6 @@ namespace Tests.AI
                 {
                     if (onHit != null) CollectUnhandled(onHit, handled, unhandled, cardName, depth + 1);
                 }
-            }
-            if (effect is ConditionalEffect conditional && depth < 8)
-            {
-                if (conditional.TrueEffect != null)
-                    CollectUnhandled(conditional.TrueEffect, handled, unhandled, cardName, depth + 1);
-                if (conditional.FalseEffect != null)
-                    CollectUnhandled(conditional.FalseEffect, handled, unhandled, cardName, depth + 1);
             }
         }
     }

@@ -355,7 +355,7 @@ namespace Characters
 
         /// <summary>
         /// Draws cards and returns the instances actually drawn (up to the hand limit).
-        /// Each drawn card's OnDrawnEffect runs before the card enters the hand, so draw
+        /// Each drawn card's OnDrawnModifiers run before the card enters the hand, so draw
         /// triggers can set up the copy (e.g. randomize its cost) before it is displayed.
         /// </summary>
         public List<CardInstance> DrawCards(int count)
@@ -378,8 +378,13 @@ namespace Characters
 
         private void TriggerOnDrawn(CardInstance card)
         {
-            if (card == null || card.Data == null || card.Data.OnDrawnEffect == null) return;
-            card.Data.OnDrawnEffect.Execute(new CardContext { Source = this, Card = card });
+            if (card == null || card.Data == null || card.Data.OnDrawnModifiers == null) return;
+            var context = new CardContext { Source = this, Card = card };
+            foreach (CardModifierSO modifier in card.Data.OnDrawnModifiers)
+            {
+                if (modifier == null) continue;
+                modifier.Modify(card, context);
+            }
         }
 
         /// <summary>Draws cards until the hand reaches the character's max hand size.</summary>

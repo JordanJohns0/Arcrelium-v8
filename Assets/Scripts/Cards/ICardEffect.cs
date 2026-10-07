@@ -39,7 +39,7 @@ namespace Cards
 
         /// <summary>
         /// The card instance this context resolves (the played card, the card just drawn for
-        /// OnDrawnEffect, or the just-discarded card). Lets effects mutate an instance's own
+        /// OnDrawnModifiers, or the just-discarded card). Lets effects mutate an instance's own
         /// state, e.g. "when this card is drawn, set its cost to 0, 1, or 2 at random".
         /// </summary>
         public CardInstance Card;

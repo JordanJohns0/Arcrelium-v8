@@ -67,16 +67,11 @@ namespace Game
                 case SelfDamageEffect selfDamageEffect:
                     selfDamage += selfDamageEffect.Damage.Evaluate(source);
                     break;
-                case ConditionalEffect conditional:
-                    if (conditional.TrueEffect != null)
-                        Accumulate(conditional.TrueEffect, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
-                    if (conditional.FalseEffect != null)
-                        Accumulate(conditional.FalseEffect, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
-                    break;
-                // Board-state effects yield no direct damage/heal/block/draw here; their value is
-                // positional and scored by AIController.TileEffectValue against the candidate cell.
+                // Board- or hand-state effects yield no direct damage/heal/block/draw here; their value is
+                // positional and scored by AIController against the candidate cell/hand.
                 case PlaceTileEffect:
-                case FireWallEffect:
+                case TilePatternEffect:
+                case ApplyModifiersToHandEffect:
                 case PushOccupantsEffect:
                 case SpawnRockEffect:
                     break;

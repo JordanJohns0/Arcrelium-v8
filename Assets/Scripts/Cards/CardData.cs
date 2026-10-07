@@ -22,9 +22,10 @@ namespace Cards
         [Tooltip("Effects to perform when played, in order. Each step has its own target type and range.")]
         public List<CardEffectStep> Steps = new List<CardEffectStep>();
 
-        [Tooltip("Executed once when this card is drawn into a hand. Used for draw-triggers e.g. " +
-                 "'when this card is drawn, set its cost to 0, 1, or 2 at random'.")]
-        public CardEffectSO OnDrawnEffect;
+        [Tooltip("Card options applied to this card once, when it is drawn into a hand. Used for " +
+                 "draw-triggers e.g. 'when this card is drawn, set its cost to 0, 1, or 2 at random'. " +
+                 "Same modifier vocabulary as step card options, so on-draw and card-producing effects share.")]
+        public List<CardModifierSO> OnDrawnModifiers = new List<CardModifierSO>();
 
         [Tooltip("When true, discarding this card from hand plays it for free. Cards that need a " +
                  "board target pick are left discarded (there's no way to pick a target mid-discard).")]

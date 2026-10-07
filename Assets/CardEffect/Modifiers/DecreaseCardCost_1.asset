@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1a7824614ea884b4d87712c9b761f41e, type: 3}
-  m_Name: SetRandomCost_0_1_2
-  m_EditorClassIdentifier: Arcrelium.Game::Cards.Effects.SetRandomCostEffect
+  m_Script: {fileID: 11500000, guid: 5d9117f23b58403d81518850b615f958, type: 3}
+  m_Name: DecreaseCardCost_1
+  m_EditorClassIdentifier: Arcrelium.Game::Cards.Effects.DecreaseCardCostModifier
+  Amount: 1
   MinCost: 0
-  MaxCost: 2

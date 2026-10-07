@@ -29,5 +29,9 @@ namespace Cards
         [Tooltip("Options applied to every card this step's effect produces (e.g. set cost to 1). " +
                  "Attach here, on the card, so the option is visible right in the card's inspector.")]
         public List<CardModifierSO> CardModifiers = new List<CardModifierSO>();
+
+        [Tooltip("When set, this step only runs if the condition passes — it is silently skipped " +
+                 "otherwise (the card still plays). E.g. Parry: 'if there is an adjacent enemy, gain 2 block'.")]
+        public CardConditionSO Condition;
     }
 }

@@ -26,5 +26,3 @@ MonoBehaviour:
     TargetType: 2
     Range: 3
     CellConstraint: 0
-  OnDrawnEffect: {fileID: 0}
-  PlaysOnDiscard: 0

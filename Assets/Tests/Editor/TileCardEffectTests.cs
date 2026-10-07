@@ -155,8 +155,7 @@ namespace Tests.TileEffects
             HexCell target = Cell(1, 0); // east of source
             FireTileEffectSO fire = Fire();
 
-            var wall = ScriptableObject.CreateInstance<FireWallEffect>();
-            wall.FireDefinition = fire;
+            var wall = WallOfFlames(fire);
 
             CardContext ctx = Ctx(grid, source, target, 1);
             Assert.IsTrue(wall.CanExecute(ctx), "A Wall of Flames must be playable on an adjacent hex.");
@@ -176,8 +175,7 @@ namespace Tests.TileEffects
         public void FireWall_RequiresAdjacentTarget()
         {
             Character source = At(0, 0, 0);
-            var wall = ScriptableObject.CreateInstance<FireWallEffect>();
-            wall.FireDefinition = Fire();
+            var wall = WallOfFlames(Fire());
 
             Assert.IsTrue(wall.CanExecute(Ctx(grid, source, Cell(1, 0), 1)), "Adjacent pick is valid.");
             Assert.IsTrue(wall.CanExecute(Ctx(grid, source, Cell(-1, 1), 1)), "Any adjacent pick is valid.");
@@ -192,8 +190,7 @@ namespace Tests.TileEffects
             HexCell target = Cell(1, 0);
             FireTileEffectSO fire = Fire();
 
-            var wall = ScriptableObject.CreateInstance<FireWallEffect>();
-            wall.FireDefinition = fire;
+            var wall = WallOfFlames(fire);
 
             CardContext ctx = Ctx(grid, source, target, 1);
             wall.Execute(ctx);
@@ -201,6 +198,21 @@ namespace Tests.TileEffects
 
             Assert.AreEqual(1, target.Effects.Count(effect => effect.Data == fire),
                 "A second wall must not double-stack fire on an already burning tile.");
+        }
+
+        /// <summary>The generic three-tile fire wall of the "Wall of Flames" card.</summary>
+        private static TilePatternEffect WallOfFlames(FireTileEffectSO fire)
+        {
+            var wall = ScriptableObject.CreateInstance<TilePatternEffect>();
+            wall.Definition = fire;
+            wall.RequireAdjacent = true;
+            wall.Offsets = new List<HexCoordinates>
+            {
+                new HexCoordinates(0, 0),
+                new HexCoordinates(0, -1),
+                new HexCoordinates(-1, 1)
+            };
+            return wall;
         }
 
         // ------------------------------------------------------------ Mould Earth
@@ -375,9 +387,16 @@ namespace Tests.TileEffects
 
             CardData fireWall = library.GetCardByName("Wall of Flames");
             Assert.IsNotNull(fireWall, "Wall of Flames missing from GameDataLibrary.");
-            FireWallEffect wall = fireWall.Steps[0].Effect as FireWallEffect;
-            Assert.IsNotNull(wall, "Wall of Flames must use FireWallEffect.");
-            Assert.IsNotNull(wall.FireDefinition as FireTileEffectSO, "Wall of Flames must reference the Fire tile effect.");
+            TilePatternEffect wall = fireWall.Steps[0].Effect as TilePatternEffect;
+            Assert.IsNotNull(wall, "Wall of Flames must use TilePatternEffect.");
+            Assert.IsNotNull(wall.Definition as FireTileEffectSO, "Wall of Flames must reference the Fire tile effect.");
+            Assert.IsTrue(wall.RequireAdjacent, "Wall of Flames must be cast on an adjacent hex.");
+
+            List<HexCoordinates> pattern = wall.Offsets;
+            Assert.AreEqual(3, pattern.Count, "Wall of Flames must burn exactly three hexes.");
+            Assert.Contains(new HexCoordinates(0, 0), pattern);
+            Assert.Contains(new HexCoordinates(0, -1), pattern);
+            Assert.Contains(new HexCoordinates(-1, 1), pattern);
         }
 
         private static void AssertWiredAsSpawn(GameDataLibrary library, CardData mouldEarth)

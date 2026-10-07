@@ -172,7 +172,8 @@ namespace Game
         /// <summary>
         /// Every step of the card must be executable against its own context (per-step range
         /// and target type) for the candidate to be valid — same all-or-nothing rule as the
-        /// resolver, so a multi-step card is only played if it fully resolves.
+        /// resolver, so a multi-step card is only played if it fully resolves. Steps whose
+        /// condition fails are skipped, exactly like the resolver.
         /// </summary>
         private bool AllStepsCanExecute(Character source, CardData card, HexCell cell, Character target)
         {
@@ -180,6 +181,7 @@ namespace Game
             {
                 if (step == null || step.Effect == null) return false;
                 CardContext ctx = MakeContext(source, card, step, cell, target);
+                if (step.Condition != null && !step.Condition.Evaluate(ctx)) continue;
                 if (!step.Effect.CanExecute(ctx)) return false;
             }
             return true;
@@ -245,12 +247,13 @@ namespace Game
             {
                 switch (step?.Effect)
                 {
-                    case FireWallEffect wall:
+                    case TilePatternEffect pattern:
                     {
-                        int burn = (wall.FireDefinition as FireTileEffectSO)?.FireDamage ?? 0;
+                        int burn = (pattern.Definition as FireTileEffectSO)?.FireDamage ?? 0;
                         if (burn <= 0) break;
-                        foreach (HexCell burned in wall.BurningCells(grid, source.CurrentCell, cell))
+                        foreach (HexCoordinates burnedCoords in pattern.Cells(source.CurrentCell, cell))
                         {
+                            HexCell burned = grid.GetCell(burnedCoords);
                             if (burned?.Occupant == null || burned.Occupant.IsAllyOf(source)) continue;
                             if (burned.Occupant.Stats == null || !burned.Occupant.Stats.IsAlive) continue;
                             int needed = AICardScoring.EffectiveHpToKill(burned.Occupant);
