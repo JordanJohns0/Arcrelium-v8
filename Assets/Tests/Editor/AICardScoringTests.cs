@@ -179,7 +179,7 @@ namespace Tests.AI
         }
 
         [Test]
-        public void Score_Composite_AccumulatesSubEffects()
+        public void Score_MultipleSteps_AccumulatesAllEffects()
         {
             source.Stats.CurrentHealth = 5;
 
@@ -192,16 +192,38 @@ namespace Tests.AI
             var draw = MakeEffect<DrawCardsEffect>();
             draw.Amount = CardValue.MakeConstant(1);
 
-            var composite = MakeEffect<CompositeEffect>();
-            composite.Effects = new List<CardEffectSO> { attack, heal, block, draw };
+            var card = TestHelper.MakeCard("All", 0,
+                TestHelper.Step(attack, TargetType.EnemyCharacter),
+                TestHelper.Step(heal),
+                TestHelper.Step(block),
+                TestHelper.Step(draw));
+            trackedSops.Add(card);
 
-            float score = AICardScoring.Score(MakeCard("All", composite, TargetType.EnemyCharacter), source, target, 1);
+            float score = AICardScoring.Score(card, source, target, 1);
 
             Assert.AreEqual(
                 2 * AICardScoring.DamagePerHp
                 + 1 * AICardScoring.HealPerPoint
                 + 1 * AICardScoring.BlockThreatened
                 + 1 * AICardScoring.DrawPerCard, score, 0.0001f);
+        }
+
+        [Test]
+        public void Score_AttackWithOnHitEffect_AccumulatesOnHitDamage()
+        {
+            target.Stats.CurrentHealth = 10;
+
+            var attack = MakeEffect<AttackEffect>();
+            attack.Damage = CardValue.MakeConstant(2);
+            var onHit = MakeEffect<AttackEffect>();
+            onHit.Damage = CardValue.MakeConstant(3);
+            attack.OnHitEffects = new List<CardEffectSO> { onHit };
+
+            float score = AICardScoring.Score(
+                MakeCard("Poison Sting", attack, TargetType.EnemyCharacter), source, target, 1);
+
+            Assert.AreEqual(5 * AICardScoring.DamagePerHp, score, 0.0001f,
+                "The AI must count damage from effects that fire when the attack lands.");
         }
 
         [Test]
@@ -272,13 +294,11 @@ namespace Tests.AI
                 typeof(HealEffect),
                 typeof(GainBlockEffect),
                 typeof(DrawCardsEffect),
-                typeof(CompositeEffect),
                 typeof(SelfDamageEffect),
                 typeof(MoveEffect),
                 typeof(AreaDamageEffect),
                 typeof(ConditionalEffect),
                 typeof(SetRandomCostEffect),
-                typeof(SetDrawnCardsCostEffect),
                 typeof(DecreaseHandCostsEffect),
                 typeof(PlaceTileEffect),
                 typeof(FireWallEffect),
@@ -311,11 +331,11 @@ namespace Tests.AI
             if (effect == null) return;
             if (!handled.Contains(effect.GetType()))
                 unhandled.Add($"{cardName}:{effect.GetType().Name}");
-            if (effect is CompositeEffect composite && composite.Effects != null && depth < 8)
+            if (effect is AttackEffect attack && attack.OnHitEffects != null && depth < 8)
             {
-                foreach (CardEffectSO sub in composite.Effects)
+                foreach (CardEffectSO onHit in attack.OnHitEffects)
                 {
-                    if (sub != null) CollectUnhandled(sub, handled, unhandled, cardName, depth + 1);
+                    if (onHit != null) CollectUnhandled(onHit, handled, unhandled, cardName, depth + 1);
                 }
             }
             if (effect is ConditionalEffect conditional && depth < 8)

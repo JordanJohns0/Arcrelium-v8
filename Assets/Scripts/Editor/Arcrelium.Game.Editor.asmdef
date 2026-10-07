@@ -1,0 +1,19 @@
+{
+    "name": "Arcrelium.Game.Editor",
+    "rootNamespace": "",
+    "references": [
+        "UnityEditor",
+        "Arcrelium.Game"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

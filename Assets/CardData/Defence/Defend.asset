@@ -19,6 +19,13 @@ MonoBehaviour:
   Artwork: {fileID: 0}
   Cost: 1
   Steps:
-  - Effect: {fileID: 11400000, guid: 1414dbd31e75d5d4fa8f9e4298d8db75, type: 2}
+  - Effect: {fileID: 11400000, guid: 62d740655fe03de40b89bfad2d452f8e, type: 2}
     TargetType: 1
     Range: 0
+    CellConstraint: 0
+  - Effect: {fileID: 11400000, guid: f08f9f6e55a21e243a8fdf504d998f5a, type: 2}
+    TargetType: 1
+    Range: 0
+    CellConstraint: 0
+  OnDrawnEffect: {fileID: 0}
+  PlaysOnDiscard: 0

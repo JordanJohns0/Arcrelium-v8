@@ -58,5 +58,30 @@ namespace Tests.Cards
             effect.Execute(ctx);
             Assert.AreEqual(source.Hand.MaxCapacity, source.Hand.Cards.Count);
         }
+
+        [Test]
+        public void Execute_StepCardModifiers_AppliedToEveryDrawnCard()
+        {
+            var setCost = ScriptableObject.CreateInstance<SetCardCostModifier>();
+            setCost.Cost = 2;
+
+            var ctx = new CardContext { Source = source, StepModifiers = new List<CardModifierSO> { setCost } };
+            effect.Execute(ctx);
+
+            Assert.AreEqual(2, source.Hand.Cards.Count);
+            foreach (CardInstance card in source.Hand.Cards)
+                Assert.AreEqual(2, card.Cost, "The attached option must touch every drawn card.");
+        }
+
+        [Test]
+        public void Execute_WithoutCardModifiers_DrawnCostsUnchanged()
+        {
+            var ctx = new CardContext { Source = source };
+            effect.Execute(ctx);
+
+            Assert.AreEqual(2, source.Hand.Cards.Count);
+            foreach (CardInstance card in source.Hand.Cards)
+                Assert.AreEqual(0, card.Cost, "No option attached means drawn cards keep their base cost.");
+        }
     }
 }

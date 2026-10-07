@@ -106,24 +106,25 @@ namespace Tests.Cards
         }
 
         [Test]
-        public void DrawThenSetCost_AppliesCostToDrawnCards()
+        public void DrawCardsEffect_WithSetCostOption_AppliesCostToDrawnCards()
         {
             var draw = ScriptableObject.CreateInstance<DrawCardsEffect>();
             draw.Amount = CardValue.MakeConstant(2);
-            var setCost = ScriptableObject.CreateInstance<SetDrawnCardsCostEffect>();
-            setCost.CostValue = 1;
+            var setCost = ScriptableObject.CreateInstance<SetCardCostModifier>();
+            setCost.Cost = 1;
 
             Deck deck = GetDeck();
             deck.SetStartingCards(new List<CardData> { SelfCard("A", 4), SelfCard("B", 4), SelfCard("C", 4) });
             deck.Shuffle();
 
-            var ctx = new CardContext { Source = source };
+            var ctx = new CardContext { Source = source, StepModifiers = new List<CardModifierSO> { setCost } };
             draw.Execute(ctx);
-            setCost.Execute(ctx);
 
             Assert.AreEqual(2, source.Hand.Cards.Count);
             foreach (CardInstance card in source.Hand.Cards)
-                Assert.AreEqual(1, card.Cost, "Cards drawn by the chain should cost 1.");
+                Assert.AreEqual(1, card.Cost, "Cards drawn by the effect should cost 1.");
+            Assert.AreEqual(4, source.Hand.Cards[0].Data.Cost,
+                "The option must change the instance cost, never the shared CardData.");
         }
 
         [Test]

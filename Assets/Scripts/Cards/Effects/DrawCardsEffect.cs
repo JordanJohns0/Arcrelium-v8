@@ -6,11 +6,11 @@ namespace Cards.Effects
     /// <summary>
     /// Draws cards for the source character when played.
     /// Amount can be a constant or derived from a stat.
-    /// The cards actually drawn are recorded on CardContext.DrawnCards so later effects in
-    /// the same chain can modify them (e.g. "Draw a card. Set its cost to 1").
+    /// Card options attached to the STEP (CardEffectStep.CardModifiers, e.g. "set cost to 1")
+    /// are applied to every card it draws.
     /// </summary>
     [CreateAssetMenu(fileName = "DrawCardsEffect", menuName = "Arcrelium/Effects/Draw Cards")]
-    public class DrawCardsEffect : CardEffectSO
+    public class DrawCardsEffect : CardTargetingEffectSO
     {
         public CardValue Amount = CardValue.MakeConstant(1);
 
@@ -19,8 +19,7 @@ namespace Cards.Effects
             List<CardInstance> drawn = context.Source.DrawCards(Amount.Evaluate(context.Source));
             if (drawn == null || drawn.Count == 0) return;
 
-            context.DrawnCards ??= new List<CardInstance>();
-            context.DrawnCards.AddRange(drawn);
+            ApplyCardModifiers(context, drawn);
         }
     }
 }

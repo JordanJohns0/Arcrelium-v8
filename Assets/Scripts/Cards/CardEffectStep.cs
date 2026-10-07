@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace Cards
 {
@@ -23,5 +25,9 @@ namespace Cards
         public TargetType TargetType = TargetType.Self;
         public int Range = 0;
         public CellConstraint CellConstraint = CellConstraint.Any;
+
+        [Tooltip("Options applied to every card this step's effect produces (e.g. set cost to 1). " +
+                 "Attach here, on the card, so the option is visible right in the card's inspector.")]
+        public List<CardModifierSO> CardModifiers = new List<CardModifierSO>();
     }
 }

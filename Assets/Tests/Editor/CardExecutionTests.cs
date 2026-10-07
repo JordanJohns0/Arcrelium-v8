@@ -41,16 +41,18 @@ namespace Tests.Cards
         }
 
         /// <summary>
-        /// Walks a card's effect tree asserting no node is null. Catches missing-script
-        /// ScriptableObject children inside composites, which silently do nothing.
+        /// Walks a card's effect asserting no node is null. Catches missing-script
+        /// ScriptableObject references inside effects (on-hit lists), which silently
+        /// do nothing. Card options are checked separately against the step that carries them.
         /// </summary>
-        private static void AssertEffectBound(CardEffectSO effect, string cardName, int depth)
+        private static void AssertEffectBound(CardEffectSO effect, string cardName)
         {
             Assert.IsNotNull(effect, $"Card '{cardName}' has a null (missing-script) effect node.");
-            if (depth >= 16 || !(effect is CompositeEffect composite)) return;
-            for (int i = 0; i < composite.Effects.Count; i++)
+
+            if (effect is AttackEffect attack && attack.OnHitEffects != null)
             {
-                AssertEffectBound(composite.Effects[i], cardName, depth + 1);
+                foreach (CardEffectSO onHit in attack.OnHitEffects)
+                    Assert.IsNotNull(onHit, $"Card '{cardName}' has a null (missing-script) on-hit effect.");
             }
         }
 
@@ -76,7 +78,12 @@ namespace Tests.Cards
                 foreach (CardEffectStep step in card.Steps)
                 {
                     Assert.IsNotNull(step, $"Card '{card.CardName}' has a null step.");
-                    AssertEffectBound(step.Effect, card.CardName, 0);
+                    AssertEffectBound(step.Effect, card.CardName);
+                    if (step.CardModifiers != null)
+                    {
+                        foreach (CardModifierSO modifier in step.CardModifiers)
+                            Assert.IsNotNull(modifier, $"Card '{card.CardName}' has a null (missing-script) card option.");
+                    }
                 }
                 Assert.GreaterOrEqual(card.Cost, 0, $"Card '{card.CardName}' has negative cost.");
                 Assert.LessOrEqual(card.Cost, 4, $"Card '{card.CardName}' costs {card.Cost} — cost plus the card itself must fit a 5-card hand.");
@@ -295,11 +302,15 @@ namespace Tests.Cards
             {
                 case DrawCardsEffect draw:
                     return draw.Amount.Evaluate(null);
-                case CompositeEffect composite:
+                case AttackEffect attack:
+                    // On-hit effects may draw too (they run when the attack lands).
                     int total = 0;
-                    foreach (CardEffectSO child in composite.Effects)
+                    if (attack.OnHitEffects != null)
                     {
-                        if (child != null) total += TotalDrawAmount(child);
+                        foreach (CardEffectSO onHit in attack.OnHitEffects)
+                        {
+                            if (onHit != null) total += TotalDrawAmount(onHit);
+                        }
                     }
                     return total;
                 default:

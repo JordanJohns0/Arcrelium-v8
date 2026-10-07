@@ -21,9 +21,7 @@ MonoBehaviour:
     TargetType: 0
     Range: 0
     CellConstraint: 0
-  - Effect: {fileID: 11400000, guid: 295a352f040fd8c49afd922636b2469c, type: 2}
-    TargetType: 0
-    Range: 0
-    CellConstraint: 0
+    CardModifiers:
+    - {fileID: 11400000, guid: 236b5192bffcec082f6be7137a042d7b, type: 2}
   OnDrawnEffect: {fileID: 0}
   PlaysOnDiscard: 0

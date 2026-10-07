@@ -42,6 +42,15 @@ namespace Game
             {
                 case AttackEffect attack:
                     damage += attack.Damage.Evaluate(source);
+                    // Follow-up effects on the enemy hit also count (they resolve on a hit).
+                    if (attack.OnHitEffects != null)
+                    {
+                        foreach (CardEffectSO onHit in attack.OnHitEffects)
+                        {
+                            if (onHit != null)
+                                Accumulate(onHit, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
+                        }
+                    }
                     break;
                 case AreaDamageEffect area:
                     damage += area.Damage.Evaluate(source);
@@ -57,14 +66,6 @@ namespace Game
                     break;
                 case SelfDamageEffect selfDamageEffect:
                     selfDamage += selfDamageEffect.Damage.Evaluate(source);
-                    break;
-                case CompositeEffect composite:
-                    if (composite.Effects == null) break;
-                    foreach (CardEffectSO sub in composite.Effects)
-                    {
-                        if (sub != null)
-                            Accumulate(sub, source, ref damage, ref heal, ref block, ref draw, ref selfDamage);
-                    }
                     break;
                 case ConditionalEffect conditional:
                     if (conditional.TrueEffect != null)
