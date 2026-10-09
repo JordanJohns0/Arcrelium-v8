@@ -13,10 +13,21 @@ MonoBehaviour:
   m_Name: Disarming Slash
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
   CardName: Disarming Slash
-  Description: Deal 2 damage
+  Description: Deal 2 damage. Gain 1 block.
   Artwork: {fileID: 0}
-  Cost: 0
+  Cost: 1
   Steps:
   - Effect: {fileID: 11400000, guid: 27dc0be6e10472e4193f1b964ea432e3, type: 2}
     TargetType: 3
     Range: 1
+    CellConstraint: 0
+    CardModifiers: []
+    Condition: {fileID: 0}
+  - Effect: {fileID: 11400000, guid: 62d740655fe03de40b89bfad2d452f8e, type: 2}
+    TargetType: 3
+    Range: 1
+    CellConstraint: 0
+    CardModifiers: []
+    Condition: {fileID: 0}
+  OnDrawnModifiers: []
+  PlaysOnDiscard: 0

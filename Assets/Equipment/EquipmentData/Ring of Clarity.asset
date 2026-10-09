@@ -17,6 +17,6 @@ MonoBehaviour:
   Icon: {fileID: 21300000, guid: 8f24757e8a18405499490210ef06704c, type: 3}
   SlotType: 4
   Cards:
-  - {fileID: 11400000, guid: e27cc2d80690d424691c9f3a39840277, type: 2}
+  - {fileID: 11400000, guid: 834fb79ddbee55e46b0a31b8a28dae86, type: 2}
   Triggers: []
   Enchantments: []

@@ -436,11 +436,22 @@ namespace Tests.Cards
                 case "Painful Sprint":
                     return MoveAndSelfDamage(2, 1);
                 case "Disarming Slash":
-                    return Attack(2);
+                    // "Deal 2 damage. Gain 1 block." Cost 1, draws nothing.
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 4, EnemyHealth = 8 };
                 case "Heavy Slash":
                     return Attack(4);
                 case "Parry":
                     return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 5, EnemyHealth = 10 };
+                case "Clarity":
+                    // "Draw a card. Reduce its cost by 1." Cost 1: hand goes 2 -> 1 (drew one).
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 1 };
+                case "Sense Evil":
+                    // "If there is an adjacent enemy, draw a card." Cost 0, enemy adjacent in the
+                    // fixture: hand goes 1 -> 1 (played one, drew one).
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 1 };
+                case "Sleight of Hand":
+                    // "Draw 2 cards." Cost 1: hand goes 2 -> 2 (played one + cost, drew two).
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 2 };
                 case "Grease":
                 case "Wall of Flames":
                 case "Mould Earth":

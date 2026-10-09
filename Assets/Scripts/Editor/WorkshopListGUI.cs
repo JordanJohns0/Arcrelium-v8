@@ -238,6 +238,20 @@ namespace Cards.EditorTools
             EditorGUILayout.PropertyField(stepEl.FindPropertyRelative("Range"));
             EditorGUILayout.PropertyField(stepEl.FindPropertyRelative("CellConstraint"));
 
+            // Optional condition: when attached, this step only runs if the condition passes and
+            // is silently skipped otherwise (e.g. Parry's "if there is an adjacent enemy").
+            SerializedProperty condition = stepEl.FindPropertyRelative("Condition");
+            if (condition == null)
+            {
+                EditorGUILayout.HelpBox("Condition field is missing from CardEffectStep.", MessageType.Error);
+            }
+            else
+            {
+                EditorGUILayout.PropertyField(condition);
+                if (condition.objectReferenceValue != null)
+                    DrawInlineFields(condition.objectReferenceValue, expanded);
+            }
+
             // Card options attached to this step ("set cost to 1", ...).
             SerializedProperty modifiers = stepEl.FindPropertyRelative("CardModifiers");
             if (modifiers != null)

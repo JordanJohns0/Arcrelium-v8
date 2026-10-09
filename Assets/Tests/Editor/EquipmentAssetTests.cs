@@ -105,7 +105,7 @@ namespace Tests.Equipment
             {
                 Name = "Staff of Fire",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Fireball", "Wall of Flames" },
+                Cards = new[] { "Fireball", "Wall of Flames", "Flame Bolt" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -140,7 +140,7 @@ namespace Tests.Equipment
             {
                 Name = "Tower Shield",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Bulwark", "Fortify", "Fortify", "Shield Bash" },
+                Cards = new[] { "Bulwark", "Fortify", "Fortify", "Shield Bash", "Defend" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -252,7 +252,7 @@ namespace Tests.Equipment
             {
                 Name = "Backpack",
                 Slot = EquipmentSlotType.Trinket,
-                Cards = new[] { "Prepare" },
+                Cards = new[] { "Prepare", "Sleight of Hand" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -266,14 +266,28 @@ namespace Tests.Equipment
             {
                 Name = "Mystic Scroll",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Mystic Bolt" },
+                Cards = new[] { "Mystic Bolt", "Sense Evil" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
             {
                 Name = "Ring of Clarity",
                 Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Clarity" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Ring of Foresight",
+                Slot = EquipmentSlotType.Trinket,
                 Cards = new[] { "Foretell" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Snake Oil Vial",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Snake Oil" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
         };
@@ -387,6 +401,61 @@ namespace Tests.Equipment
                 }
             }
             Assert.IsEmpty(problems, "Equipment assets that drift from their intended spec:\n" + string.Join("\n", problems));
+        }
+
+        /// <summary>
+        /// Mirrors EquipmentManager.GetAllCards (Character.cs builds the deck from it): every
+        /// card the player can end up holding must be reachable through at least one equipment's
+        /// granted-cards list (the Cards field) OR through one of its enchantments'
+        /// CollectGrantedCards. The enemy-only demo card is the sole intended exception. Cards
+        /// are matched by asset identity, not display name, so coverage only counts when the
+        /// exact CardData an equipment grants is the same object.
+        /// </summary>
+        [Test]
+        public void EveryCard_GrantableBySomeEquipment()
+        {
+            var granted = new HashSet<CardData>();
+            foreach (var equipment in AllEquipmentAssets())
+            {
+                if (equipment.Cards != null)
+                {
+                    foreach (CardData card in equipment.Cards)
+                    {
+                        if (card != null) granted.Add(card);
+                    }
+                }
+
+                if (equipment.Enchantments == null) continue;
+                foreach (EquipmentEnchantmentSO enchantment in equipment.Enchantments)
+                {
+                    if (enchantment == null) continue;
+                    var grantedByEnchantment = new List<CardData>();
+                    enchantment.CollectGrantedCards(grantedByEnchantment);
+                    foreach (CardData card in grantedByEnchantment)
+                    {
+                        if (card != null) granted.Add(card);
+                    }
+                }
+            }
+
+            var unobtainable = new List<string>();
+            foreach (string guid in AssetDatabase.FindAssets("t:CardData"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var card = AssetDatabase.LoadAssetAtPath<CardData>(path);
+                if (card == null)
+                {
+                    unobtainable.Add($"<asset fails to load at {path}>");
+                    continue;
+                }
+                if (card.CardName == "Only the enemy has this card") continue;
+                if (!granted.Contains(card))
+                    unobtainable.Add(card.CardName);
+            }
+
+            CollectionAssert.IsEmpty(unobtainable,
+                "Cards no equipment can grant the player (add each to an equipment's Cards or a grant-card enchantment): "
+                + string.Join(", ", unobtainable));
         }
 
         /// <summary>
