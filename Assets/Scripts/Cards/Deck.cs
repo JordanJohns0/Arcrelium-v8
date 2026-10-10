@@ -119,6 +119,20 @@ namespace Cards
         }
 
         /// <summary>
+        /// Removes and returns the top card of the draw pile WITHOUT reshuffling the discard
+        /// pile back in (steal effects: the victim's deck loses the card, so they can never
+        /// get it back). Null when the draw pile is empty.
+        /// </summary>
+        public CardInstance TakeTopCard()
+        {
+            if (drawPile.Count == 0) return null;
+
+            CardInstance card = drawPile[0];
+            drawPile.RemoveAt(0);
+            return card;
+        }
+
+        /// <summary>
         /// Shuffles a specific card into the draw pile. If the deck hasn't been shuffled yet,
         /// the card is added to the starting cards instead (it will appear on the next Shuffle).
         /// </summary>

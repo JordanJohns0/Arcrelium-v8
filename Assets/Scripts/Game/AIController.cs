@@ -107,6 +107,8 @@ namespace Game
             foreach (CardInstance card in hand)
             {
                 if (card == null || card.Data == null || card.Data.Steps == null || card.Data.Steps.Count == 0) continue;
+                // A "can't move" status on the AI roots it in place even when its hand has moves.
+                if (card.Data.IsMove && !character.CanMoveThisTurn) continue;
                 if (card.Cost > hand.Count - 1) continue;
                 List<CardInstance> cost = PickCostCards(hand, card);
 
@@ -310,6 +312,9 @@ namespace Game
                     case TargetType.AllyCharacter when !occupant.IsAllyOf(source):
                         continue;
                 }
+
+                // Statuses such as "this enemy cannot target you" take the victim out of reach.
+                if (!source.CanTarget(occupant)) continue;
 
                 yield return occupant;
             }

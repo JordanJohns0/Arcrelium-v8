@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Boots of Flame
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
-  EquipmentName: New Equipment
-  Description: 
+  EquipmentName: Boots of Flame
+  Description: When you move out of a cell, the cell you left catches fire.
   Icon: {fileID: 0}
-  SlotType: 0
+  SlotType: 2
   Cards: []
-  Triggers: []
+  Triggers:
+  - Timing: 11
+    Effect: {fileID: 11400000, guid: d6e7f8a9b0c1a2b3c4d5e6f712345678, type: 2}
+    OnlyOnWearersTurn: 0
   Enchantments: []

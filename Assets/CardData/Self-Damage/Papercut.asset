@@ -12,10 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
   m_Name: Papercut
   m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
-  CardName: New Card
-  Description: 
+  CardName: Papercut
+  Description: You take 1 damage.
   Artwork: {fileID: 0}
   Cost: 0
-  Steps: []
+  Steps:
+  - Effect: {fileID: 11400000, guid: 3e30c5bafacd4d669fa251031751db25, type: 2}
+    TargetType: 0
+    Range: 0
+    CellConstraint: 0
+    CardModifiers: []
+    Condition: {fileID: 0}
   OnDrawnModifiers: []
   PlaysOnDiscard: 0

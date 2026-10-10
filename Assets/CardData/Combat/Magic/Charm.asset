@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df7b604374ce27d48ae5401fee449acd, type: 3}
+  m_Name: Charm
+  m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
+  CardName: Charm
+  Description: An enemy can't target you on their next turn.
+  Artwork: {fileID: 0}
+  Cost: 1
+  Steps:
+  - Effect: {fileID: 11400000, guid: d5e6f7a8b9c0a1b2c3d4e5f612345678, type: 2}
+    TargetType: 3
+    Range: 2
+    CellConstraint: 0
+    CardModifiers: []
+    Condition: {fileID: 0}
+  OnDrawnModifiers: []
+  PlaysOnDiscard: 0

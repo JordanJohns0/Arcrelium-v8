@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Tome of Knowledge
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
-  EquipmentName: New Equipment
-  Description: 
+  EquipmentName: Tome of Knowledge
+  Description: At the start of your turn, draw a card.
   Icon: {fileID: 0}
-  SlotType: 0
-  Cards: []
+  SlotType: 3
+  Cards:
+  - {fileID: 11400000, guid: 8f2c3888ea1c547499b09259a67b309a, type: 2}
   Triggers: []
   Enchantments: []

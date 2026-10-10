@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: Soul-Sight Magnifying Glass
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Soul-Sight Magnifying Glass
-  Description: 
+  Description: Grants Sense Evil and the Steal card, letting the wearer read and
+    swipe a foe's deck.
   Icon: {fileID: 21300000, guid: f267240923426124fb90aca205a5fad5, type: 3}
   SlotType: 4
-  Cards: []
+  Cards:
+  - {fileID: 11400000, guid: 027cb306187c0f6428f6361e4736dce2, type: 2}
   Triggers: []
   Enchantments: []

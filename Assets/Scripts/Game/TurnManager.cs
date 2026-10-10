@@ -80,6 +80,7 @@ namespace Game
         private void BeginTurn()
         {
             CurrentPhase = TurnPhase.Act;
+            ActiveCharacter?.TickStatusesAtTurnStart();
             ActiveCharacter?.DrawToHandLimit();
             OnTurnStarted?.Invoke(ActiveCharacter);
         }
@@ -146,6 +147,7 @@ namespace Game
             CurrentPhase = TurnPhase.End;
             ActiveCharacter?.DiscardHand();
             OnTurnEnded?.Invoke(ActiveCharacter);
+            ActiveCharacter?.TickStatusesAtTurnEnd();
             yield return new WaitForSeconds(turnEndDelay);
 
             AdvanceToNextCharacter();

@@ -64,6 +64,10 @@ namespace Game
                 case DrawCardsEffect drawEffect:
                     draw += drawEffect.Amount.Evaluate(source);
                     break;
+                case StealTopCardEffect:
+                    // Stealing the top card of the victim's deck puts one card in hand.
+                    draw += 1;
+                    break;
                 case SelfDamageEffect selfDamageEffect:
                     selfDamage += selfDamageEffect.Damage.Evaluate(source);
                     break;
@@ -74,6 +78,12 @@ namespace Game
                 case ApplyModifiersToHandEffect:
                 case PushOccupantsEffect:
                 case SpawnRockEffect:
+                // Kill value depends on the live target's health and is scored in Score();
+                // next-turn debuffs buy control the AI doesn't value in raw resources.
+                case KillTargetEffect:
+                case ReduceDrawNextTurnEffect:
+                case BlockMovementNextTurnEffect:
+                case BlockTargetingNextTurnEffect:
                     break;
             }
         }
@@ -125,6 +135,17 @@ namespace Game
                     score += LethalBonus;
                 else if (target.Stats.CurrentHealth <= NearDeathThreshold)
                     score += WeakTargetBonus;
+            }
+
+            // Execution effects ("kill an enemy with X or less health") only do something
+            // when they actually land the kill: value the removed hit points + lethal bonus,
+            // and nothing at all when the target is out of kill range.
+            foreach (CardEffectStep step in card.Steps)
+            {
+                if (step?.Effect is not KillTargetEffect kill) continue;
+                if (target == null || target.Stats == null || !target.Stats.IsAlive) continue;
+                if (target.Stats.CurrentHealth > kill.Threshold.Evaluate(source)) continue;
+                score += target.Stats.CurrentHealth * DamagePerHp + LethalBonus;
             }
 
             if (heal > 0 && source.Stats.CurrentHealth < source.Stats.MaxHealth)

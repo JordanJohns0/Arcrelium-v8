@@ -10,13 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
-  m_Name: Snake Oil Vial
+  m_Name: Thieves Tools
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
-  EquipmentName: Snake Oil Vial
-  Description: A tainted flask that grants Snake Oil cards.
+  EquipmentName: New Equipment
+  Description: 
   Icon: {fileID: 0}
-  SlotType: 4
-  Cards:
-  - {fileID: 11400000, guid: 72346e819051ca547b19a905858e520e, type: 2}
+  SlotType: 0
+  Cards: []
   Triggers: []
   Enchantments: []

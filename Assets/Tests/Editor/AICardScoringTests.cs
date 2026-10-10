@@ -301,7 +301,12 @@ namespace Tests.AI
                 typeof(TilePatternEffect),
                 typeof(ApplyModifiersToHandEffect),
                 typeof(PushOccupantsEffect),
-                typeof(SpawnRockEffect)
+                typeof(SpawnRockEffect),
+                typeof(StealTopCardEffect),
+                typeof(KillTargetEffect),
+                typeof(ReduceDrawNextTurnEffect),
+                typeof(BlockMovementNextTurnEffect),
+                typeof(BlockTargetingNextTurnEffect)
             };
 
             var unhandled = new List<string>();

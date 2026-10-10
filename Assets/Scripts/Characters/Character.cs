@@ -31,6 +31,9 @@ namespace Characters
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
 
+        /// <summary>Active temporary conditions (debuffs) on this character.</summary>
+        public IReadOnlyList<CharacterStatus> Statuses => statuses;
+
         /// <summary>The cell the character was on before the current one; used to infer travel
         /// direction (e.g. which way to slide when entering an oil tile).</summary>
         public HexCell LastCell { get; private set; }
@@ -64,6 +67,9 @@ namespace Characters
 
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
+
+        /// <summary>Fired after the character leaves a cell (the cell just vacated is passed).</summary>
+        public event Action<HexCell> OnLeftCell;
         public event Action<int> OnDamageTaken;
         public event Action<int, Character> OnDamageDealt;
         public event Action<int> OnBlockGained;
@@ -82,6 +88,7 @@ namespace Characters
         private const float ArrivalThreshold = 0.05f;
         private readonly List<Renderer> renderers = new List<Renderer>();
         private readonly List<(Renderer renderer, Color originalColor, Color originalBaseColor)> originalColors = new List<(Renderer, Color, Color)>();
+        private readonly List<CharacterStatus> statuses = new List<CharacterStatus>();
         private static readonly int colorID = Shader.PropertyToID("_Color");
         private static readonly int baseColorID = Shader.PropertyToID("_BaseColor");
 
@@ -164,6 +171,8 @@ namespace Characters
             CurrentCell = cell;
             cell.SetOccupant(this);
             OnMovedToCell?.Invoke(cell);
+            if (LastCell != null)
+                OnLeftCell?.Invoke(LastCell);
         }
 
         /// <summary>
@@ -387,10 +396,71 @@ namespace Characters
             }
         }
 
-        /// <summary>Draws cards until the hand reaches the character's max hand size.</summary>
+        /// <summary>Draws cards until the hand reaches the character's max hand size, adjusted
+        /// by any active draw-modifying statuses.</summary>
         public void DrawToHandLimit()
         {
-            DrawCards(maxHandSize);
+            DrawCards(GetModifiedDrawCount(maxHandSize));
+        }
+
+        // ------------------------------------------------------------ statuses
+
+        /// <summary>Attaches a status. It lies dormant until this character's next turn begins.</summary>
+        public void AddStatus(CharacterStatus status)
+        {
+            if (status != null)
+                statuses.Add(status);
+        }
+
+        /// <summary>Called at the start of this character's turn so statuses become active.</summary>
+        public void TickStatusesAtTurnStart()
+        {
+            foreach (CharacterStatus status in statuses)
+                status.OnTurnStarted();
+        }
+
+        /// <summary>Called at the end of this character's turn; expends/removes spent statuses.</summary>
+        public void TickStatusesAtTurnEnd()
+        {
+            foreach (CharacterStatus status in statuses)
+                status.OnTurnEnded();
+            statuses.RemoveAll(status => status.Expired);
+        }
+
+        /// <summary>The hand-size draw count after active statuses are applied.</summary>
+        public int GetModifiedDrawCount(int baseCount)
+        {
+            foreach (CharacterStatus status in statuses)
+            {
+                if (status.ActiveThisTurn)
+                    baseCount = status.ModifyDrawCount(baseCount);
+            }
+            return Mathf.Max(0, baseCount);
+        }
+
+        /// <summary>Whether this character is allowed to move during their current turn.</summary>
+        public bool CanMoveThisTurn
+        {
+            get
+            {
+                foreach (CharacterStatus status in statuses)
+                {
+                    if (status.ActiveThisTurn && !status.AllowsMovement)
+                        return false;
+                }
+                return true;
+            }
+        }
+
+        /// <summary>Whether this character is allowed to target <paramref name="target"/> this turn.</summary>
+        public bool CanTarget(Character target)
+        {
+            foreach (CharacterStatus status in statuses)
+            {
+                if (status.ActiveThisTurn && !status.AllowsTargeting(target))
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>Moves every card in the hand to the deck's discard pile.</summary>
@@ -420,6 +490,20 @@ namespace Characters
             stats.ApplyDamage(amount);
             if (dealer != null) dealer.OnDamageDealt?.Invoke(amount, this);
             OnDamageTaken?.Invoke(amount);
+            if (!stats.IsAlive)
+            {
+                Die();
+            }
+        }
+
+        /// <summary>
+        /// Instantly defeats the character, bypassing any remaining block (armor does not
+        /// stop an execution). Used by execution-style effects ("kill an enemy with X or
+        /// less health") that ignore block.
+        /// </summary>
+        public void Kill()
+        {
+            stats.Kill();
             if (!stats.IsAlive)
             {
                 Die();
