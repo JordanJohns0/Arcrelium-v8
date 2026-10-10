@@ -12,10 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Thieves Tools
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
-  EquipmentName: New Equipment
+  EquipmentName: Thieve's Tools
   Description: 
-  Icon: {fileID: 0}
-  SlotType: 0
-  Cards: []
+  Icon: {fileID: 21300000, guid: 7633ac7b65887d44aad179af87d1a4b3, type: 3}
+  SlotType: 3
+  Cards:
+  - {fileID: 11400000, guid: c1d2e3f4a5b60718293a4b5c6d7e8f91, type: 2}
+  - {fileID: 11400000, guid: f350f8c420e937547bab7a27615a1992, type: 2}
   Triggers: []
   Enchantments: []

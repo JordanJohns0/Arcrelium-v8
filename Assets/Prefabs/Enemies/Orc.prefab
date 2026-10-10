@@ -168,8 +168,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: stats.Block
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: stats.MaxHealth
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: stats.CharacterName

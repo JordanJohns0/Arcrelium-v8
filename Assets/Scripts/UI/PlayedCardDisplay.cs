@@ -58,6 +58,7 @@ namespace UI
         private Canvas canvas;
         private readonly Queue<DisplayRequest> queue = new Queue<DisplayRequest>();
         private Coroutine playRoutine;
+        private GameObject resolvedCardPrefab;
 
         /// <summary>Each played card stays on screen at least this long, in seconds.</summary>
         internal const float MinVisibleSeconds = 1f;
@@ -119,6 +120,24 @@ namespace UI
         {
             EnsureInstance();
             instance.cardPrefab = prefab != null ? prefab.gameObject : null;
+        }
+
+        /// <summary>
+        /// The prefab used to render played cards. Prefers the explicitly injected prefab
+        /// (EquipmentUI hands it the deck-window preview) and otherwise borrows the hand's card
+        /// prefab, which is always wired in the scene. Without this the popup fell back to a
+        /// name-only card whenever no deck UI had opened yet — which is why enemy plays showed
+        /// a name instead of the real card "sometimes".
+        /// </summary>
+        private GameObject ResolveCardPrefab()
+        {
+            if (cardPrefab != null) return cardPrefab;
+            if (resolvedCardPrefab != null) return resolvedCardPrefab;
+
+            HandView hand = FindAnyObjectByType<HandView>(FindObjectsInactive.Include);
+            if (hand != null && hand.ViewPrefab != null)
+                resolvedCardPrefab = hand.ViewPrefab.gameObject;
+            return resolvedCardPrefab;
         }
 
         private static void EnsureInstance()
@@ -203,7 +222,8 @@ namespace UI
             GameObject card;
             if (data != null)
             {
-                card = cardPrefab != null ? Instantiate(cardPrefab, canvas.transform) : BuildFallbackCard(name);
+                GameObject prefab = ResolveCardPrefab();
+                card = prefab != null ? Instantiate(prefab, canvas.transform) : BuildFallbackCard(name);
                 card.name = "PlayedCard";
 
                 var view = card.GetComponent<CardView>();

@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
   m_Name: Steel Net
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
-  EquipmentName: New Equipment
+  EquipmentName: Steel Net
   Description: 
-  Icon: {fileID: 0}
-  SlotType: 0
-  Cards: []
+  Icon: {fileID: 21300000, guid: 844e5804e353b34458b507ccdcc92921, type: 3}
+  SlotType: 3
+  Cards:
+  - {fileID: 11400000, guid: c4d5e6f7a8b90a1b2c3d4e5f6ffa1234, type: 2}
   Triggers: []
   Enchantments: []

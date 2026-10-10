@@ -84,7 +84,7 @@ namespace Characters
         // Walking travel pace (world units/sec). Deliberately slow so the walk stance reads clearly
         // while the transform lerp carries the character cell-to-cell. Chosen so a ~1.3s walk gait
         // cycle lands on roughly one board space, keeping the legs in step with the travel.
-        private const float WalkPace = 2f;
+        private const float WalkPace = 3f;
         private const float ArrivalThreshold = 0.05f;
         private readonly List<Renderer> renderers = new List<Renderer>();
         private readonly List<(Renderer renderer, Color originalColor, Color originalBaseColor)> originalColors = new List<(Renderer, Color, Color)>();

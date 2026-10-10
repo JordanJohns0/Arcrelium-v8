@@ -4,6 +4,7 @@ using UnityEngine;
 using HexGrid;
 using Characters;
 using Cards;
+using Enemies;
 using Equipment;
 using UI;
 using Steamworks;
@@ -40,6 +41,12 @@ namespace Game
         [SerializeField] private UnityEngine.InputSystem.InputActionAsset inputActions;
         [SerializeField] [Min(1)] private int baseEnemyCount = 2;
         [SerializeField] [Min(0)] private int extraEnemiesPerLevel = 1;
+
+        [Header("Procedural Enemies")]
+        [SerializeField] private List<EnemyGroup> enemyGroups = new List<EnemyGroup>();
+        [SerializeField] [Min(0)] private int enemyBaseDifficulty = 40;
+        [SerializeField] [Min(0)] private int enemyDifficultyPerLevel = 20;
+
         [SerializeField] private int allySpawnQ = 0;
         [SerializeField] private int allySpawnR = -2;
 
@@ -427,6 +434,17 @@ namespace Game
                 return;
             }
 
+            // Procedural enemies take priority when any group is set up in the inspector.
+            // PvP never reaches here, so the RNG call below only happens on the decision
+            // maker (host / single player), keeping clients in sync.
+            if (TrySpawnProceduralEnemyGroup())
+            {
+                turnManager.SetTurnOrder(new List<Character>(activeCharacters));
+                GameState.MatchLoadouts.Clear();
+                turnManager.StartMatch();
+                return;
+            }
+
             int enemyCount = baseEnemyCount + (GameState.CurrentLevel - 1) * extraEnemiesPerLevel;
             var spawnCells = GetValidSpawnCells(enemyCount);
             int enemyHp = 3;
@@ -445,6 +463,53 @@ namespace Game
             turnManager.SetTurnOrder(new List<Character>(activeCharacters));
             GameState.MatchLoadouts.Clear();
             turnManager.StartMatch();
+        }
+
+        /// <summary>
+        /// Picks a random configured group, derives the encounter budget from the current level and
+        /// spawns the generated composition. Returns false (falling back to the legacy count formula)
+        /// when no usable groups are configured.
+        /// </summary>
+        private bool TrySpawnProceduralEnemyGroup()
+        {
+            var pool = new List<EnemyGroup>();
+            for (int i = 0; i < enemyGroups.Count; i++)
+            {
+                EnemyGroup group = enemyGroups[i];
+                if (group == null || group.MemberTypes == null || group.MemberTypes.Count == 0) continue;
+                pool.Add(group);
+            }
+
+            if (pool.Count == 0) return false;
+
+            EnemyGroup selected = pool[Random.Range(0, pool.Count)];
+            int budget = EnemySpawnGenerator.BudgetForLevel(enemyBaseDifficulty, enemyDifficultyPerLevel, GameState.CurrentLevel);
+            EncounterPlan plan = EnemySpawnGenerator.Generate(selected, budget, new System.Random());
+
+            var spawnCells = GetValidSpawnCells(plan.TotalCount);
+            int index = 0;
+            foreach (CountedEnemy counted in plan.Enemies)
+            {
+                Character prefab = counted.Type.characterPrefab != null ? counted.Type.characterPrefab : enemyCharacterPrefab;
+                string displayName = string.IsNullOrEmpty(counted.Type.EnemyName) ? counted.Type.name : counted.Type.EnemyName;
+                for (int j = 0; j < counted.Count; j++)
+                {
+                    if (index >= spawnCells.Count) break;
+
+                    Character enemy = Instantiate(prefab);
+                    enemy.Initialize(GameState.EnemyOwnerPlayerId + index, spawnCells[index], teamId: 1);
+                    enemy.SetName(displayName);
+                    enemy.SetNameColor(EnemyColor);
+                    enemy.OnDefeated += HandleCharacterDefeated;
+                    activeCharacters.Add(enemy);
+                    index++;
+                }
+            }
+
+            if (plan.Overshot)
+                Debug.LogWarning($"[GameManager] Enemy group '{selected.GroupName}' required a minimum cost of {plan.TotalCost} over the difficulty budget of {budget}; spawning the minima anyway.", selected);
+
+            return true;
         }
 
         private void SetupMultiplayerPlayers()

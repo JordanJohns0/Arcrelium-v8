@@ -14,15 +14,15 @@ namespace Game
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionResolver actionResolver;
         [SerializeField] private HexGridManager grid;
-        [SerializeField] private float aiDelay = 0.4f;
+        [SerializeField] private float aiDelay = 0.27f;
 
         /// <summary>
         /// Minimum real seconds between AI card plays so everyone can follow each
         /// resolution. Human players are never throttled by this.
         /// </summary>
-        internal const float MinPlayIntervalSeconds = 1f;
+        internal const float MinPlayIntervalSeconds = 0.67f;
 
-        [SerializeField] private float aiPlayInterval = 1f;
+        [SerializeField] private float aiPlayInterval = 0.67f;
 
         private struct Candidate
         {

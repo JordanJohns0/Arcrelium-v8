@@ -2194,8 +2194,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.TurnManager
   turnOrder: []
   actionResolver: {fileID: 531838724}
-  actionDelay: 0.5
-  turnEndDelay: 0.3
+  actionDelay: 0.33
+  turnEndDelay: 0.2
 --- !u!114 &531838724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2230,6 +2230,10 @@ MonoBehaviour:
   inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   baseEnemyCount: 2
   extraEnemiesPerLevel: 1
+  enemyGroups:
+  - {fileID: 11400000, guid: d388ce3ecb1a3b64589b078d0ea7258f, type: 2}
+  enemyBaseDifficulty: 40
+  enemyDifficultyPerLevel: 20
   allySpawnQ: 0
   allySpawnR: 0
   spawns: []
@@ -2263,8 +2267,8 @@ MonoBehaviour:
   turnManager: {fileID: 531838723}
   actionResolver: {fileID: 531838724}
   grid: {fileID: 396940646}
-  aiDelay: 0.4
-  aiPlayInterval: 1
+  aiDelay: 0.27
+  aiPlayInterval: 0.67
 --- !u!1 &540449548
 GameObject:
   m_ObjectHideFlags: 0
@@ -4429,6 +4433,7 @@ MonoBehaviour:
   pathLineHeight: 0.4
   pathLineWidth: 0.2
   pathLineColor: {r: 1, g: 1, b: 1, a: 0.9}
+  hoverPathColor: {r: 0.6, g: 1, b: 0.6, a: 0.6}
   pathLineMaterial: {fileID: 2100000, guid: 2b42e0759fb38c947a22e859e76fbb88, type: 2}
 --- !u!4 &1364112889
 Transform:

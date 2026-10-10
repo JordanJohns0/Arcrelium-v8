@@ -34,6 +34,10 @@ namespace UI
 
         public event System.Action<CardInstance> OnCardClicked;
 
+        /// <summary>The CardView prefab spawned for hand cards. Always wired in-scene, so the
+        /// played-card popup can fall back to it before any deck UI injects its own preview prefab.</summary>
+        internal CardView ViewPrefab => cardViewPrefab;
+
         private void OnEnable()
         {
             Character.OnCharacterCreated += HandleCharacterCreated;

@@ -30,8 +30,8 @@ namespace Game
         [SerializeField] private ActionResolver actionResolver;
 
         [Header("Action Timing")]
-        [SerializeField] private float actionDelay = 0.5f;
-        [SerializeField] private float turnEndDelay = 0.3f;
+        [SerializeField] private float actionDelay = 0.33f;
+        [SerializeField] private float turnEndDelay = 0.2f;
 
         private int currentIndex = 0;
         private Coroutine turnCoroutine;
