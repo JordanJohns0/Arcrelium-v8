@@ -85,7 +85,6 @@ namespace Game
         internal static Func<ulong, int> PlayerIdLookup;
 
         private LoadoutScreen loadoutScreen;
-        private ShopScreen shopScreen;
         private bool victoryAchieved;
         private bool defeatAchieved;
         private bool matchStarted;
@@ -255,13 +254,13 @@ namespace Game
             Networking.NetworkManager.Instance.SendRequestInitialState();
         }
 
-        private void ShowLoadoutScreen()
+        private void ShowLoadoutScreen(bool showShop = false)
         {
             var lobby = LobbyManager.Instance.CurrentLobby;
             ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
 
             loadoutScreen = LoadoutScreen.Create();
-            loadoutScreen.Show(null, OnLoadoutConfirmed);
+            loadoutScreen.Show(null, OnLoadoutConfirmed, showShop);
         }
 
         private static int CountExpectedLoadouts(Lobby lobby)
@@ -974,22 +973,9 @@ namespace Game
                 PlayerInventoryProvider.Save(PlayerInventoryProvider.LocalPlayerKey, inventory);
             }
 
-            ShowShopScreen();
-        }
-
-        /// <summary>
-        /// Opens the end-of-level shop. Once the player continues, the loadout screen is
-        /// shown so they can equip whatever they bought before the next level starts.
-        /// </summary>
-        private void ShowShopScreen()
-        {
-            shopScreen = ShopScreen.Show(OnShopClosed);
-        }
-
-        private void OnShopClosed()
-        {
-            shopScreen = null;
-            ShowLoadoutScreen();
+            // The shop is part of the loadout screen now: open it straight away with the
+            // Special pane filled, so the player buys, equips, and confirms in one place.
+            ShowLoadoutScreen(showShop: true);
         }
 
         /// <summary>

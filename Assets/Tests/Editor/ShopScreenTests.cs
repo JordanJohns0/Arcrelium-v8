@@ -3,7 +3,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Cards;
 using Equipment;
 using UI;
 
@@ -23,6 +22,10 @@ namespace Tests.UI
             inventory = Track(ScriptableObject.CreateInstance<PlayerInventory>()) as PlayerInventory;
             ShopScreen.LocalInventory = () => inventory;
             ShopScreen.PersistInventory = _ => savedCount++;
+            // Pin the offer sources to explicit (empty) pools so no real Resources asset
+            // leaks into the tests; MakePool then overrides the shop pool per test.
+            ShopPool.SetMain(Track(ScriptableObject.CreateInstance<ShopPool>()) as ShopPool);
+            RewardPool.SetMain(Track(ScriptableObject.CreateInstance<RewardPool>()) as RewardPool);
         }
 
         [TearDown]
@@ -30,7 +33,7 @@ namespace Tests.UI
         {
             foreach (var screen in Object.FindObjectsByType<ShopScreen>(FindObjectsSortMode.None))
             {
-                if (screen != null) Object.DestroyImmediate(screen.gameObject);
+                if (screen != null) Object.DestroyImmediate(screen);
             }
             ShopScreen.LocalInventory = PlayerInventoryProvider.GetLocal;
             ShopScreen.PersistInventory = inv =>
@@ -68,92 +71,102 @@ namespace Tests.UI
 
         private static ShopEntry Entry(EquipmentData item, int price) => new ShopEntry { item = item, price = price };
 
-        private static GameObject CanvasRoot()
+        /// <summary>The pane the shop fills, mirroring the scene's "Special" column.</summary>
+        private RectTransform MakeOffersPanel()
         {
-            var screen = Object.FindAnyObjectByType<ShopScreen>();
-            if (screen == null) return null;
-            Transform canvas = screen.transform.Find("ShopCanvas");
-            return canvas != null && canvas.gameObject.activeSelf ? canvas.gameObject : null;
+            var go = Track(new GameObject("Special", typeof(RectTransform))) as GameObject;
+            return go.GetComponent<RectTransform>();
         }
 
-        private static TMP_Text FindGoldLabel(GameObject canvas)
+        private TMP_Text MakeGoldLabel()
         {
-            foreach (var text in canvas.GetComponentsInChildren<TMP_Text>())
-            {
-                if (text.text.StartsWith("Gold:")) return text;
-            }
-            return null;
+            var go = Track(new GameObject("Gold Number Display", typeof(TextMeshProUGUI))) as GameObject;
+            return go.GetComponent<TMP_Text>();
         }
 
-        private static Button FindButton(GameObject canvas, string name)
+        /// <summary>A tile shaped like the shared Inventory Slot prefab (icon + script).</summary>
+        private GameObject MakeTilePrefab()
         {
-            foreach (var button in canvas.GetComponentsInChildren<Button>())
-            {
-                if (button.gameObject.name == name) return button;
-            }
-            return null;
+            return Track(new GameObject("Inventory Slot", typeof(RectTransform), typeof(Image), typeof(InventorySlotUI))) as GameObject;
         }
+
+        private static ShopScreen Bind(RectTransform panel, TMP_Text gold, GameObject prefab)
+            => ShopScreen.Attach(panel, prefab, gold);
+
+        private static Button BuyButton(RectTransform panel)
+            => panel.GetChild(0).GetComponentInChildren<Button>();
 
         [Test]
-        public void Show_CreatesShopWithGoldAndOffers()
+        public void Attach_Show_PopulatesOffersAndGoldInPanel()
         {
             inventory.AddGold(50);
             MakePool(Entry(MakeEquipment("Sword"), 10));
+            var panel = MakeOffersPanel();
+            var gold = MakeGoldLabel();
+            var prefab = MakeTilePrefab();
 
-            ShopScreen.Show(() => { });
+            ShopScreen screen = Bind(panel, gold, prefab);
+            screen.Show();
 
-            GameObject canvas = CanvasRoot();
-            Assert.IsNotNull(canvas, "Show must create the shop canvas.");
-            Assert.IsNotNull(FindGoldLabel(canvas), "Shop must display the player's gold.");
-            Assert.AreEqual("Gold: 50", FindGoldLabel(canvas).text);
-            Assert.IsNotNull(FindButton(canvas, "BuyButton"), "Shop must offer at least one item to buy.");
-            Assert.IsNotNull(FindButton(canvas, "ContinueButton"), "Shop must let the player continue.");
+            Assert.AreEqual("50", gold.text, "Show must write the player's gold to the display.");
+            Assert.AreEqual(1, panel.childCount, "Shop must spawn one tile per offer.");
+            var slot = panel.GetChild(0).GetComponent<InventorySlotUI>();
+            Assert.IsNotNull(slot, "Tiles must reuse the Inventory Slot prefab.");
+            Assert.IsFalse(slot.Interactable, "Shop tiles must not be draggable.");
+            Assert.AreEqual("Sword", slot.EquipmentData.EquipmentName, "Tile must show the offered item.");
         }
 
         [Test]
-        public void Buy_Affordable_UnlocksItemAndDeductsGold()
+        public void BuyTile_Affordable_UnlocksDeductsAndRefreshes()
         {
             inventory.AddGold(50);
             var sword = MakeEquipment("Sword");
             MakePool(Entry(sword, 10));
+            var panel = MakeOffersPanel();
+            var gold = MakeGoldLabel();
+            var prefab = MakeTilePrefab();
 
-            ShopScreen.Show(() => { });
-            GameObject canvas = CanvasRoot();
-            FindButton(canvas, "BuyButton").onClick.Invoke();
+            Bind(panel, gold, prefab).Show();
+
+            BuyButton(panel).onClick.Invoke();
 
             Assert.IsTrue(inventory.IsUnlocked(sword), "Buying must unlock the item.");
             Assert.AreEqual(40, inventory.Gold, "Buying must deduct the item's price.");
             Assert.AreEqual(1, savedCount, "Buying must persist the inventory.");
+            Assert.AreEqual("40", gold.text, "Gold display must update after a purchase.");
+            Assert.AreEqual(0, panel.childCount, "An owned offer must disappear from the shop.");
         }
 
         [Test]
-        public void Buy_TooExpensive_DoesNothing()
+        public void BuyTile_TooExpensive_DoesNothing()
         {
             inventory.AddGold(5);
             var sword = MakeEquipment("Sword");
             MakePool(Entry(sword, 10));
+            var panel = MakeOffersPanel();
+            var gold = MakeGoldLabel();
+            var prefab = MakeTilePrefab();
 
-            ShopScreen.Show(() => { });
-            GameObject canvas = CanvasRoot();
-            FindButton(canvas, "BuyButton").onClick.Invoke();
+            Bind(panel, gold, prefab).Show();
+
+            BuyButton(panel).onClick.Invoke();
 
             Assert.IsFalse(inventory.IsUnlocked(sword), "An unaffordable item must not be unlocked.");
             Assert.AreEqual(5, inventory.Gold, "An unaffordable purchase must not change the balance.");
             Assert.AreEqual(0, savedCount, "A failed purchase must not persist.");
+            Assert.AreEqual(1, panel.childCount, "An unaffordable offer must remain for another try.");
         }
 
         [Test]
-        public void Continue_ClosesShopAndInvokesCallback()
+        public void NoOffers_LeavesPanelEmpty()
         {
-            bool closed = false;
-            MakePool(Entry(MakeEquipment("Sword"), 10));
+            var panel = MakeOffersPanel();
+            var gold = MakeGoldLabel();
+            var prefab = MakeTilePrefab();
 
-            ShopScreen.Show(() => closed = true);
-            GameObject canvas = CanvasRoot();
-            FindButton(canvas, "ContinueButton").onClick.Invoke();
+            Bind(panel, gold, prefab).Show();
 
-            Assert.IsTrue(closed, "Continue must run the close callback.");
-            Assert.IsNull(Object.FindAnyObjectByType<ShopScreen>(), "Continue must destroy the shop overlay.");
+            Assert.AreEqual(0, panel.childCount, "An empty pool must show no shop tiles.");
         }
     }
 }

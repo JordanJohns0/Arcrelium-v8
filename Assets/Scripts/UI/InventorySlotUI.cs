@@ -20,6 +20,8 @@ namespace UI
         [SerializeField] private float dragAlpha = 0.6f;
         [Tooltip("Shared Card prefab for hover previews. Storage point only — EquipmentUI hands this to the deck list; slots themselves never render previews.")]
         [SerializeField] private CardView cardPreviewPrefab;
+        [Tooltip("When false the slot ignores input entirely (used for shop offer tiles).")]
+        [SerializeField] private bool interactable = true;
 
         private Equipment.EquipmentData equipmentData;
         private Transform originalParent;
@@ -31,6 +33,13 @@ namespace UI
 
         /// <summary>Shared Card preview prefab (storage point for EquipmentUI → DeckListUI).</summary>
         public CardView CardPreviewPrefab => cardPreviewPrefab;
+
+        /// <summary>When false the slot ignores drag and click input (shop tiles).</summary>
+        public bool Interactable
+        {
+            get => interactable;
+            set => interactable = value;
+        }
 
         public void SetVisible(bool visible)
         {
@@ -66,7 +75,7 @@ namespace UI
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (equipmentData == null) return;
+            if (!interactable || equipmentData == null) return;
 
             Tooltip.Hide();
             originalParent = transform.parent;
@@ -89,13 +98,13 @@ namespace UI
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (equipmentData == null) return;
+            if (!interactable || equipmentData == null) return;
             transform.position = eventData.position;
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            if (equipmentData == null) return;
+            if (!interactable || equipmentData == null) return;
 
             transform.SetParent(originalParent);
             transform.localPosition = Vector3.zero;
@@ -115,6 +124,7 @@ namespace UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (!interactable) return;
             if (eventData.button != PointerEventData.InputButton.Right) return;
             if (equipmentData == null) return;
             Tooltip.Show(equipmentData, eventData.position);

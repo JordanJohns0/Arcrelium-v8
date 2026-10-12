@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using Equipment;
 using Characters;
 using Cards;
@@ -37,22 +39,39 @@ namespace UI
         [SerializeField] private Transform inventoryPanel;
         [SerializeField] private InventorySlotUI inventorySlotPrefab;
 
-        [Header("Deck List")]
-        [Tooltip("Width of the deck list column shown to the left of the equipment slots.")]
-        [SerializeField] private float deckListWidth = 360f;
-        [Tooltip("Width of the equipment slots column. Used to size the deck list column.")]
-        [SerializeField] private float equipmentSlotsWidth = 600f;
-        [Tooltip("Gap between the deck list column and the equipment columns.")]
-        [SerializeField] private float deckListGap = 12f;
-        [Tooltip("Right margin kept for the right-edge columns when narrowing them.")]
-        [SerializeField] private float rightPanelRightMargin = 62f;
-        [Tooltip("Minimum width the right-edge columns can shrink to.")]
-        [SerializeField] private float rightPanelMinWidth = 300f;
+        [Header("Tabs")]
+        [Tooltip("Page shown when the UI opens. Must match a tab's page name.")]
+        [SerializeField] private string defaultPage = "Inventory Slots";
 
         private readonly List<InventorySlotUI> spawnedInventorySlots = new List<InventorySlotUI>();
+        private readonly List<TabButton> tabButtons = new List<TabButton>();
         private EquipmentManager cachedEquipmentManager;
         private EquipmentSlotType? currentFilter;
         private DeckListUI deckList;
+        private TMP_Text cachedGoldLabel;
+
+        /// <summary>The mutually-exclusive pages switched by the bookmark tabs.</summary>
+        private static readonly string[] PageNames = { "Inventory Slots", "Decklist", "Special" };
+
+        /// <summary>The shared Inventory Slot prefab (also used by the shop's offer tiles).</summary>
+        public InventorySlotUI InventorySlotPrefab => inventorySlotPrefab;
+
+        /// <summary>The Special column the end-of-level shop fills (empty when absent).</summary>
+        public Transform ShopPanel => transform.Find("Special");
+
+        /// <summary>The "Gold Number Display" TMP under "Gold Display", found lazily.</summary>
+        public TMP_Text GoldLabel
+        {
+            get
+            {
+                if (cachedGoldLabel == null)
+                {
+                    Transform gold = transform.Find("Gold Display/Gold Number Display");
+                    if (gold != null) cachedGoldLabel = gold.GetComponent<TMP_Text>();
+                }
+                return cachedGoldLabel;
+            }
+        }
 
         /// <summary>
         /// When set, this UI edits a fixed loadout (the pre-match / victory selection)
@@ -76,6 +95,9 @@ namespace UI
 
             if (inventory != null)
                 inventory.OnInventoryChanged += RefreshInventory;
+
+            InitializeTabs();
+            SelectPage(defaultPage);
         }
 
         private void OnDisable()
@@ -181,22 +203,42 @@ namespace UI
         }
 
         /// <summary>
-        /// Creates the deck list column (once) and lays it out to the left of the
-        /// equipment slots, narrowing the right-side panels so nothing overlaps.
+        /// Creates the deck list (once) inside the "Decklist" page and makes it fill that page.
+        /// Falls back to a direct child when no such page exists (e.g. unit tests).
         /// </summary>
         private void EnsureDeckList()
         {
+            Transform page = transform.Find("Decklist");
+
             if (deckList == null)
             {
-                Transform existing = transform.Find("Deck List");
+                Transform existing = page != null ? page.Find("Deck List") : transform.Find("Deck List");
                 deckList = existing != null ? existing.GetComponent<DeckListUI>() : null;
             }
 
             if (deckList == null)
             {
                 deckList = DeckListUI.Create();
-                deckList.transform.SetParent(transform, false);
+                deckList.transform.SetParent(page != null ? page : transform, false);
             }
+
+            if (page != null)
+            {
+                if (deckList.transform.parent != page)
+                    deckList.transform.SetParent(page, false);
+
+                // The Decklist page ships with a grid layout (copied from the Special page);
+                // the deck list builds and lays out its own rows, so the grid must not drive it.
+                var grid = page.GetComponent<UnityEngine.UI.GridLayoutGroup>();
+                if (grid != null) grid.enabled = false;
+
+                var rect = (RectTransform)deckList.transform;
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+            }
+
             // The Card prefab is stored on the inventory slot prefab; hand it to the deck
             // list so its rows can preview cards, and to the played-card notifications so
             // plays render as the real card (like the deck-window hover previews).
@@ -210,42 +252,67 @@ namespace UI
             {
                 Debug.LogWarning("[DeckPreview] EnsureDeckList: inventorySlotPrefab is NULL, no card prefab injected.");
             }
-
-            LayoutForDeckList();
         }
 
-        private void LayoutForDeckList()
+        /// <summary>
+        /// Wires the bookmark tabs under "Bookmarks" (creating a TabButton for any plain
+        /// Button) and lets the code drive their selection.
+        /// </summary>
+        private void InitializeTabs()
         {
-            var deckRect = (RectTransform)deckList.transform;
-            deckRect.anchorMin = new Vector2(0, 0);
-            deckRect.anchorMax = new Vector2(0, 1);
-            deckRect.pivot = new Vector2(0, 0.5f);
-            deckRect.anchoredPosition = Vector2.zero;
-            deckRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, deckListWidth);
+            tabButtons.Clear();
+            Transform bookmarks = transform.Find("Bookmarks");
+            if (bookmarks == null) return;
 
-            Transform equipmentSlots = transform.Find("Equipment Slots");
-            if (equipmentSlots != null)
+            foreach (Transform child in bookmarks)
             {
-                ((RectTransform)equipmentSlots).anchoredPosition =
-                    new Vector2(deckListWidth, 0);
+                Button button = child.GetComponent<Button>();
+                if (button == null) continue;
+
+                TabButton tab = child.GetComponent<TabButton>();
+                if (tab == null) tab = child.gameObject.AddComponent<TabButton>();
+                if (string.IsNullOrEmpty(tab.PageName)) tab.SetPageName(PageNameFor(child.name));
+
+                tab.Wire();
+                tab.Selected = () => SelectPage(tab.PageName);
+                tabButtons.Add(tab);
+            }
+        }
+
+        /// <summary>Maps a tab GameObject name to its page name ("Inventory Tab" -> "Inventory Slots").</summary>
+        private static string PageNameFor(string tabName)
+        {
+            const string suffix = " Tab";
+            string key = tabName.EndsWith(suffix) ? tabName.Substring(0, tabName.Length - suffix.Length) : tabName;
+            return key == "Inventory" ? "Inventory Slots" : key;
+        }
+
+        /// <summary>
+        /// Shows only the given page and marks its tab selected. Unknown names fall back to
+        /// the default page.
+        /// </summary>
+        public void SelectPage(string pageName)
+        {
+            if (tabButtons.Count == 0 && transform.Find("Bookmarks") != null)
+                InitializeTabs();
+
+            string requested = string.IsNullOrEmpty(pageName) ? defaultPage : pageName;
+
+            foreach (string page in PageNames)
+            {
+                Transform pageTransform = transform.Find(page);
+                if (pageTransform != null)
+                    pageTransform.gameObject.SetActive(page == requested);
             }
 
-            // Push the right-edge columns over so the new left column fits without overlap.
-            float rectWidth = ((RectTransform)transform).rect.width;
-            float leftTotal = deckListWidth + equipmentSlotsWidth + deckListGap;
-            float rightWidth = Mathf.Max(rightPanelMinWidth, rectWidth - rightPanelRightMargin - leftTotal);
-
-            NarrowRightPanel("Inventory Slots", rightWidth);
-            NarrowRightPanel("Filter Buttons", rightWidth);
+            foreach (TabButton tab in tabButtons)
+                tab.SetSelected(string.Equals(tab.PageName, requested, System.StringComparison.OrdinalIgnoreCase));
         }
 
-        private void NarrowRightPanel(string childName, float width)
+        private void RefreshGoldLabel()
         {
-            Transform child = transform.Find(childName);
-            if (child == null) return;
-            var rt = (RectTransform)child;
-            if (rt.rect.width <= width + 1f) return;
-            rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+            if (GoldLabel != null && inventory != null)
+                GoldLabel.text = inventory.Gold.ToString();
         }
 
         private void RefreshDeckList()
@@ -331,6 +398,7 @@ namespace UI
         private void RefreshInventory()
         {
             RefreshDeckList();
+            RefreshGoldLabel();
 
             foreach (InventorySlotUI slot in spawnedInventorySlots)
             {

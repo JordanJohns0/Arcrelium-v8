@@ -274,7 +274,7 @@ namespace Tests.UI
             // Loads the real asset so a mis-wired YAML reference (child object, root
             // GameObject instead of the CardView component, missing guid, ...) resolves
             // to null here instead of silently killing previews at runtime.
-            GameObject root = PrefabUtility.LoadPrefabContents("Assets/Prefabs/Inventory Slot.prefab");
+            GameObject root = PrefabUtility.LoadPrefabContents("Assets/Prefabs/UI/Inventory Slot.prefab");
             try
             {
                 var slot = root.GetComponent<InventorySlotUI>();
@@ -318,12 +318,19 @@ namespace Tests.UI
                 .GetField("inventorySlotPrefab", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(ui, slotPrefab);
 
+            // The deck list lives inside the "Decklist" page (which ships with a grid layout).
+            var deckPage = new GameObject("Decklist", typeof(RectTransform), typeof(GridLayoutGroup));
+            deckPage.transform.SetParent(uiGo.transform, false);
+            owned.Add(deckPage);
+
             typeof(EquipmentUI)
                 .GetMethod("EnsureDeckList", BindingFlags.NonPublic | BindingFlags.Instance)
                 .Invoke(ui, null);
 
-            Transform deckTransform = uiGo.transform.Find("Deck List");
-            Assert.IsNotNull(deckTransform, "EnsureDeckList must create the Deck List child.");
+            Transform deckTransform = deckPage.transform.Find("Deck List");
+            Assert.IsNotNull(deckTransform, "EnsureDeckList must create the Deck List under the Decklist page.");
+            Assert.IsFalse(deckPage.GetComponent<GridLayoutGroup>().enabled,
+                "The Decklist page's grid layout must be disabled so the deck list can lay itself out.");
             var deckList = deckTransform.GetComponent<DeckListUI>();
             Assert.IsNotNull(deckList);
 
