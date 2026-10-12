@@ -14,9 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Boots of Flame
   Description: When you move out of a cell, the cell you left catches fire.
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 91a5ad2284d4d9447896f5d4cf919866, type: 3}
   SlotType: 2
-  Cards: []
+  Cards:
+  - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
+  - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
+  - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}
   Triggers:
   - Timing: 11
     Effect: {fileID: 11400000, guid: d6e7f8a9b0c1a2b3c4d5e6f712345678, type: 2}

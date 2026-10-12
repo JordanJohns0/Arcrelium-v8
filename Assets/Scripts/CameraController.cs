@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
+using Characters;
 
 [RequireComponent(typeof(CinemachineOrbitalFollow))]
 public class CameraController : MonoBehaviour
@@ -10,17 +12,26 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float tiltSpeed = 40f;
     [SerializeField] private float zoomSpeed = 8f;
 
+    [Header("Target Group")]
+    // The camera frames whatever members are in this group. If left unassigned it is
+    // resolved from whatever the CinemachineCamera currently follows.
+    [SerializeField] private CinemachineTargetGroup targetGroup;
+    [SerializeField] private float targetWeight = 1f;
+    [SerializeField] private float targetRadius = 1f;
+
     private CinemachineOrbitalFollow orbitalFollow;
     private CinemachineCamera cinemachineCamera;
-    private Transform followTarget;
     private InputAction horizontalAction;
     private InputAction verticalAction;
     private InputAction zoomAction;
+    private readonly HashSet<Character> trackedCharacters = new HashSet<Character>();
 
     private void Awake()
     {
         cinemachineCamera = GetComponent<CinemachineCamera>();
         orbitalFollow = GetComponent<CinemachineOrbitalFollow>();
+
+        ResolveTargetGroup();
 
         if (inputActions == null)
         {
@@ -41,6 +52,13 @@ public class CameraController : MonoBehaviour
         horizontalAction?.Enable();
         verticalAction?.Enable();
         zoomAction?.Enable();
+
+        Character.OnCharacterCreated += HandleCharacterCreated;
+        Character.OnCharacterDestroyed += HandleCharacterDestroyed;
+
+        // Pick up any characters that were already spawned before this component enabled.
+        foreach (Character character in FindObjectsByType<Character>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            HandleCharacterCreated(character);
     }
 
     private void OnDisable()
@@ -48,6 +66,9 @@ public class CameraController : MonoBehaviour
         horizontalAction?.Disable();
         verticalAction?.Disable();
         zoomAction?.Disable();
+
+        Character.OnCharacterCreated -= HandleCharacterCreated;
+        Character.OnCharacterDestroyed -= HandleCharacterDestroyed;
     }
 
     private void Update()
@@ -74,17 +95,43 @@ public class CameraController : MonoBehaviour
                 orbitalFollow.RadialAxis);
     }
 
-    private void LateUpdate()
+    /// <summary>
+    /// Finds the group to manage, preferring an explicit inspector reference and otherwise
+    /// reusing whatever the CinemachineCamera already follows (so a scene wired up in the
+    /// inspector needs no extra setup). The camera is then pointed at the group.
+    /// </summary>
+    private void ResolveTargetGroup()
     {
-        if (cinemachineCamera == null) return;
-        if (followTarget != null) return;
+        if (targetGroup == null && cinemachineCamera != null && cinemachineCamera.Follow != null)
+            targetGroup = cinemachineCamera.Follow.GetComponent<CinemachineTargetGroup>();
 
-        Game.GameManager gameManager = FindFirstObjectByType<Game.GameManager>();
-        Characters.Character local = gameManager != null ? gameManager.LocalCharacter : null;
-        if (local == null) return;
+        if (targetGroup == null)
+            targetGroup = FindFirstObjectByType<CinemachineTargetGroup>();
 
-        followTarget = local.transform;
-        cinemachineCamera.Follow = followTarget;
+        if (targetGroup == null)
+        {
+            Debug.LogWarning("[CameraController] No CinemachineTargetGroup found; characters will not be framed by the camera.");
+            return;
+        }
+
+        if (cinemachineCamera != null)
+            cinemachineCamera.Follow = targetGroup.transform;
+    }
+
+    private void HandleCharacterCreated(Character character)
+    {
+        if (character == null || character.IsStructure || targetGroup == null) return;
+        if (!trackedCharacters.Add(character)) return;
+
+        targetGroup.AddMember(character.transform, targetWeight, targetRadius);
+    }
+
+    private void HandleCharacterDestroyed(Character character)
+    {
+        if (character == null || !trackedCharacters.Remove(character)) return;
+
+        if (targetGroup != null)
+            targetGroup.RemoveMember(character.transform);
     }
 
     private static float ClampValue(float value, InputAxis axis)

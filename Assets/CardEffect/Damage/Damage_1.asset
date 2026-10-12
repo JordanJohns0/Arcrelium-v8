@@ -14,4 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Cards.Effects.AttackEffect
   Damage:
     Type: 0
-    Constant: 2
+    Constant: 1
+  OnHitEffects: []

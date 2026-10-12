@@ -391,8 +391,9 @@ namespace Tests.Cards
             {
                 case "Slash":
                 case "Bonk":
-                case "Poke":
                     return Attack(2);
+                case "Poke":
+                    return Attack(1);
                 case "Excalibur's Justice":
                     return Attack(10);
                 case "Shield Bash":
@@ -416,6 +417,9 @@ namespace Tests.Cards
                 case "Walk":
                 case "Only the enemy has this card":
                     return MoveTo(1);
+                case "Heavy Footsteps":
+                    // Same effect as Walk (Move 1); its different cost is exercised generically.
+                    return MoveTo(1);
                 case "Jog":
                     return MoveTo(2);
                 case "Run":
@@ -437,6 +441,8 @@ namespace Tests.Cards
                     return RangedAttack(2);
                 case "Mystic Bolt":
                     return RangedAttack(3);
+                case "Shoot Pebble":
+                    return RangedAttack(1);
                 case "Foretell":
                     // "Draw a card. Set its cost to 1." Cost 0: net hand unchanged (played one, drew one).
                     return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 1 };
@@ -459,9 +465,9 @@ namespace Tests.Cards
                     // "Draw a card. Reduce its cost by 1." Cost 1: hand goes 2 -> 1 (drew one).
                     return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 1 };
                 case "Sense Evil":
-                    // "If there is an adjacent enemy, draw a card." Cost 0, enemy adjacent in the
-                    // fixture: hand goes 1 -> 1 (played one, drew one).
-                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 1 };
+                    // "If there is an adjacent enemy, draw 2 cards." Cost 0, enemy adjacent in the
+                    // fixture: hand goes 1 -> 2 (played one, drew two).
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 2 };
                 case "Sleight of Hand":
                     // "Draw 2 cards." Cost 1: hand goes 2 -> 2 (played one + cost, drew two).
                     return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 2 };

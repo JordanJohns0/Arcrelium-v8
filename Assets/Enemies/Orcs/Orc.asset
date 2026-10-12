@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Enemies.EnemyType
   EnemyName: Orc
   characterPrefab: {fileID: 3890759042152615654, guid: 735c479c759ce754e8f03d722122b14a, type: 3}
-  PointCost: 20
-  MinCount: 0
+  PointCost: 25
+  MinCount: 1

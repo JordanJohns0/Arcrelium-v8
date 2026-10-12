@@ -16,9 +16,10 @@ namespace UI
     /// Plays made by other players (and AI) are queued and shown strictly one at a
     /// time, each visible for at least MinVisibleSeconds before the next appears — so a
     /// card played right after another still gets read instead of flashing by. The
-    /// local player's own plays are never displayed (they just played them). This is
-    /// purely visual: playing cards is never blocked or slowed by the queue;
-    /// resolution stays instant while the display catches up in the background.
+    /// local player's own plays are never displayed (they just played them). The queue
+    /// itself never blocks card resolution (effects still commit in turn order), but
+    /// the AI waits on <see cref="IsBusy"/> so an enemy never plays its next card while
+    /// a popup is still on screen — keeping each enemy action and its visual in step.
     /// </summary>
     public class PlayedCardDisplay : MonoBehaviour
     {
@@ -62,6 +63,14 @@ namespace UI
 
         /// <summary>Each played card stays on screen at least this long, in seconds.</summary>
         internal const float MinVisibleSeconds = 1f;
+
+        /// <summary>
+        /// True while a played-card popup is on screen or waiting to be shown. The AI waits on
+        /// this before its next play so an enemy never acts while its previous card (or anyone
+        /// else's) is still being displayed, keeping the visuals in step with the action.
+        /// No instance (headless/tests) means nothing is showing.
+        /// </summary>
+        public static bool IsBusy => instance != null && (instance.playRoutine != null || instance.queue.Count > 0);
 
         private struct DisplayRequest
         {

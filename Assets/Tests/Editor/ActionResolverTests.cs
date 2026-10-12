@@ -330,5 +330,44 @@ namespace Tests.Game
             resolver.PlayCard(source, card);
             Assert.IsTrue(fired);
         }
+
+        [Test]
+        public void CanPlay_DoesNotMutateBoardOrHand()
+        {
+            var card = new CardInstance(selfCardData);
+            source.Hand.AddCard(card);
+
+            bool can = resolver.CanPlay(source, card);
+
+            Assert.IsTrue(can);
+            Assert.AreEqual(0, source.Stats.Block, "CanPlay must not resolve the card's effects");
+            Assert.IsTrue(source.Hand.Contains(card), "CanPlay must not remove the card from hand");
+        }
+
+        [Test]
+        public void CanPlay_CardNotInHand_ReturnsFalse()
+        {
+            var card = new CardInstance(selfCardData);
+            Assert.IsFalse(resolver.CanPlay(source, card));
+        }
+
+        [Test]
+        public void CanPlay_NullSourceOrCard_ReturnsFalse()
+        {
+            var card = new CardInstance(selfCardData);
+            Assert.IsFalse(resolver.CanPlay(null, card));
+            Assert.IsFalse(resolver.CanPlay(source, null));
+        }
+
+        [Test]
+        public void CanPlay_InvalidTarget_ReturnsFalse()
+        {
+            var card = new CardInstance(attackCardData);
+            source.Hand.AddCard(card);
+
+            Assert.IsTrue(resolver.CanPlay(source, card, targetCharacter: target));
+            Assert.IsFalse(resolver.CanPlay(source, card, targetCharacter: source),
+                "an enemy-targeting card must reject an ally target");
+        }
     }
 }

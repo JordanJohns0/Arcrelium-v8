@@ -148,12 +148,25 @@ namespace Tests.TileEffects
         [Test]
         public void Fire_DamagesCharacter_AtStartOfTurn()
         {
+            // Fire is placed while the tile is empty so this isolates the turn-start trigger
+            // (creating a character on a tile is a placement, not an entry).
+            HexCell fireCell = Cell(1, 0);
+            system.PlaceEffect(fireCell, Fire());
             Character hero = At(1, 0);
-            system.PlaceEffect(hero.CurrentCell, Fire());
 
             system.HandleTurnStarted(hero, isRoundStart: false);
 
             Assert.AreEqual(10 - 2, hero.Stats.CurrentHealth);
+        }
+
+        [Test]
+        public void Fire_PlacedOnOccupiedTile_BurnsOccupantImmediately()
+        {
+            Character victim = At(1, 0);
+            system.PlaceEffect(victim.CurrentCell, Fire());
+
+            Assert.AreEqual(10 - 2, victim.Stats.CurrentHealth,
+                "Fire that appears on a character's tile should burn them right away.");
         }
 
         [Test]
@@ -310,10 +323,13 @@ namespace Tests.TileEffects
         [Test]
         public void GreaseOnBurningTile_Explodes_DamagingTileAndAdjacentCharacters()
         {
+            // Fire goes down first on an empty tile so this isolates the explosion (dumping oil
+            // on burning ground) from the fire's own on-appearance burn.
+            HexCell center = Cell(0, 0);
+            system.PlaceEffect(center, Fire());
             Character victim = At(0, 0);
             Character neighbor = At(1, 0);
 
-            system.PlaceEffect(victim.CurrentCell, Fire());
             system.PlaceEffect(victim.CurrentCell, Oil());
 
             Assert.AreEqual(10 - 3, victim.Stats.CurrentHealth);

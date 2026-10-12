@@ -3,8 +3,9 @@ using UnityEngine;
 namespace TileEffects
 {
     /// <summary>
-    /// Fire: burns anyone who enters or starts a turn on the tile, lasts Duration rounds,
-    /// and explodes when placed on an oil tile (consuming the oil).
+    /// Fire: burns anyone on the tile when it appears, when they enter it, or when they start
+    /// a turn there; lasts Duration rounds, and explodes when placed on an oil tile (consuming
+    /// the oil).
     /// </summary>
     [CreateAssetMenu(fileName = "FireTileEffect", menuName = "Arcrelium/Tile Effects/Fire")]
     public class FireTileEffectSO : TileEffectSO
@@ -33,7 +34,17 @@ namespace TileEffects
                 && context.Cell.HasEffect(effect => effect.Slippery)
                 && context.System != null)
             {
+                // Fire meeting oil detonates instead of burning the occupant directly; the
+                // blast already damages everyone within radius (including this tile).
                 context.System.IgniteOil(context.Cell, ExplosionDamage, ExplosionRadius);
+                return;
+            }
+
+            var occupant = context.Character;
+            if (occupant != null && occupant.Stats.IsAlive)
+            {
+                occupant.TakeDamage(FireDamage);
+                Debug.Log($"[TileEffects] {occupant.name} is engulfed as fire appears on {context.Cell.Coordinates} and takes {FireDamage} damage.");
             }
         }
     }

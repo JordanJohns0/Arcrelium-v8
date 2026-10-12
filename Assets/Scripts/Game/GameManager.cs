@@ -161,6 +161,7 @@ namespace Game
             if (turnManager != null)
             {
                 turnManager.OnActionResolved -= HandleActionResolved;
+                turnManager.OnPlayQueued -= HandleActionResolved;
                 turnManager.OnTurnStarted -= HandleTurnStartedBroadcast;
                 turnManager.OnCardPlayed -= HandleCardPlayed;
             }
@@ -184,6 +185,7 @@ namespace Game
             if (turnManager != null)
             {
                 turnManager.OnActionResolved += HandleActionResolved;
+                turnManager.OnPlayQueued += HandleActionResolved;
                 turnManager.OnTurnStarted += HandleTurnStartedBroadcast;
                 turnManager.OnCardPlayed += HandleCardPlayed;
             }

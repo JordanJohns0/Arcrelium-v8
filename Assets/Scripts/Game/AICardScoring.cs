@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Cards;
 using Cards.Effects;
 using Characters;
@@ -26,8 +27,17 @@ namespace Game
         public const float CostPenalty = 0.5f;
         public const float MovePerHex = 3f;
         public const float PassThreshold = 0f;
+
+        /// <summary>
+        /// The floor a play that produces a real effect is clamped to so it always outranks
+        /// passing, even when its cost penalty cancels its raw value.
+        /// </summary>
+        public const float MinPlayValue = 0.01f;
         public const int ThreatRange = 2;
         public const int NearDeathThreshold = 2;
+
+        /// <summary>The reach assumed for a kit with no longer attack — fighting from adjacent.</summary>
+        public const int MeleeRange = 1;
 
         /// <summary>
         /// Sums the raw resources a card's effect produces for the source character:
@@ -123,10 +133,12 @@ namespace Game
             }
 
             float score = 0f;
+            bool producesValue = false;
             score -= cost * CostPenalty;
 
             if (target != null && damage > 0)
             {
+                producesValue = true;
                 int needed = EffectiveHpToKill(target);
                 int effective = Mathf.Min(damage, needed);
                 score += effective * DamagePerHp;
@@ -145,11 +157,13 @@ namespace Game
                 if (step?.Effect is not KillTargetEffect kill) continue;
                 if (target == null || target.Stats == null || !target.Stats.IsAlive) continue;
                 if (target.Stats.CurrentHealth > kill.Threshold.Evaluate(source)) continue;
+                producesValue = true;
                 score += target.Stats.CurrentHealth * DamagePerHp + LethalBonus;
             }
 
             if (heal > 0 && source.Stats.CurrentHealth < source.Stats.MaxHealth)
             {
+                producesValue = true;
                 int missing = source.Stats.MaxHealth - source.Stats.CurrentHealth;
                 score += Mathf.Min(heal, missing) * HealPerPoint;
                 if (source.Stats.CurrentHealth <= NearDeathThreshold)
@@ -158,6 +172,7 @@ namespace Game
 
             if (block > 0)
             {
+                producesValue = true;
                 bool threatened = distanceToNearestEnemy >= 0 && distanceToNearestEnemy <= ThreatRange;
                 score += block * (threatened ? BlockThreatened : BlockIdle);
             }
@@ -169,6 +184,7 @@ namespace Game
                 int space = Mathf.Max(0, capacity - handCount);
                 int actual = Mathf.Min(draw, space);
                 score += actual * DrawPerCard;
+                if (actual > 0) producesValue = true;
                 if (actual <= 0) score += NoHandSpacePenalty;
             }
 
@@ -183,13 +199,74 @@ namespace Game
                     score -= NearDeathHealBonus;
             }
 
+            // A play that actually does something (damage/heal/block/draw/execute) must never be
+            // rated at or below the pass threshold: cost may reorder it against a better play, but
+            // it must not talk the AI out of its turn. Passing forfeits the whole hand anyway, so
+            // an expensive-but-productive card (e.g. a 1-damage card whose cost penalty exactly
+            // cancels its damage) is still worth playing when nothing better is available.
+            if (producesValue && score <= PassThreshold)
+                score = MinPlayValue;
+
             return score;
         }
 
-        /// <summary>Movement is worth MovePerHex for every hex the play closes to the fight.</summary>
+        /// <summary>
+        /// The distance this character wants to fight from: the longest reach of any
+        /// damage-dealing card it owns (hand, draw pile and discard pile), never less than
+        /// adjacent. A melee kit (reach 1) closes to contact, while a ranged kit (reach 2+)
+        /// hangs back at the edge of its range instead of walking into the target.
+        /// </summary>
+        public static int PreferredRange(Character source)
+        {
+            if (source == null) return MeleeRange;
+
+            int best = LongestAttackRange(source.Hand != null ? source.Hand.Cards : null);
+            if (source.Deck != null)
+            {
+                best = Mathf.Max(best, LongestAttackRange(source.Deck.DrawPile));
+                best = Mathf.Max(best, LongestAttackRange(source.Deck.DiscardPile));
+            }
+            return best;
+        }
+
+        private static int LongestAttackRange(IReadOnlyList<CardInstance> cards)
+        {
+            int best = MeleeRange;
+            if (cards == null) return best;
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                CardData card = cards[i] != null ? cards[i].Data : null;
+                if (card == null || !card.IsAttack) continue;
+                if (card.Range > best) best = card.Range;
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Movement is worth MovePerHex for every hex the play closes toward the preferred
+        /// engagement distance. The default overload assumes a melee reach of one, so a play
+        /// that gets closer to the target always scores positively.
+        /// </summary>
         public static float ScoreMove(int distanceBefore, int distanceAfter)
         {
-            return (distanceBefore - distanceAfter) * MovePerHex;
+            return ScoreMove(distanceBefore, distanceAfter, MeleeRange);
+        }
+
+        /// <summary>
+        /// Movement score relative to a preferred engagement distance: closing toward that
+        /// distance is rewarded, while moving past it (e.g. stepping into melee when only
+        /// ranged attacks are available) is penalised, so a ranged kit keeps its distance.
+        /// </summary>
+        public static float ScoreMove(int distanceBefore, int distanceAfter, int preferredRange)
+        {
+            if (distanceAfter < 0) return 0f; // no enemies to engage
+            if (preferredRange < MeleeRange) preferredRange = MeleeRange;
+
+            int alignedBefore = distanceBefore < 0 ? preferredRange : distanceBefore;
+            int deviationBefore = Mathf.Abs(alignedBefore - preferredRange);
+            int deviationAfter = Mathf.Abs(distanceAfter - preferredRange);
+            return (deviationBefore - deviationAfter) * MovePerHex;
         }
     }
 }

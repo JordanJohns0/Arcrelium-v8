@@ -188,6 +188,18 @@ PrefabInstance:
       value: Goblin
       objectReference: {fileID: 0}
     - target: {fileID: 8828293540060635697, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8828293540060635697, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8828293540060635697, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8828293540060635697, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: m_LocalPosition.x
       value: 14.55627
       objectReference: {fileID: 0}
@@ -226,6 +238,10 @@ PrefabInstance:
     - target: {fileID: 8828293540060635697, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8828293540060635697, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

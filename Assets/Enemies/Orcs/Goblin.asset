@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Goblin
   m_EditorClassIdentifier: Arcrelium.Game::Enemies.EnemyType
   EnemyName: Goblin
-  characterPrefab: {fileID: 3890759042152615654, guid: 735c479c759ce754e8f03d722122b14a, type: 3}
-  PointCost: 10
-  MinCount: 0
+  characterPrefab: {fileID: 3890759042152615654, guid: 853efa7689617c443ae6d77ea0a906c4, type: 3}
+  PointCost: 15
+  MinCount: 1

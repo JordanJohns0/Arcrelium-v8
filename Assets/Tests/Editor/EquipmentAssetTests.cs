@@ -161,7 +161,42 @@ namespace Tests.Equipment
             {
                 Name = "Goblin Sword",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Poke", "Poke", "Poke", "Poke" },
+                Cards = new[] { "Poke", "Poke" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Kobold Shoes",
+                Slot = EquipmentSlotType.Feet,
+                Cards = new[] { "Walk", "Walk", "Walk", "Walk" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Kobold Sling",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Shoot Pebble", "Shoot Pebble", "Shoot Pebble" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Kobold Stick",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Poke", "Poke" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Orc Club",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Bonk", "Bonk" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Orc Shoes",
+                Slot = EquipmentSlotType.Feet,
+                Cards = new[] { "Heavy Footsteps", "Heavy Footsteps", "Heavy Footsteps" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -301,7 +336,7 @@ namespace Tests.Equipment
             {
                 Name = "Boots of Flame",
                 Slot = EquipmentSlotType.Feet,
-                Cards = Array.Empty<string>(),
+                Cards = new[] { "Walk", "Walk", "Walk" },
                 Triggers = new[] { (TriggerTiming.OnLeftCell, typeof(PlaceFireTileEffect)) }
             },
             new Spec

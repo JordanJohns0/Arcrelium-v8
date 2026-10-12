@@ -60,6 +60,24 @@ namespace Tests.AI
             return MakeCard($"Attack {damage}", effect, TargetType.EnemyCharacter);
         }
 
+        private CardData MakeAttackCard(int damage, int range)
+        {
+            var effect = MakeEffect<AttackEffect>();
+            effect.Damage = CardValue.MakeConstant(damage);
+            var card = TestHelper.MakeCard($"Attack {damage} R{range}", 0,
+                TestHelper.Step(effect, TargetType.EnemyCharacter, range));
+            trackedSops.Add(card);
+            return card;
+        }
+
+        private CardData MakeMoveCard(int range)
+        {
+            var card = TestHelper.MakeCard($"Move R{range}", 0,
+                TestHelper.Step(MakeEffect<MoveEffect>(), TargetType.HexCell, range));
+            trackedSops.Add(card);
+            return card;
+        }
+
         [Test]
         public void EffectiveHpToKill_IncludesBlockAndHealth()
         {
@@ -241,9 +259,117 @@ namespace Tests.AI
         }
 
         [Test]
+        public void Score_CostlyAttack_StillBeatsPassThreshold()
+        {
+            target.Stats.CurrentHealth = 10;
+
+            // Shoot Pebble: Deal 1 damage at cost 2. The cost penalty (2 * 0.5) exactly
+            // cancels the damage value (1), scoring 0, so a ranged AI at the edge of its
+            // range would pass instead of firing.
+            var effect = MakeEffect<AttackEffect>();
+            effect.Damage = CardValue.MakeConstant(1);
+            var shootPebble = MakeCard("Shoot Pebble", effect, TargetType.EnemyCharacter, cost: 2);
+
+            float score = AICardScoring.Score(shootPebble, source, target, 2);
+
+            Assert.Greater(score, AICardScoring.PassThreshold,
+                "A card that deals damage must be worth playing over passing, even when its cost penalty cancels its damage.");
+        }
+
+        [Test]
+        public void Score_CostlyUselessCard_StaysBelowPassThreshold()
+        {
+            // The clamp only rescues cards that actually do something. A card that produces no
+            // real effect still has its cost penalty applied and is rated below passing.
+            var effect = MakeEffect<HealEffect>();
+            effect.Amount = CardValue.MakeConstant(2);
+
+            float score = AICardScoring.Score(MakeCard("Costly Heal", effect, TargetType.Self, cost: 2), source, null, -1);
+
+            Assert.Less(score, AICardScoring.PassThreshold,
+                "Cost still sinks a card that produces no real effect.");
+        }
+
+        [Test]
         public void ScoreMove_RewardsClosingDistance()
         {
             Assert.AreEqual((4 - 1) * AICardScoring.MovePerHex, AICardScoring.ScoreMove(4, 1), 0.0001f);
+        }
+
+        [Test]
+        public void ScoreMove_DefaultOverload_MatchesMeleeRange()
+        {
+            Assert.AreEqual(
+                AICardScoring.ScoreMove(4, 1, AICardScoring.MeleeRange),
+                AICardScoring.ScoreMove(4, 1), 0.0001f);
+        }
+
+        [Test]
+        public void ScoreMove_PreferredRange_RewardsBackingOffToRange()
+        {
+            Assert.Greater(AICardScoring.ScoreMove(1, 2, 2), 0f,
+                "Backing off from adjacent to the edge of a range-2 attack must score positively.");
+        }
+
+        [Test]
+        public void ScoreMove_PreferredRange_PenalisesSteppingIntoMelee()
+        {
+            Assert.Less(AICardScoring.ScoreMove(2, 1, 2), 0f,
+                "A ranged kit stepping into melee must score negatively so the move is not chosen.");
+        }
+
+        [Test]
+        public void ScoreMove_PreferredRange_NeutralAtPreferredDistance()
+        {
+            Assert.AreEqual(0f, AICardScoring.ScoreMove(2, 2, 2), 0.0001f);
+        }
+
+        [Test]
+        public void ScoreMove_PreferredRange_StillClosesWhenOutOfRange()
+        {
+            Assert.Greater(AICardScoring.ScoreMove(4, 2, 2), 0f,
+                "When too far to attack, closing toward the preferred range must score positively.");
+        }
+
+        [Test]
+        public void PreferredRange_MeleeKit_IsAdjacent()
+        {
+            source.Hand.AddCard(new CardInstance(MakeAttackCard(2, 1)));
+
+            Assert.AreEqual(AICardScoring.MeleeRange, AICardScoring.PreferredRange(source));
+        }
+
+        [Test]
+        public void PreferredRange_RangedKit_IsItsAttackReach()
+        {
+            source.Hand.AddCard(new CardInstance(MakeAttackCard(1, 2)));
+
+            Assert.AreEqual(2, AICardScoring.PreferredRange(source));
+        }
+
+        [Test]
+        public void PreferredRange_UsesLongestAttackAcrossHandAndDeck()
+        {
+            source.Hand.AddCard(new CardInstance(MakeAttackCard(1, 1)));
+            source.Deck.SetStartingCards(new List<CardData> { MakeAttackCard(1, 3) });
+            source.Deck.Shuffle();
+
+            Assert.AreEqual(3, AICardScoring.PreferredRange(source));
+        }
+
+        [Test]
+        public void PreferredRange_IgnoresNonAttackingCards()
+        {
+            source.Hand.AddCard(new CardInstance(MakeMoveCard(3)));
+
+            Assert.AreEqual(AICardScoring.MeleeRange, AICardScoring.PreferredRange(source),
+                "A long-range move card must not make the AI hang back.");
+        }
+
+        [Test]
+        public void PreferredRange_NoCards_IsMeleeRange()
+        {
+            Assert.AreEqual(AICardScoring.MeleeRange, AICardScoring.PreferredRange(source));
         }
 
         [Test]

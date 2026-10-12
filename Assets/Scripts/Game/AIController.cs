@@ -57,8 +57,7 @@ namespace Game
 
         private IEnumerator PlayAITurn(Character character)
         {
-            while (turnManager.Busy)
-                yield return null;
+            yield return WaitUntilIdle();
 
             yield return new WaitForSeconds(aiDelay);
 
@@ -67,10 +66,10 @@ namespace Game
                 Candidate best = ChooseBestPlay(character);
                 if (best.Card == null || best.Score <= AICardScoring.PassThreshold)
                 {
-                    // The previous card's animation must finish before passing, otherwise the
-                    // Pass would be rejected while the turn is busy and the turn would stall.
-                    while (turnManager.Busy)
-                        yield return null;
+                    // The previous card's animation and popup must finish before passing,
+                    // otherwise the Pass would be rejected while the turn is busy and the
+                    // turn would stall.
+                    yield return WaitUntilIdle();
                     turnManager.Pass();
                     yield break;
                 }
@@ -80,18 +79,29 @@ namespace Game
                     // Every candidate is pre-validated, so a rejection means the turn
                     // is no longer playable (e.g. a state change mid-AI). End the turn
                     // cleanly instead of soft-locking on an unplayable hand.
-                    while (turnManager.Busy)
-                        yield return null;
+                    yield return WaitUntilIdle();
                     turnManager.Pass();
                     yield break;
                 }
 
-                // Pace the turn: wait for this card's animation to finish (and keep a readable
-                // minimum gap between plays) before the next one is submitted.
+                // Pace the turn: wait for this card's animation to finish, let its popup clear,
+                // and keep a readable minimum gap between plays before the next is submitted.
                 float minGapEnd = Time.time + Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval);
-                while (Time.time < minGapEnd || turnManager.Busy)
+                while (Time.time < minGapEnd || turnManager.Busy || UI.PlayedCardDisplay.IsBusy)
                     yield return null;
             }
+        }
+
+        /// <summary>
+        /// Blocks the AI until the board is idle: no card animation resolving (turnManager.Busy)
+        /// and no played-card popup still on screen. Enemies therefore never play a card on top
+        /// of an unfinished animation or while a popup is being read, so each enemy action and
+        /// its visual stay in step.
+        /// </summary>
+        private IEnumerator WaitUntilIdle()
+        {
+            while (turnManager.Busy || UI.PlayedCardDisplay.IsBusy)
+                yield return null;
         }
 
         private Candidate ChooseBestPlay(Character character)
@@ -103,6 +113,9 @@ namespace Game
             best.Score = float.MinValue;
 
             int nearestEnemyDistance = DistanceToNearest(enemies, character.CurrentCell.Coordinates);
+            // Where this character wants to stand based on its own attack reach: a purely
+            // ranged kit hangs back at the edge of its range rather than closing to contact.
+            int preferredRange = AICardScoring.PreferredRange(character);
 
             foreach (CardInstance card in hand)
             {
@@ -134,7 +147,7 @@ namespace Game
                             int before = nearestEnemyDistance;
                             int after = DistanceToNearest(enemies, cell.Coordinates);
                             float score = AICardScoring.Score(card.Data, character, null, after, card.Cost)
-                                + AICardScoring.ScoreMove(before, after)
+                                + AICardScoring.ScoreMove(before, after, preferredRange)
                                 + AreaDamageValue(card.Data, character, enemies, cell)
                                 + TileEffectValue(card.Data, character, cell);
                             AddCandidate(ref best, card, cost, cell, null, score);

@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Sense Evil
   m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
   CardName: Sense Evil
-  Description: If there is an adjacent enemy, draw a card.
+  Description: If there is an adjacent enemy, draw 2 cards.
   Artwork: {fileID: 0}
   Cost: 0
   Steps:
-  - Effect: {fileID: 11400000, guid: f08f9f6e55a21e243a8fdf504d998f5a, type: 2}
+  - Effect: {fileID: 11400000, guid: 09046fec638033c4ba12c151c541396c, type: 2}
     TargetType: 0
     Range: 0
     CellConstraint: 0
