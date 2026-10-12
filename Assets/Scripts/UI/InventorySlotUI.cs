@@ -8,8 +8,10 @@ namespace UI
 {
     /// <summary>
     /// Represents one piece of equipment in the inventory panel. Draggable — can be dropped
-    /// onto an EquipmentSlotUI to equip it. Right-clicking shows the classic text tooltip;
-    /// actual-card hover previews live on the deck list rows instead (see DeckListUI).
+    /// onto an EquipmentSlotUI to equip it. Right-clicking shows the classic text tooltip,
+    /// which stays available even on non-interactable tiles (shop offers) so their info can
+    /// still be inspected; actual-card hover previews live on the deck list rows instead
+    /// (see DeckListUI).
     /// </summary>
     public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler,
         IPointerClickHandler
@@ -20,7 +22,7 @@ namespace UI
         [SerializeField] private float dragAlpha = 0.6f;
         [Tooltip("Shared Card prefab for hover previews. Storage point only — EquipmentUI hands this to the deck list; slots themselves never render previews.")]
         [SerializeField] private CardView cardPreviewPrefab;
-        [Tooltip("When false the slot ignores input entirely (used for shop offer tiles).")]
+        [Tooltip("When false the slot ignores dragging (used for shop offer tiles); right-click tooltips still work.")]
         [SerializeField] private bool interactable = true;
 
         private Equipment.EquipmentData equipmentData;
@@ -34,7 +36,7 @@ namespace UI
         /// <summary>Shared Card preview prefab (storage point for EquipmentUI → DeckListUI).</summary>
         public CardView CardPreviewPrefab => cardPreviewPrefab;
 
-        /// <summary>When false the slot ignores drag and click input (shop tiles).</summary>
+        /// <summary>When false the slot ignores dragging (shop tiles) but still shows its tooltip.</summary>
         public bool Interactable
         {
             get => interactable;
@@ -124,7 +126,6 @@ namespace UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!interactable) return;
             if (eventData.button != PointerEventData.InputButton.Right) return;
             if (equipmentData == null) return;
             Tooltip.Show(equipmentData, eventData.position);

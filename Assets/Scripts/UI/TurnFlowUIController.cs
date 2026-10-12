@@ -110,9 +110,10 @@ namespace UI
         private void HandlePassClicked()
         {
             if (!IsLocalTurn) return;
-            if (turnManager.Busy) return;
             if (requestPending) return;
             if (state != SelectionState.Idle) ResetSelection();
+            // Ending the turn is queued like a card play: if a card is still resolving the
+            // pass is deferred by the turn manager and takes effect once the board is idle.
             if (IsClient)
             {
                 requestPending = true;
@@ -126,6 +127,8 @@ namespace UI
         {
             if (!IsLocalTurn) return;
             if (requestPending) return;
+            // Once End Turn is queued the turn is committed to ending; ignore card clicks.
+            if (turnManager.HasQueuedPass) return;
 
             switch (state)
             {

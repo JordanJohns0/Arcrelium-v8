@@ -45,12 +45,18 @@ namespace Game
         private readonly Queue<PendingPlay> pendingPlays = new Queue<PendingPlay>();
         private bool resolvingPlay;
 
+        // Ending the turn is queued exactly like a play: submitting End Turn while an earlier
+        // card is still resolving takes effect once the board is idle (see PumpPendingPlays).
+        private bool passQueued;
+
         public Character ActiveCharacter => turnOrder.Count > 0 ? turnOrder[currentIndex] : null;
         public TurnPhase CurrentPhase { get; private set; } = TurnPhase.Act;
         public bool Busy => turnCoroutine != null
             || pendingPlays.Count > 0
+            || passQueued
             || (ActiveCharacter != null && ActiveCharacter.IsAnimating);
         public bool HasQueuedPlays => pendingPlays.Count > 0;
+        public bool HasQueuedPass => passQueued;
         public int CurrentTurnIndex => currentIndex;
 
         private struct PendingPlay
@@ -105,6 +111,7 @@ namespace Game
         {
             CurrentPhase = TurnPhase.Act;
             pendingPlays.Clear();
+            passQueued = false;
             ActiveCharacter?.TickStatusesAtTurnStart();
             ActiveCharacter?.DrawToHandLimit();
             OnTurnStarted?.Invoke(ActiveCharacter);
@@ -120,6 +127,10 @@ namespace Game
             bool ignoreHandMembership = false)
         {
             if (CurrentPhase != TurnPhase.Act) return false;
+
+            // Once the player has queued End Turn the turn is already committed to ending,
+            // so no further plays are accepted.
+            if (passQueued) return false;
 
             var play = new PendingPlay
             {
@@ -199,16 +210,23 @@ namespace Game
         {
             if (CurrentPhase != TurnPhase.Act) return;
             if (turnCoroutine != null) return;
-            if (pendingPlays.Count == 0) return;
             if (ActiveCharacter != null && ActiveCharacter.IsAnimating) return;
 
-            PendingPlay play = pendingPlays.Dequeue();
-            if (!ResolvePlay(play))
+            if (pendingPlays.Count > 0)
             {
-                // The board or hand changed while this play waited, so it is no longer legal.
-                Debug.Log($"[TurnManager] Queued play '{play.Card?.Data?.CardName}' could not resolve and was skipped.");
-                OnActionResolved?.Invoke();
+                PendingPlay play = pendingPlays.Dequeue();
+                if (!ResolvePlay(play))
+                {
+                    // The board or hand changed while this play waited, so it is no longer legal.
+                    Debug.Log($"[TurnManager] Queued play '{play.Card?.Data?.CardName}' could not resolve and was skipped.");
+                    OnActionResolved?.Invoke();
+                }
+                return;
             }
+
+            // Nothing left to resolve: a queued End Turn now takes effect.
+            if (passQueued)
+                BeginPass();
         }
 
         /// <summary>
@@ -262,8 +280,23 @@ namespace Game
         public void Pass()
         {
             if (CurrentPhase != TurnPhase.Act) return;
-            if (Busy) return;
+            if (turnCoroutine != null) return;
 
+            // Ending the turn while a card is still resolving (or queued) is accepted and
+            // deferred, exactly like a card played mid-resolution: the turn ends once the
+            // board is idle. Otherwise it begins right away.
+            if (HasQueuedPlays || passQueued || (ActiveCharacter != null && ActiveCharacter.IsAnimating))
+            {
+                passQueued = true;
+                return;
+            }
+
+            BeginPass();
+        }
+
+        private void BeginPass()
+        {
+            passQueued = false;
             OnPlayerPassed?.Invoke(ActiveCharacter);
             turnCoroutine = StartCoroutine(AdvanceToDrawThenEndCoroutine());
         }

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Equipment;
@@ -41,6 +43,8 @@ namespace Tests.UI
             ShopPool.SetMain(null);
             RewardPool.SetMain(null);
             PlayerInventoryProvider.ResetForTests();
+            typeof(Tooltip).GetField("instance", BindingFlags.NonPublic | BindingFlags.Static)
+                .SetValue(null, null);
             foreach (var obj in tracked)
             {
                 if (obj != null) Object.DestroyImmediate(obj);
@@ -167,6 +171,46 @@ namespace Tests.UI
             Bind(panel, gold, prefab).Show();
 
             Assert.AreEqual(0, panel.childCount, "An empty pool must show no shop tiles.");
+        }
+
+        [Test]
+        public void ShopTile_RightClick_ShowsEquipmentTooltip()
+        {
+            inventory.AddGold(50);
+            var sword = MakeEquipment("Sword");
+            MakePool(Entry(sword, 10));
+            var panel = MakeOffersPanel();
+            var gold = MakeGoldLabel();
+            var prefab = MakeTilePrefab();
+
+            Bind(panel, gold, prefab).Show();
+
+            Transform tile = panel.GetChild(0);
+            var slot = tile.GetComponent<InventorySlotUI>();
+            Assert.IsFalse(slot.Interactable, "Shop tiles stay non-draggable.");
+            Assert.IsNotNull(tile.GetComponent<Button>(),
+                "The buy button belongs on the tile itself so right-clicks still reach the slot.");
+
+            var tooltipGo = Track(new GameObject("Tooltip", typeof(Tooltip))) as GameObject;
+            var tooltip = tooltipGo.GetComponent<Tooltip>();
+            typeof(Tooltip).GetField("instance", BindingFlags.NonPublic | BindingFlags.Static)
+                .SetValue(null, tooltip);
+            typeof(Tooltip).GetMethod("CreateUI", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(tooltip, null);
+
+            var click = new PointerEventData(EventSystem.current)
+            {
+                button = PointerEventData.InputButton.Right
+            };
+            ((IPointerClickHandler)slot).OnPointerClick(click);
+
+            bool showsName = false;
+            foreach (var tmp in tooltipGo.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (tmp.text == "Sword") showsName = true;
+            }
+            Assert.IsTrue(showsName,
+                "Right-clicking a shop tile must show the offered item's tooltip.");
         }
     }
 }

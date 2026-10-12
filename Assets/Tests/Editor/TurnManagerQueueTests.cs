@@ -192,7 +192,7 @@ namespace Tests.Game
         }
 
         [Test]
-        public void Pass_IsRejectedWhilePlaysAreQueued()
+        public void Pass_WhilePlaysAreQueued_DefersUntilIdle()
         {
             StartMatch();
             var card = new CardInstance(BlockCard("Guard", 3));
@@ -205,7 +205,50 @@ namespace Tests.Game
             turnManager.OnPlayerPassed += _ => passedFired = true;
             turnManager.Pass();
 
-            Assert.IsFalse(passedFired, "Passing must wait for queued plays to resolve.");
+            Assert.IsFalse(passedFired, "A queued End Turn must not fire while a play resolves.");
+            Assert.IsTrue(turnManager.HasQueuedPass, "End Turn must be queued like a card play.");
+        }
+
+        [Test]
+        public void Pass_WhileResolving_FiresOnceBoardIsIdle()
+        {
+            StartMatch();
+            var card = new CardInstance(BlockCard("Guard", 3));
+            player.Hand.AddCard(card);
+
+            SetAnimating(true);
+            turnManager.PlayCard(card);
+
+            bool passedFired = false;
+            turnManager.OnPlayerPassed += _ => passedFired = true;
+            turnManager.Pass();
+
+            SetAnimating(false);
+            turnManager.PumpPendingPlays();
+            Assert.IsFalse(passedFired, "The queued card must resolve before the turn ends.");
+
+            turnManager.PumpPendingPlays();
+            Assert.IsTrue(passedFired, "The queued End Turn fires once the board is idle.");
+            Assert.IsFalse(turnManager.HasQueuedPass);
+        }
+
+        [Test]
+        public void PlayCard_AfterEndTurnQueued_IsRejected()
+        {
+            StartMatch();
+            var first = new CardInstance(BlockCard("First", 3));
+            var second = new CardInstance(BlockCard("Second", 5));
+            player.Hand.AddCard(first);
+            player.Hand.AddCard(second);
+
+            SetAnimating(true);
+            turnManager.PlayCard(first);
+            turnManager.Pass();
+
+            bool accepted = turnManager.PlayCard(second);
+
+            Assert.IsFalse(accepted, "No plays are accepted once End Turn is queued.");
+            Assert.IsTrue(player.Hand.Contains(second), "A rejected play stays in the hand.");
         }
 
         [Test]

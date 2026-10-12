@@ -706,6 +706,35 @@ namespace Game
             return true;
         }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Debug cheat (editor Play mode only): instantly defeats every live AI enemy.
+        /// Host/single-player only — clients aren't authoritative, so it is a no-op there.
+        /// Each kill runs through the normal defeat flow, so the last enemy triggers victory
+        /// and any clients get the resulting state broadcast.
+        /// </summary>
+        public void KillAllEnemies()
+        {
+            if (GameState.ActiveMode == GameMode.Client) return;
+
+            // Kill() mutates activeCharacters (via HandleCharacterDefeated), so snapshot
+            // the targets before defeating them.
+            var enemies = new List<Character>();
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null || c.IsStructure) continue;
+                if (c.OwnerPlayerId < GameState.EnemyOwnerPlayerId) continue;
+                if (!c.Stats.IsAlive) continue;
+                enemies.Add(c);
+            }
+
+            foreach (Character enemy in enemies)
+            {
+                if (enemy != null) enemy.Kill();
+            }
+        }
+#endif
+
         public void BroadcastGameState()
         {
             if (!Networking.NetworkManager.Instance.IsHost) return;

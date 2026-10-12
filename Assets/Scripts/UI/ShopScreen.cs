@@ -19,8 +19,9 @@ namespace UI
     /// unlocks the item, and persists locally — the host never sees another player's gold.
     ///
     /// Attach one to the Special pane's transform via <see cref="Attach"/> and call
-    /// <see cref="Show"/> to populate it. Tiles are non-interactable (no drag/right-click
-    /// tooltip) so a not-yet-owned item can't be dropped onto an equipment slot.
+    /// <see cref="Show"/> to populate it. Tiles are non-draggable (they can't be dropped onto
+    /// an equipment slot) but still show their item tooltip on right-click, just like the
+    /// inventory tiles they are cloned from.
     /// </summary>
     public class ShopScreen : MonoBehaviour
     {
@@ -159,19 +160,22 @@ namespace UI
 
         private void AddBuyOverlay(Transform tile, ShopOffer offer, TMP_Text price)
         {
-            var overlay = new GameObject("Buy", typeof(Image), typeof(Button));
+            // The overlay is a translucent tint over the tile; the buy Button lives on the
+            // tile itself (next to InventorySlotUI) so a right-click still reaches the slot's
+            // tooltip instead of being swallowed by the overlay.
+            var overlay = new GameObject("Buy", typeof(Image));
             overlay.transform.SetParent(tile, false);
 
             var image = overlay.GetComponent<Image>();
             image.color = new Color(1, 1, 1, 0.08f);
 
-            var button = overlay.GetComponent<Button>();
-            button.targetGraphic = image;
-
             var rt = overlay.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
             rt.sizeDelta = Vector2.zero;
+
+            var button = tile.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
 
             EquipmentData item = offer.Item;
             int priceValue = offer.Price;
