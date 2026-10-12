@@ -67,6 +67,7 @@ namespace Equipment
             inventory.SetUnlocked(new List<EquipmentData>(defaults.UnlockedEquipment));
             if (inventory.Loadout != null && defaults.Loadout != null)
                 inventory.Loadout.Apply(defaults.Loadout);
+            inventory.SetGold(defaults.Gold);
         }
 
         /// <summary>Guarantees equipped items count as owned, so a template loadout works even
@@ -94,6 +95,7 @@ namespace Equipment
             data.loadoutNames = inventory.Loadout != null
                 ? inventory.Loadout.ToNames()
                 : new string[EquipmentLoadout.SlotCount];
+            data.gold = inventory.Gold;
 
             string path = GetPath(steamId);
             try
@@ -135,6 +137,7 @@ namespace Equipment
                     inventory.SetUnlocked(unlocked);
                     if (inventory.Loadout != null)
                         inventory.Loadout.Apply(EquipmentLoadout.FromNames(data.loadoutNames, lib));
+                    inventory.SetGold(data.gold);
                 }
                 return true;
             }
@@ -177,5 +180,6 @@ namespace Equipment
     {
         public List<string> unlockedNames = new List<string>();
         public string[] loadoutNames = new string[EquipmentLoadout.SlotCount];
+        public int gold;
     }
 }

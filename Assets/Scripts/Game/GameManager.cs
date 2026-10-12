@@ -50,6 +50,10 @@ namespace Game
         [SerializeField] private int allySpawnQ = 0;
         [SerializeField] private int allySpawnR = -2;
 
+        [Header("Shop")]
+        [Tooltip("Gold awarded to each player after every victory, spent in the end-of-level shop.")]
+        [SerializeField] [Min(0)] private int goldPerVictory = 25;
+
         [System.Serializable]
         public class CharacterSpawn
         {
@@ -81,6 +85,7 @@ namespace Game
         internal static Func<ulong, int> PlayerIdLookup;
 
         private LoadoutScreen loadoutScreen;
+        private ShopScreen shopScreen;
         private bool victoryAchieved;
         private bool defeatAchieved;
         private bool matchStarted;
@@ -135,7 +140,7 @@ namespace Game
 
             if (GameState.ShowLoadoutScreen)
             {
-                ShowLoadoutScreen(null);
+                ShowLoadoutScreen();
                 return;
             }
 
@@ -250,13 +255,13 @@ namespace Game
             Networking.NetworkManager.Instance.SendRequestInitialState();
         }
 
-        private void ShowLoadoutScreen(EquipmentData reward)
+        private void ShowLoadoutScreen()
         {
             var lobby = LobbyManager.Instance.CurrentLobby;
             ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
 
             loadoutScreen = LoadoutScreen.Create();
-            loadoutScreen.Show(reward, OnLoadoutConfirmed);
+            loadoutScreen.Show(null, OnLoadoutConfirmed);
         }
 
         private static int CountExpectedLoadouts(Lobby lobby)
@@ -960,20 +965,31 @@ namespace Game
             if (victoryAchieved) return;
             victoryAchieved = true;
             BroadcastGameState();
-            // Each machine rolls its own reward from the shared pool, so players never
-            // see each other's inventories. Unlocks persist across sessions.
-            EquipmentData reward = null;
+            // Each machine awards its own gold and rolls its own shop offers, so players
+            // never see each other's inventories. Gold and purchases persist across sessions.
             var inventory = PlayerInventoryProvider.GetLocal();
-            var pool = Equipment.RewardPool.Main;
-            if (pool != null)
-                reward = pool.RollUnlocked(inventory);
-            if (reward != null)
+            if (goldPerVictory > 0)
             {
-                inventory.Unlock(reward);
+                inventory.AddGold(goldPerVictory);
                 PlayerInventoryProvider.Save(PlayerInventoryProvider.LocalPlayerKey, inventory);
             }
 
-            ShowLoadoutScreen(reward);
+            ShowShopScreen();
+        }
+
+        /// <summary>
+        /// Opens the end-of-level shop. Once the player continues, the loadout screen is
+        /// shown so they can equip whatever they bought before the next level starts.
+        /// </summary>
+        private void ShowShopScreen()
+        {
+            shopScreen = ShopScreen.Show(OnShopClosed);
+        }
+
+        private void OnShopClosed()
+        {
+            shopScreen = null;
+            ShowLoadoutScreen();
         }
 
         /// <summary>
