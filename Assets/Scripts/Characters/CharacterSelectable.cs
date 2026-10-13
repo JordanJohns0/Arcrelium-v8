@@ -48,18 +48,6 @@ namespace Characters
 
             UpdateSharedRaycast();
 
-            // Hover tracking — exactly one character hovered globally at a time.
-            if (lastHitCharacter == character && currentlyHovered != character)
-            {
-                currentlyHovered = character;
-                AnyCharacterHovered?.Invoke(character);
-            }
-            else if (lastHitCharacter != character && currentlyHovered == character)
-            {
-                currentlyHovered = null;
-                AnyCharacterHoverEnded?.Invoke();
-            }
-
             // Click handling.
             if (!Mouse.current.leftButton.wasPressedThisFrame) return;
             if (processedThisFrame) return;
@@ -97,6 +85,20 @@ namespace Characters
             Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (Physics.Raycast(ray, out RaycastHit hit))
                 lastHitCharacter = hit.collider.GetComponentInParent<Character>();
+
+            // Hover tracking — exactly one character hovered globally at a time.
+            // Runs once per frame in the shared raycast so per-character Update order
+            // (which is unordered in Unity) can't skip ending a previous hover.
+            if (currentlyHovered != lastHitCharacter)
+            {
+                if (currentlyHovered != null)
+                    AnyCharacterHoverEnded?.Invoke();
+
+                currentlyHovered = lastHitCharacter;
+
+                if (currentlyHovered != null)
+                    AnyCharacterHovered?.Invoke(currentlyHovered);
+            }
         }
     }
 }

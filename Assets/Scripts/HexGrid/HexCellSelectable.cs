@@ -17,18 +17,40 @@ namespace HexGrid
     public class HexCellSelectable : MonoBehaviour
     {
         public static event System.Action<HexCell> AnyCellClicked;
+        /// <summary>Fires when the mouse pointer moves over a different hex tile.</summary>
+        public static event System.Action<HexCell> AnyCellHovered;
+        /// <summary>Fires when the mouse pointer leaves a hex tile / the board.</summary>
+        public static event System.Action AnyCellHoverEnded;
 
         private HexCell cell;
         private static bool processedThisFrame;
+        private static bool hoverProcessedThisFrame;
+        private static HexCell lastHoveredCell;
 
         private void Awake()
         {
             cell = GetComponent<HexCell>();
         }
 
+        private void OnDestroy()
+        {
+            if (lastHoveredCell != null)
+            {
+                lastHoveredCell = null;
+                AnyCellHoverEnded?.Invoke();
+            }
+        }
+
         private void Update()
         {
             if (Mouse.current == null) return;
+
+            if (!hoverProcessedThisFrame)
+            {
+                hoverProcessedThisFrame = true;
+                UpdateHover();
+            }
+
             if (!Mouse.current.leftButton.wasPressedThisFrame) return;
             if (processedThisFrame) return;
             processedThisFrame = true;
@@ -48,9 +70,45 @@ namespace HexGrid
             }
         }
 
+        /// <summary>
+        /// Tracks which cell the mouse is currently over and raises hover events when it
+        /// changes (or when the pointer leaves the board). Runs once per frame via a static
+        /// gate so only the first tile's Update performs the raycast.
+        /// </summary>
+        private void UpdateHover()
+        {
+            HexCell hovered = null;
+
+            if (Mouse.current != null
+                && (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject())
+                && Camera.main != null)
+            {
+                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+                if (Physics.Raycast(ray, out RaycastHit hit))
+                {
+                    hovered = hit.collider.GetComponentInParent<HexCell>();
+                }
+            }
+
+            if (hovered == lastHoveredCell) return;
+
+            if (lastHoveredCell != null)
+            {
+                AnyCellHoverEnded?.Invoke();
+            }
+
+            lastHoveredCell = hovered;
+
+            if (hovered != null)
+            {
+                AnyCellHovered?.Invoke(hovered);
+            }
+        }
+
         private void LateUpdate()
         {
             processedThisFrame = false;
+            hoverProcessedThisFrame = false;
         }
     }
 }

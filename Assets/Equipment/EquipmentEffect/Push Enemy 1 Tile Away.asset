@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0339d8ac6f3edad4e994af1429a509d5, type: 3}
+  m_Name: Push Enemy 1 Tile Away
+  m_EditorClassIdentifier: Arcrelium.Game::Equipment.Effects.PushAwayEnemyEffect
+  Description: Push Adjacent Enemy Away 1 Tile
+  Distance: 1

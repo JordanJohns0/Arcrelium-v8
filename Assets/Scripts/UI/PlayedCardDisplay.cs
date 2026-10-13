@@ -88,9 +88,9 @@ namespace UI
         /// machine's player) are queued and shown sequentially, each visible for at
         /// least MinVisibleSeconds.
         /// </summary>
-        public static void Show(CardData card, string actorName)
+        public static void Show(CardData card, string actorName, int cost = -1)
         {
-            ShowInternal(card, actorName);
+            ShowInternal(card, actorName, cost: cost);
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace UI
         }
 
         private static void ShowInternal(CardData data, string actorName, string cardName = null,
-            int cost = 0, string description = null)
+            int cost = -1, string description = null)
         {
             EnsureInstance();
             instance.Display(new DisplayRequest(data, cardName, actorName, cost, description));
@@ -209,7 +209,10 @@ namespace UI
                 var view = card.GetComponent<CardView>();
                 if (view != null)
                 {
-                    view.Setup(new CardInstance(data));
+                    var instance = new CardInstance(data);
+                    if (request.Cost >= 0)
+                        instance.Cost = request.Cost;
+                    view.Setup(instance);
                     var button = card.GetComponent<Button>();
                     if (button != null) button.interactable = false;
                 }

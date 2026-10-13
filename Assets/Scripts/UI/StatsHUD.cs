@@ -12,12 +12,10 @@ namespace UI
     {
         [SerializeField] private GameObject statEntryPrefab;
         [SerializeField] private Color allyColor = new Color(0.15f, 0.25f, 0.50f, 0.7f);
-        [SerializeField] private Color enemyColor = new Color(0.50f, 0.15f, 0.15f, 0.7f);
+        [SerializeField] private Color enemyColor = new Color(0.35f, 0.30f, 0.28f, 0.7f);
 
         [Header("Hover Highlight")]
         [SerializeField] private Color entryHoverHighlight = new Color(1f, 1f, 1f, 0.15f);
-        [SerializeField] private Color outlineHoverColor = Color.white;
-        [SerializeField, Range(0f, 0.05f)] private float outlineHoverWidth = 0.025f;
 
         [Header("Canvas")]
         [SerializeField] private int sortingOrder = -1;
@@ -217,10 +215,8 @@ namespace UI
 
         private void SetOutline(Character character, bool on)
         {
-            OutlineEffect outline = character.GetComponent<OutlineEffect>();
+            OutlineEffect outline = character.GetComponentInChildren<OutlineEffect>();
             if (outline == null) return;
-            outline.SetOutlineColor(outlineHoverColor);
-            outline.SetOutlineWidth(outlineHoverWidth);
             outline.SetOutline(on);
         }
 
@@ -396,7 +392,7 @@ namespace UI
                 entry.nameLabel.fontSize = nameFontSize;
                 entry.nameLabel.verticalAlignment = VerticalAlignmentOptions.Bottom;
                 entry.nameLabel.alignment = isAlly ? TextAlignmentOptions.Left : TextAlignmentOptions.Right;
-                entry.nameLabel.color = character.PlayerColor ?? Color.white;
+                entry.nameLabel.color = character.NameColor ?? character.PlayerColor ?? Color.white;
                 var nameRt = entry.nameLabel.rectTransform;
                 if (isAlly)
                 {
@@ -459,7 +455,7 @@ namespace UI
         private static void UpdateEntryNameColor(StatEntry entry, Character character)
         {
             if (entry.nameLabel != null)
-                entry.nameLabel.color = character.PlayerColor ?? Color.white;
+                entry.nameLabel.color = character.NameColor ?? character.PlayerColor ?? Color.white;
         }
 
         private void CreateSegments(StatEntry entry, int maxHealth, bool isAlly, float nameWidth)

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Characters;
 
 namespace Cards.Effects
 {
@@ -13,7 +14,9 @@ namespace Cards.Effects
 
         public override void Execute(CardContext context)
         {
-            context.Source.Stats.GainBlock(Amount.Evaluate(context.Source));
+            int amount = Amount.Evaluate(context.Source);
+            if (amount > 0)
+                context.Source.GainBlock(amount);
         }
     }
 }

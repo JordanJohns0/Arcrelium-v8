@@ -35,6 +35,8 @@ namespace Game
 
         private int currentIndex = 0;
         private Coroutine turnCoroutine;
+        private readonly HashSet<Character> discardSubscribed = new HashSet<Character>();
+        private readonly HashSet<CardInstance> discardPlaying = new HashSet<CardInstance>();
 
         public Character ActiveCharacter => turnOrder.Count > 0 ? turnOrder[currentIndex] : null;
         public TurnPhase CurrentPhase { get; private set; } = TurnPhase.Act;
@@ -51,6 +53,12 @@ namespace Game
         {
             turnOrder = characters;
             currentIndex = 0;
+
+            foreach (Character character in turnOrder)
+            {
+                if (character == null || !discardSubscribed.Add(character)) continue;
+                character.OnCardDiscarded += HandleCardDiscarded;
+            }
         }
 
         /// <summary>
@@ -80,17 +88,46 @@ namespace Game
             CardInstance card,
             List<CardInstance> costCards = null,
             HexCell targetCell = null,
-            Character targetCharacter = null)
+            Character targetCharacter = null,
+            List<HexCell> movePath = null,
+            bool ignoreCost = false,
+            bool ignoreHandMembership = false)
         {
             if (CurrentPhase != TurnPhase.Act) return false;
             if (Busy) return false;
 
-            bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter);
+            if (targetCharacter != null)
+                ActiveCharacter.FaceTarget(targetCharacter);
+            else if (targetCell != null)
+                ActiveCharacter.FaceTarget(targetCell);
+
+            bool played = actionResolver.PlayCard(ActiveCharacter, card, costCards, targetCell, targetCharacter, movePath, ignoreCost, ignoreHandMembership);
             if (!played) return false;
+
+            // Only offensive cards swing: move/block/heal cards may have a target but shouldn't
+            // play the attack animation. The play stays busy through the card's actual visual
+            // (walk or attack) so the next card never starts on top of an unfinished animation.
+            if (card.Data != null && card.Data.IsAttack)
+                ActiveCharacter.PlayAttack();
+
+            if (ActiveCharacter.IsAnimating)
+                turnCoroutine = StartCoroutine(WaitForAnimationsToFinish());
 
             OnCardPlayed?.Invoke(card, ActiveCharacter);
             OnActionResolved?.Invoke();
             return true;
+        }
+
+        /// <summary>
+        /// Holds new plays (Busy) until the active character's cosmetic animation for the just-played
+        /// card has finished. Effects are already committed when PlayCard returns; this only paces the
+        /// next play so the swing/walk visibly plays out before another card can be submitted.
+        /// </summary>
+        private IEnumerator WaitForAnimationsToFinish()
+        {
+            while (ActiveCharacter != null && ActiveCharacter.IsAnimating)
+                yield return null;
+            turnCoroutine = null;
         }
 
         public void Pass()
@@ -133,6 +170,27 @@ namespace Game
         {
             turnOrder.Remove(character);
             if (currentIndex >= turnOrder.Count) currentIndex = 0;
+        }
+
+        /// <summary>
+        /// "When this card is discarded, play it." A card leaving the hand into the discard
+        /// pile is re-played for free while the owner's Act phase is live. Cards that need a
+        /// board pick are left discarded (nothing can ask for a target mid-discard), and the
+        /// card is tracked so its own resolve can't loop. Host-authoritative: clients only
+        /// display what the host broadcasts.
+        /// </summary>
+        private void HandleCardDiscarded(Character character, CardInstance card)
+        {
+            if (character == null || card == null || card.Data == null) return;
+            if (!card.Data.PlaysOnDiscard) return;
+            if (GameState.ActiveMode == GameMode.Client) return;
+            if (CurrentPhase != TurnPhase.Act || Busy) return;
+            if (card.Data.NeedsPick) return;
+            if (!discardPlaying.Add(card)) return;
+
+            PlayCard(card, ignoreCost: true, ignoreHandMembership: true);
+
+            discardPlaying.Remove(card);
         }
     }
 }

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: add4c8cecb195fd4c89195f49353ebc9
+timeCreated: 1526434521
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 118399
+  packageName: POLYGON - Fantasy Rivals Pack - Art by Synty
+  packageVersion: 1.4.2
+  assetPath: Assets/Synty/PolygonFantasyRivals/Prefabs/FX/FX_Magic_Missile_01.prefab
+  uploadId: 975906

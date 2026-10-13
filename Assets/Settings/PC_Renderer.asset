@@ -26,8 +26,7 @@ MonoBehaviour:
     probeVolumeBlendStatesCS: {fileID: 7200000, guid: b9a23f869c4fd45f19c5ada54dd82176, type: 3}
   m_RendererFeatures:
   - {fileID: 7833122117494664109}
-  - {fileID: 8764530839036261573}
-  m_RendererFeatureMap: ad6b866f10d7b46cc574b6935cdea179
+  m_RendererFeatureMap: 
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -82,18 +81,3 @@ MonoBehaviour:
     BlurQuality: 0
     Falloff: 100
     SampleCount: -1
---- !u!114 &8764530839036261573
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b39fa7e156bdbb4c8ecf3caaab5e5c5, type: 3}
-  m_Name: OutlineRendererFeature
-  m_EditorClassIdentifier: Arcrelium.Game::Characters.OutlineRendererFeature
-  m_Active: 1
-  outlineMaterial: {fileID: 2100000, guid: c3171eb2792782f428498cb681b63500, type: 2}
-  verboseLogging: 0

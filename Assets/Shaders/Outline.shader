@@ -48,8 +48,10 @@ Shader "Arcrelium/Outline"
             {
                 Varyings output;
 
-                float3 posOS = input.positionOS.xyz + normalize(input.normalOS) * _OutlineWidth;
-                output.positionHCS = TransformObjectToHClip(posOS);
+                float3 posOS = input.positionOS.xyz;
+                float3 dir = length(posOS) > 0.001 ? normalize(posOS) : float3(0, 1, 0);
+                float3 expandedOS = posOS + dir * _OutlineWidth;
+                output.positionHCS = TransformObjectToHClip(expandedOS);
 
                 return output;
             }

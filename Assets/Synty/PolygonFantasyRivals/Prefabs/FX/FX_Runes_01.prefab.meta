@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: dde2cd27d00bf574da21adcc64afa07e
+timeCreated: 1526430897
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 118399
+  packageName: POLYGON - Fantasy Rivals Pack - Art by Synty
+  packageVersion: 1.4.2
+  assetPath: Assets/Synty/PolygonFantasyRivals/Prefabs/FX/FX_Runes_01.prefab
+  uploadId: 975906

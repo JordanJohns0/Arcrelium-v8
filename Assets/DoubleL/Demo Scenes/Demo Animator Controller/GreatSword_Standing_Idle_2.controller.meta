@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 8d4aa6bcc9ac3f14cb2f7ea566531e1e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animator Controller/GreatSword_Standing_Idle_2.controller
+  uploadId: 936120

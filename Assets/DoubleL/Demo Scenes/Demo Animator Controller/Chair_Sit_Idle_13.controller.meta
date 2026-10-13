@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 722edb40e25027d47a7528de34fd59c4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animator Controller/Chair_Sit_Idle_13.controller
+  uploadId: 936120

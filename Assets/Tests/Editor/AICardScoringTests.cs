@@ -276,7 +276,10 @@ namespace Tests.AI
                 typeof(SelfDamageEffect),
                 typeof(MoveEffect),
                 typeof(AreaDamageEffect),
-                typeof(ConditionalEffect)
+                typeof(ConditionalEffect),
+                typeof(SetRandomCostEffect),
+                typeof(SetDrawnCardsCostEffect),
+                typeof(DecreaseHandCostsEffect)
             };
 
             var unhandled = new List<string>();

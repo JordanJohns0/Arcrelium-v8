@@ -21,6 +21,9 @@ namespace UI
         [SerializeField] private TMP_Text nameText;
         [SerializeField] private TMP_Text descriptionText;
         [SerializeField] private TMP_Text costText;
+        [Tooltip("Shows the target range of the card's primary targeting step. Hidden for untargeted cards (Range 0).")]
+        [SerializeField] private GameObject rangeBadge;
+        [SerializeField] private TMP_Text rangeText;
         [Tooltip("Enabled while this card is selected (as the card being played, or as a cost payment).")]
         [SerializeField] private GameObject selectionHighlight;
         [Tooltip("Shown while this card is selected for discard (cost payment). Optional — a red X is generated if left empty.")]
@@ -63,7 +66,14 @@ namespace UI
             if (nameText != null) nameText.text = data.CardName;
             if (descriptionText != null) descriptionText.text = data.Description;
             // Cost of 0 still displays "0" — free cards are common, this isn't hidden.
-            if (costText != null) costText.text = data.Cost.ToString();
+            // Uses the instance's cost so in-hand cost modifications show immediately.
+            if (costText != null) costText.text = instance.Cost.ToString();
+
+            // Range badge: show only for non-movement cards that actually need a target pick.
+            // Movement cards don't show a range value — distance is implied by the move step.
+            bool showRange = !data.IsMove && data.Range > 0;
+            if (rangeBadge != null) rangeBadge.SetActive(showRange);
+            if (rangeText != null) rangeText.text = showRange ? data.Range.ToString() : string.Empty;
 
             SetSelected(false);
             SetDiscardMarked(false);

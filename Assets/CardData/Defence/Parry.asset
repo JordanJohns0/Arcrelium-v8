@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Parry
   m_EditorClassIdentifier: Arcrelium.Game::Cards.CardData
   CardName: Parry
-  Description: 
+  Description: If there is an adjacent enemy, gain 2 block.
   Artwork: {fileID: 0}
   Cost: 0
   Steps:

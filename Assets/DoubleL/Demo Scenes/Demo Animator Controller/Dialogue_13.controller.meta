@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 137a1fa4b1cadc743ab126c380854ea2
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animator Controller/Dialogue_13.controller
+  uploadId: 936120

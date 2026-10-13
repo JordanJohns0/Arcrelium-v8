@@ -91,6 +91,25 @@ namespace UI
                 if (iconImage != null) iconImage.enabled = false;
                 if (nameLabel != null) nameLabel.text = GetSlotLabel();
             }
+
+            UpdateIconMirror();
+        }
+
+        /// <summary>
+        /// Mirrors the icon horizontally when the equipment occupies the left hand so the
+        /// weapon/off-hand artwork faces the correct direction. Right hand and all other
+        /// slots render un-mirrored.
+        /// </summary>
+        private void UpdateIconMirror()
+        {
+            if (iconImage == null) return;
+            if (iconImage.rectTransform == null) return;
+
+            bool mirrored = slotType == Equipment.EquipmentSlotType.Hand && slotIndex == 0 && currentEquipment != null;
+            Vector3 scale = iconImage.rectTransform.localScale;
+            iconImage.rectTransform.localScale = mirrored
+                ? new Vector3(-Mathf.Abs(scale.x), scale.y, scale.z)
+                : new Vector3(Mathf.Abs(scale.x), scale.y, scale.z);
         }
 
         private string GetSlotLabel()

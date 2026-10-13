@@ -19,5 +19,12 @@ namespace Equipment
         public int Amount;
         public HexCell TargetCell;
         public CardContext CardContext;
+
+        /// <summary>
+        /// The secondary character involved in the trigger. For OnEnemyTurnEnded this is the
+        /// enemy whose turn just ended; for OnDamageTaken it could be a future damage source.
+        /// Left null when the effect only concerns the wearer (Source).
+        /// </summary>
+        public Character Other;
     }
 }

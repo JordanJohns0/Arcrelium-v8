@@ -37,6 +37,8 @@ namespace Cards.Effects
         [Tooltip("Lowest damage a target can take from the blast, even at the edge (0 = no floor, falls to 0).")]
         public int MinimumDamage = 0;
 
+        public override bool IsAttack => true;
+
         public override bool CanExecute(CardContext context)
         {
             if (context.TargetCell == null) return false;

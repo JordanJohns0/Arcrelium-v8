@@ -13,5 +13,19 @@ namespace Cards
         public virtual bool CanExecute(CardContext context) => true;
 
         public abstract void Execute(CardContext context);
+
+        /// <summary>
+        /// Whether this effect represents an offensive attack (deals damage to one or more
+        /// enemies). Used to decide cosmetic behavior such as playing the attack animation:
+        /// move/block/heal cards that merely have a target should not swing.
+        /// </summary>
+        public virtual bool IsAttack => false;
+
+        /// <summary>
+        /// Whether this effect moves the Source onto a board cell. Used by the UI to enable
+        /// path-building for movement-style cards (click a chain of cells, or stop early and
+        /// keep the leftover distance).
+        /// </summary>
+        public virtual bool IsMove => false;
     }
 }

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 25126042bb4cc7f4c9e14e956b12c61b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animator Controller/Drinking_Sit_Play_2.controller
+  uploadId: 936120

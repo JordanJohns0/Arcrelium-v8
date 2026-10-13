@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fca6dd4bbacaedb4da6089526b40b65e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animations/Think_Start.anim
+  uploadId: 936120

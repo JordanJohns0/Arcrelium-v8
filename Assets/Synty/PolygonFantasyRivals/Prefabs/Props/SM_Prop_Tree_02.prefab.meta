@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 8d5d44700efc7fe4297dc4072514f60c
+timeCreated: 1526441338
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 118399
+  packageName: POLYGON - Fantasy Rivals Pack - Art by Synty
+  packageVersion: 1.4.2
+  assetPath: Assets/Synty/PolygonFantasyRivals/Prefabs/Props/SM_Prop_Tree_02.prefab
+  uploadId: 975906

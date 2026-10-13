@@ -20,3 +20,4 @@ MonoBehaviour:
   - Effect: {fileID: 11400000, guid: 76cfbe1b9702e2a4cbece7a17f1e0162, type: 2}
     TargetType: 1
     Range: 0
+    CellConstraint: 0

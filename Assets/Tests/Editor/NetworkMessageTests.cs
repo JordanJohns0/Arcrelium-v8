@@ -76,6 +76,8 @@ namespace Tests.Network
             Assert.AreEqual(0, decoded.targetQ);
             Assert.AreEqual(0, decoded.targetR);
             Assert.AreEqual(-1, decoded.targetOwnerPlayerId);
+            Assert.AreEqual(0, decoded.pathQ.Count);
+            Assert.AreEqual(0, decoded.pathR.Count);
         }
 
         [Test]
@@ -88,7 +90,9 @@ namespace Tests.Network
                 hasBoardTarget = true,
                 targetQ = 1,
                 targetR = -2,
-                targetOwnerPlayerId = 1
+                targetOwnerPlayerId = 1,
+                pathQ = new List<int> { 1, 2 },
+                pathR = new List<int> { -2, -1 }
             };
 
             string json = JsonUtility.ToJson(request);
@@ -102,6 +106,11 @@ namespace Tests.Network
             Assert.AreEqual(1, decoded.targetQ);
             Assert.AreEqual(-2, decoded.targetR);
             Assert.AreEqual(1, decoded.targetOwnerPlayerId);
+            Assert.AreEqual(2, decoded.pathQ.Count);
+            Assert.AreEqual(1, decoded.pathQ[0]);
+            Assert.AreEqual(2, decoded.pathQ[1]);
+            Assert.AreEqual(-2, decoded.pathR[0]);
+            Assert.AreEqual(-1, decoded.pathR[1]);
         }
 
         [Test]

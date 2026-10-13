@@ -66,6 +66,10 @@ namespace Game
                 Candidate best = ChooseBestPlay(character);
                 if (best.Card == null || best.Score <= AICardScoring.PassThreshold)
                 {
+                    // The previous card's animation must finish before passing, otherwise the
+                    // Pass would be rejected while the turn is busy and the turn would stall.
+                    while (turnManager.Busy)
+                        yield return null;
                     turnManager.Pass();
                     yield break;
                 }
@@ -75,15 +79,16 @@ namespace Game
                     // Every candidate is pre-validated, so a rejection means the turn
                     // is no longer playable (e.g. a state change mid-AI). End the turn
                     // cleanly instead of soft-locking on an unplayable hand.
+                    while (turnManager.Busy)
+                        yield return null;
                     turnManager.Pass();
                     yield break;
                 }
 
-                // Pace the turn: each card resolves visibly for at least one second
-                // before the next play goes in.
-                yield return new WaitForSeconds(Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval));
-
-                if (turnManager.Busy)
+                // Pace the turn: wait for this card's animation to finish (and keep a readable
+                // minimum gap between plays) before the next one is submitted.
+                float minGapEnd = Time.time + Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval);
+                while (Time.time < minGapEnd || turnManager.Busy)
                     yield return null;
             }
         }
@@ -101,7 +106,7 @@ namespace Game
             foreach (CardInstance card in hand)
             {
                 if (card == null || card.Data == null || card.Data.Steps == null || card.Data.Steps.Count == 0) continue;
-                if (card.Data.Cost > hand.Count - 1) continue;
+                if (card.Cost > hand.Count - 1) continue;
                 List<CardInstance> cost = PickCostCards(hand, card);
 
                 switch (card.Data.TargetType)
@@ -111,7 +116,7 @@ namespace Game
                     {
                         if (!AllStepsCanExecute(character, card.Data, null, null)) break;
                         AddCandidate(ref best, card, cost, null, null,
-                            AICardScoring.Score(card.Data, character, null, nearestEnemyDistance));
+                            AICardScoring.Score(card.Data, character, null, nearestEnemyDistance, card.Cost));
                         break;
                     }
 
@@ -125,7 +130,7 @@ namespace Game
 
                             int before = nearestEnemyDistance;
                             int after = DistanceToNearest(enemies, cell.Coordinates);
-                            float score = AICardScoring.Score(card.Data, character, null, after)
+                            float score = AICardScoring.Score(card.Data, character, null, after, card.Cost)
                                 + AICardScoring.ScoreMove(before, after)
                                 + AreaDamageValue(card.Data, character, enemies, cell);
                             AddCandidate(ref best, card, cost, cell, null, score);
@@ -141,7 +146,7 @@ namespace Game
                         {
                             if (!AllStepsCanExecute(character, card.Data, null, target)) continue;
                             AddCandidate(ref best, card, cost, null, target,
-                                AICardScoring.Score(card.Data, character, target, nearestEnemyDistance));
+                                AICardScoring.Score(card.Data, character, target, nearestEnemyDistance, card.Cost));
                         }
                         break;
                     }
@@ -276,10 +281,10 @@ namespace Game
         {
             var pool = new List<CardInstance>(hand);
             pool.Remove(played);
-            pool.Sort((a, b) => (a.Data != null ? a.Data.Cost : 0).CompareTo(b.Data != null ? b.Data.Cost : 0));
+            pool.Sort((a, b) => a.Cost.CompareTo(b.Cost));
 
             var result = new List<CardInstance>();
-            for (int i = 0; i < played.Data.Cost && i < pool.Count; i++)
+            for (int i = 0; i < played.Cost && i < pool.Count; i++)
                 result.Add(pool[i]);
             return result;
         }

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 845985990b2ef3744bd0c7d11b630f50
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 309181
+  packageName: RPG_Animations - NPC Actions
+  packageVersion: 1.2
+  assetPath: Assets/DoubleL/Demo Scenes/Demo Animations/Chair_Sit_Idle_3.anim
+  uploadId: 936120

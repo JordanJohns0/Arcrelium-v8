@@ -112,5 +112,95 @@ namespace Tests.Cards
             Assert.IsTrue(visitedCells.Count > 1,
                 "MoveEffect should step through each cell in the path, firing OnMovedToCell per step.");
         }
+
+        [Test]
+        public void CanExecute_ExplicitPath_WithinRange_ReturnsTrue()
+        {
+            var ctx = ContextFor(2, 0, 3);
+            ctx.MovePath = new List<HexCell>
+            {
+                grid.GetCell(new HexCoordinates(1, 0)),
+                grid.GetCell(new HexCoordinates(2, 0))
+            };
+
+            Assert.IsTrue(effect.CanExecute(ctx));
+        }
+
+        [Test]
+        public void CanExecute_ExplicitPath_TooLong_ReturnsFalse()
+        {
+            var ctx = ContextFor(2, 0, 1);
+            ctx.MovePath = new List<HexCell>
+            {
+                grid.GetCell(new HexCoordinates(1, 0)),
+                grid.GetCell(new HexCoordinates(2, 0))
+            };
+
+            Assert.IsFalse(effect.CanExecute(ctx));
+        }
+
+        [Test]
+        public void CanExecute_ExplicitPath_NotAdjacent_ReturnsFalse()
+        {
+            var ctx = ContextFor(3, 0, 3);
+            // Skips a cell: (1,0) is adjacent to the source, but (3,0) is not adjacent to (1,0).
+            ctx.MovePath = new List<HexCell>
+            {
+                grid.GetCell(new HexCoordinates(1, 0)),
+                grid.GetCell(new HexCoordinates(3, 0))
+            };
+
+            Assert.IsFalse(effect.CanExecute(ctx));
+        }
+
+        [Test]
+        public void CanExecute_ExplicitPath_DoesNotEndOnTarget_ReturnsFalse()
+        {
+            var ctx = ContextFor(2, 0, 3);
+            // Path ends at (1,0), but the requested target is (2,0).
+            ctx.MovePath = new List<HexCell>
+            {
+                grid.GetCell(new HexCoordinates(1, 0))
+            };
+
+            Assert.IsFalse(effect.CanExecute(ctx));
+        }
+
+        [Test]
+        public void CanExecute_ExplicitPath_BlockedCell_ReturnsFalse()
+        {
+            var ctx = ContextFor(2, 0, 3);
+            grid.GetCell(new HexCoordinates(1, 0)).SetBlocked(true);
+            ctx.MovePath = new List<HexCell>
+            {
+                grid.GetCell(new HexCoordinates(1, 0)),
+                grid.GetCell(new HexCoordinates(2, 0))
+            };
+
+            Assert.IsFalse(effect.CanExecute(ctx));
+        }
+
+        [Test]
+        public void Execute_ExplicitPath_WalksExactlyTheGivenRoute()
+        {
+            var ctx = ContextFor(3, 0, 3);
+            ctx.MovePath = new List<HexCell>
+            {
+                grid.GetCell(new HexCoordinates(1, 0)),
+                grid.GetCell(new HexCoordinates(2, 0)),
+                grid.GetCell(new HexCoordinates(3, 0))
+            };
+
+            var visitedCells = new List<HexCoordinates>();
+            source.OnMovedToCell += cell => visitedCells.Add(cell.Coordinates);
+
+            effect.Execute(ctx);
+
+            Assert.AreEqual(3, visitedCells.Count);
+            Assert.AreEqual(new HexCoordinates(1, 0), visitedCells[0]);
+            Assert.AreEqual(new HexCoordinates(2, 0), visitedCells[1]);
+            Assert.AreEqual(new HexCoordinates(3, 0), visitedCells[2]);
+            Assert.AreEqual(new HexCoordinates(3, 0), source.CurrentCell.Coordinates);
+        }
     }
 }

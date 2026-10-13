@@ -411,6 +411,17 @@ namespace Tests.Cards
                     };
                 case "Flame Bolt":
                     return RangedAttack(2);
+                case "Mystic Bolt":
+                    return RangedAttack(3);
+                case "Foretell":
+                    // "Draw a card. Set its cost to 1." Cost 0: net hand unchanged (played one, drew one).
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 1 };
+                case "Transmute":
+                    // "Take 1 damage. Draw a card." Block absorbs the self-damage.
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 2, EnemyHealth = 10, HandCount = 1 };
+                case "Prepare":
+                    // "Decrease the cost of cards in your hand by 1." Cost 1, no other state change.
+                    return new ExpectedOutcome { SourceHealth = 7, SourceBlock = 3, EnemyHealth = 10, HandCount = 0 };
                 case "Painful Sprint":
                     return MoveAndSelfDamage(2, 1);
                 case "Disarming Slash":

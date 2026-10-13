@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1401ad77fce56e74db12e603722dac7a
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 319643
+  packageName: Easy FBX Anim Modifier
+  packageVersion: 1.3
+  assetPath: Assets/DoubleL/EasyFBXAnimationsSettings/Documentation.txt
+  uploadId: 984424
