@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using Equipment;
 using UI;
+using Game;
 
 namespace Tests.UI
 {
@@ -21,6 +22,8 @@ namespace Tests.UI
         public void SetUp()
         {
             savedCount = 0;
+            GameState.CurrentLevel = 1;
+            GameState.ShopSeed = 1234;
             inventory = Track(ScriptableObject.CreateInstance<PlayerInventory>()) as PlayerInventory;
             ShopScreen.LocalInventory = () => inventory;
             ShopScreen.PersistInventory = _ => savedCount++;
@@ -33,6 +36,7 @@ namespace Tests.UI
         [TearDown]
         public void TearDown()
         {
+            GameState.ShopSeed = 0;
             foreach (var screen in Object.FindObjectsByType<ShopScreen>(FindObjectsSortMode.None))
             {
                 if (screen != null) Object.DestroyImmediate(screen);
@@ -92,6 +96,18 @@ namespace Tests.UI
         private GameObject MakeTilePrefab()
         {
             return Track(new GameObject("Inventory Slot", typeof(RectTransform), typeof(Image), typeof(InventorySlotUI))) as GameObject;
+        }
+
+        /// <summary>Offered items in the order the shop displayed them.</summary>
+        private static List<string> TileItemNames(RectTransform panel)
+        {
+            var names = new List<string>();
+            for (int i = 0; i < panel.childCount; i++)
+            {
+                var slot = panel.GetChild(i).GetComponent<InventorySlotUI>();
+                names.Add(slot != null && slot.EquipmentData != null ? slot.EquipmentData.EquipmentName : "");
+            }
+            return names;
         }
 
         private static ShopScreen Bind(RectTransform panel, TMP_Text gold, GameObject prefab)
@@ -211,6 +227,37 @@ namespace Tests.UI
             }
             Assert.IsTrue(showsName,
                 "Right-clicking a shop tile must show the offered item's tooltip.");
+        }
+
+        [Test]
+        public void Show_OffersAreStablePerRunSeed_ButChangeWithNewRun()
+        {
+            inventory.AddGold(100);
+            MakePool(
+                Entry(MakeEquipment("A"), 10),
+                Entry(MakeEquipment("B"), 10),
+                Entry(MakeEquipment("C"), 10),
+                Entry(MakeEquipment("D"), 10),
+                Entry(MakeEquipment("E"), 10));
+            var panel = MakeOffersPanel();
+            var gold = MakeGoldLabel();
+            var prefab = MakeTilePrefab();
+
+            GameState.CurrentLevel = 1;
+            GameState.ShopSeed = 111;
+            ShopScreen screen = Bind(panel, gold, prefab);
+            screen.Show();
+            var first = TileItemNames(panel);
+            Assert.AreEqual(4, first.Count, "The shop fills its offer count.");
+
+            screen.Show();
+            CollectionAssert.AreEqual(first, TileItemNames(panel),
+                "Reopening the shop in the same run+level must not reshuffle the offers.");
+
+            GameState.ShopSeed = 222;
+            screen.Show();
+            CollectionAssert.AreNotEqual(first, TileItemNames(panel),
+                "A new run must roll a different shop.");
         }
     }
 }

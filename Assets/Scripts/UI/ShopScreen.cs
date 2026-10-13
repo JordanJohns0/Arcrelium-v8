@@ -116,7 +116,10 @@ namespace UI
 
             if (currentInventory == null || offersPanel == null) return;
 
-            var offers = ShopPool.Offers(currentInventory, offerCount, new System.Random(GameState.CurrentLevel));
+            // Seed from the run's random base plus the level: offers are stable within a
+            // run+level (buying shouldn't reshuffle the shop) but change every new run.
+            var offers = ShopPool.Offers(currentInventory, offerCount,
+                new System.Random(unchecked(GameState.ShopSeed + GameState.CurrentLevel)));
             foreach (var offer in offers)
                 CreateShopTile(offer);
         }

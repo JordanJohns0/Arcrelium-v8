@@ -59,7 +59,7 @@ namespace Game
         {
             yield return WaitUntilIdle();
 
-            yield return new WaitForSeconds(aiDelay);
+            yield return new WaitForSeconds(GamePace.Scale(aiDelay));
 
             while (true)
             {
@@ -86,7 +86,7 @@ namespace Game
 
                 // Pace the turn: wait for this card's animation to finish, let its popup clear,
                 // and keep a readable minimum gap between plays before the next is submitted.
-                float minGapEnd = Time.time + Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval);
+                float minGapEnd = Time.time + GamePace.Scale(Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval));
                 while (Time.time < minGapEnd || turnManager.Busy || UI.PlayedCardDisplay.IsBusy)
                     yield return null;
             }

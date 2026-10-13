@@ -29,9 +29,10 @@ namespace Equipment
     /// shop has no explicit stock (or no ShopPool asset exists) it falls back to the legacy
     /// <see cref="RewardPool"/> with derived prices, so the shop always has something to sell.
     ///
-    /// Offers are filtered to items the player does not already own and picked with an
-    /// optional seed so a given level shows a stable set. Each machine rolls locally —
-    /// the host never sees another player's inventory or offers.
+    /// Offers are filtered to items the player does not already own and picked with a
+    /// seed so a given run+level shows a stable set (buying never reshuffles the rest)
+    /// while a fresh run rolls new stock. Each machine rolls locally — the host never
+    /// sees another player's inventory or offers.
     /// </summary>
     [CreateAssetMenu(fileName = "ShopPool", menuName = "Arcrelium/Shop Pool")]
     public class ShopPool : ScriptableObject

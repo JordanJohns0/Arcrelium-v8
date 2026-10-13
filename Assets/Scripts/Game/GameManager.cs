@@ -397,6 +397,7 @@ namespace Game
             GameState.MatchLoadouts.Clear();
 
             turnManager.SetTurnOrder(new List<Character>(activeCharacters));
+            UpdateGamePace();
             turnManager.StartMatch();
         }
 
@@ -436,6 +437,7 @@ namespace Game
             {
                 turnManager.SetTurnOrder(new List<Character>(activeCharacters));
                 GameState.MatchLoadouts.Clear();
+                UpdateGamePace();
                 turnManager.StartMatch();
                 return;
             }
@@ -447,6 +449,7 @@ namespace Game
             {
                 turnManager.SetTurnOrder(new List<Character>(activeCharacters));
                 GameState.MatchLoadouts.Clear();
+                UpdateGamePace();
                 turnManager.StartMatch();
                 return;
             }
@@ -468,6 +471,7 @@ namespace Game
 
             turnManager.SetTurnOrder(new List<Character>(activeCharacters));
             GameState.MatchLoadouts.Clear();
+            UpdateGamePace();
             turnManager.StartMatch();
         }
 
@@ -656,6 +660,7 @@ namespace Game
         {
             activeCharacters.Remove(character);
             turnManager.RemoveFromTurnOrder(character);
+            UpdateGamePace();
 
             if (IsMatchOver())
             {
@@ -704,6 +709,24 @@ namespace Game
                     return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Recomputes <see cref="GamePace.Speed"/> from the current board so the enemy phase
+        /// speeds up as its ranks grow (and eases back as they thin out). Clients run this
+        /// locally too, against the characters they rebuilt from the host's sync.
+        /// </summary>
+        private void UpdateGamePace()
+        {
+            int aliveEnemies = 0;
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null || c.IsStructure) continue;
+                if (c.OwnerPlayerId < GameState.EnemyOwnerPlayerId) continue;
+                if (c.Stats == null || !c.Stats.IsAlive) continue;
+                aliveEnemies++;
+            }
+            GamePace.Update(aliveEnemies);
         }
 
 #if UNITY_EDITOR
@@ -992,6 +1015,7 @@ namespace Game
         {
             if (victoryAchieved) return;
             victoryAchieved = true;
+            GamePace.Reset();
             BroadcastGameState();
             // Each machine awards its own gold and rolls its own shop offers, so players
             // never see each other's inventories. Gold and purchases persist across sessions.
@@ -1015,6 +1039,7 @@ namespace Game
         {
             if (defeatAchieved || victoryAchieved) return;
             defeatAchieved = true;
+            GamePace.Reset();
             BroadcastGameState();
             UI.GameOverScreen.Show();
         }
@@ -1103,6 +1128,7 @@ namespace Game
 
                 turnManager.SetTurnOrder(new List<Character>(activeCharacters));
                 turnManager.SetTurn(state.currentTurnIndex);
+                UpdateGamePace();
             }
 
             // Board structures (rocks) are rebuilt wholesale from the sync, like characters.

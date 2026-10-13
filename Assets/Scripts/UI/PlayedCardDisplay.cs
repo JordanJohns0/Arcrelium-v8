@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Cards;
 using Equipment;
+using Game;
 
 namespace UI
 {
@@ -283,19 +284,23 @@ namespace UI
             Vector2 from = basePosition;
             Vector2 to = endPosition;
 
+            // Popups shrink with GamePace so a swarm's worth of enemy plays doesn't hold
+            // the turn up. At speed 1 these are exactly the serialized timings.
+            float rise = GamePace.Scale(riseTime);
+            float fade = GamePace.Scale(fadeTime);
             // Guarantee the minimum visible time even if the serialized timings are
             // tuned shorter: stretch the hold to make up the difference.
-            float hold = Mathf.Max(holdTime, MinVisibleSeconds - riseTime - fadeTime);
+            float hold = Mathf.Max(GamePace.Scale(holdTime), GamePace.Scale(MinVisibleSeconds) - rise - fade);
 
             group.alpha = 0f;
             rect.anchoredPosition = from;
             rect.localScale = Vector3.one * baseScale;
 
             float t = 0f;
-            while (t < riseTime)
+            while (t < rise)
             {
                 t += Time.deltaTime;
-                float p = Mathf.Clamp01(t / riseTime);
+                float p = Mathf.Clamp01(t / rise);
                 group.alpha = Mathf.Lerp(0f, 1f, p);
                 rect.anchoredPosition = Vector2.Lerp(from, to, p);
                 rect.localScale = Vector3.one * Mathf.Lerp(startScale, baseScale, p);
@@ -309,10 +314,10 @@ namespace UI
             yield return new WaitForSeconds(hold);
 
             t = 0f;
-            while (t < fadeTime)
+            while (t < fade)
             {
                 t += Time.deltaTime;
-                group.alpha = Mathf.Lerp(1f, 0f, Mathf.Clamp01(t / fadeTime));
+                group.alpha = Mathf.Lerp(1f, 0f, Mathf.Clamp01(t / fade));
                 yield return null;
             }
         }

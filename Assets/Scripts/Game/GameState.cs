@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Steamworks.Data;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Game
@@ -19,6 +20,30 @@ namespace Game
         public static int CurrentLevel { get; set; } = 1;
         public static GameMode ActiveMode { get; set; } = GameMode.SinglePlayer;
         public static int LocalPlayerId { get; set; } = 0;
+
+        private static int shopSeed;
+
+        /// <summary>
+        /// Random base seed for this run's shop stock. Rolled once at run start so the shop
+        /// changes every run, while the level number is mixed in so different levels still
+        /// differ (see <c>ShopScreen</c>). Rolled per machine — the host never sees another
+        /// player's shop — so it is not shared over the network.
+        /// </summary>
+        public static int ShopSeed
+        {
+            get
+            {
+                if (shopSeed == 0) shopSeed = RollShopSeed();
+                return shopSeed;
+            }
+            set => shopSeed = value;
+        }
+
+        /// <summary>Rolls a fresh, non-zero seed for a run's shop stock.</summary>
+        internal static int RollShopSeed()
+        {
+            return Random.Range(1, int.MaxValue);
+        }
 
         /// <summary>
         /// Which match format the current lobby/run is using. Kept in sync with the
@@ -72,6 +97,7 @@ namespace Game
         public static void Restart()
         {
             CurrentLevel = 1;
+            shopSeed = RollShopSeed();
             ShowLoadoutScreen = true;
             Equipment.PlayerInventoryProvider.ResetToTemplate(Equipment.PlayerInventoryProvider.LocalPlayerKey);
             SceneManager.LoadScene("GameScene");

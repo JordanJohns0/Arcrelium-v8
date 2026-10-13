@@ -303,13 +303,13 @@ namespace Game
 
         private IEnumerator AdvanceToDrawThenEndCoroutine()
         {
-            yield return new WaitForSeconds(actionDelay);
+            yield return new WaitForSeconds(GamePace.Scale(actionDelay));
 
             CurrentPhase = TurnPhase.End;
             ActiveCharacter?.DiscardHand();
             OnTurnEnded?.Invoke(ActiveCharacter);
             ActiveCharacter?.TickStatusesAtTurnEnd();
-            yield return new WaitForSeconds(turnEndDelay);
+            yield return new WaitForSeconds(GamePace.Scale(turnEndDelay));
 
             AdvanceToNextCharacter();
             turnCoroutine = null;
