@@ -143,6 +143,38 @@ namespace Tests.UI
         }
 
         [Test]
+        public void EquipmentUI_RefreshInventory_PadsToFixedSlotCount()
+        {
+            var go = CreateEquipmentUIGo();
+            var panel = new GameObject("Inventory Panel", typeof(RectTransform));
+            panel.transform.SetParent(go.transform, false);
+            owned.Add(panel);
+
+            var prefabGo = new GameObject("Slot", typeof(RectTransform), typeof(InventorySlotUI));
+            owned.Add(prefabGo);
+
+            var ui = go.GetComponent<EquipmentUI>();
+            SetPrivateField(ui, "inventoryPanel", panel.transform);
+            SetPrivateField(ui, "inventorySlotPrefab", prefabGo.GetComponent<InventorySlotUI>());
+
+            var inventory = CreateInventory();
+            ui.SetInventory(inventory);
+            typeof(EquipmentUI)
+                .GetMethod("RefreshInventory", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(ui, null);
+
+            Assert.AreEqual(20, panel.transform.childCount,
+                "An inventory grid must stay a fixed size, padding the remainder with blank cells.");
+        }
+
+        private static void SetPrivateField(EquipmentUI ui, string field, object value)
+        {
+            typeof(EquipmentUI)
+                .GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(ui, value);
+        }
+
+        [Test]
         public void EquipmentUI_TabClick_ShowsOnlyItsPageAndSwapsSprites()
         {
             var go = CreateEquipmentUIGo();

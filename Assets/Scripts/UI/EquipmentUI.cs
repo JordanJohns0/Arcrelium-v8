@@ -34,6 +34,9 @@ namespace UI
         [SerializeField] private EquipmentSlotUI trinket1Slot;
         [SerializeField] private EquipmentSlotUI trinket2Slot;
         [SerializeField] private EquipmentSlotUI trinket3Slot;
+        [Tooltip("Generic frame shown on every equipment slot while it holds an item. Slots fall back " +
+            "to their own type art when this is unset.")]
+        [SerializeField] private Sprite filledSlotSprite;
 
         [Header("Inventory")]
         [SerializeField] private Transform inventoryPanel;
@@ -44,6 +47,7 @@ namespace UI
         [SerializeField] private string defaultPage = "Inventory Slots";
 
         private readonly List<InventorySlotUI> spawnedInventorySlots = new List<InventorySlotUI>();
+        private const int InventorySlotCount = 20;
         private readonly List<TabButton> tabButtons = new List<TabButton>();
         private EquipmentManager cachedEquipmentManager;
         private EquipmentSlotType? currentFilter;
@@ -133,7 +137,22 @@ namespace UI
             trinket2Slot.Setup(EquipmentSlotType.Trinket, 1, this);
             trinket3Slot.Setup(EquipmentSlotType.Trinket, 2, this);
 
+            SetFilledSprite(headSlot);
+            SetFilledSprite(chestSlot);
+            SetFilledSprite(feetSlot);
+            SetFilledSprite(leftHandSlot);
+            SetFilledSprite(rightHandSlot);
+            SetFilledSprite(trinket1Slot);
+            SetFilledSprite(trinket2Slot);
+            SetFilledSprite(trinket3Slot);
+
             PopulateFromEquipmentManager();
+        }
+
+        private void SetFilledSprite(EquipmentSlotUI slot)
+        {
+            if (slot != null)
+                slot.SetFilledBackgroundSprite(filledSlotSprite);
         }
 
         private void PopulateFromEquipmentManager()
@@ -411,14 +430,20 @@ namespace UI
             foreach (EquipmentData data in inventory.UnlockedEquipment)
             {
                 if (data == null || IsEquipped(data)) continue;
-
-                InventorySlotUI slot = Instantiate(inventorySlotPrefab, inventoryPanel);
-                slot.Setup(data, canvas);
-                spawnedInventorySlots.Add(slot);
-
-                bool visible = currentFilter == null || data.SlotType == currentFilter.Value;
-                slot.SetVisible(visible);
+                SpawnInventorySlot(data);
             }
+
+            // Keep a fixed-size grid: pad the remainder with blank slots so the panel always
+            // shows the full set of cells regardless of how much gear the player owns.
+            while (spawnedInventorySlots.Count < InventorySlotCount)
+                SpawnInventorySlot(null);
+        }
+
+        private void SpawnInventorySlot(EquipmentData data)
+        {
+            InventorySlotUI slot = Instantiate(inventorySlotPrefab, inventoryPanel);
+            slot.Setup(data, canvas);
+            spawnedInventorySlots.Add(slot);
         }
 
         private bool IsEquipped(EquipmentData data)

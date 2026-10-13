@@ -15,6 +15,9 @@ namespace UI
         [SerializeField] private Image iconImage;
         [SerializeField] private TMP_Text nameLabel;
         [SerializeField] private Image background;
+        [Tooltip("Background art shown while an item is equipped here (the generic empty slot frame). " +
+            "The slot's own type art — whatever sprite the background starts with — is shown while the slot is empty.")]
+        [SerializeField] private Sprite filledBackgroundSprite;
         [SerializeField] private Color emptyColor = new Color(0.2f, 0.2f, 0.2f, 0.5f);
         [SerializeField] private Color validDropColor = new Color(0.3f, 0.6f, 0.3f, 0.8f);
 
@@ -22,6 +25,7 @@ namespace UI
         private Equipment.EquipmentSlotType slotType;
         private int slotIndex;
         private EquipmentUI parentUI;
+        private Sprite typeBackgroundSprite;
 
         public Equipment.EquipmentData CurrentEquipment => currentEquipment;
         public Equipment.EquipmentSlotType SlotType => slotType;
@@ -34,6 +38,13 @@ namespace UI
             slotType = type;
             slotIndex = index;
             parentUI = parent;
+            Refresh();
+        }
+
+        /// <summary>Sets the generic frame shown while an item is equipped (shared by all slots).</summary>
+        public void SetFilledBackgroundSprite(Sprite sprite)
+        {
+            filledBackgroundSprite = sprite;
             Refresh();
         }
 
@@ -93,6 +104,25 @@ namespace UI
             }
 
             UpdateIconMirror();
+            ApplyBackground();
+        }
+
+        /// <summary>
+        /// Swaps the slot's background art: the generic frame while an item is equipped, or the
+        /// slot's own type art (its initial sprite) while empty. Blocks with no frame configured
+        /// fall back to the type art, preserving the original look.
+        /// </summary>
+        private void ApplyBackground()
+        {
+            if (background == null) return;
+
+            if (typeBackgroundSprite == null)
+                typeBackgroundSprite = background.sprite;
+
+            background.sprite = currentEquipment != null && filledBackgroundSprite != null
+                ? filledBackgroundSprite
+                : typeBackgroundSprite;
+            background.color = Color.white;
         }
 
         /// <summary>

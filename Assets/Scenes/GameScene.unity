@@ -582,6 +582,7 @@ MonoBehaviour:
   iconImage: {fileID: 1834062583}
   nameLabel: {fileID: 24046816}
   background: {fileID: 291134859}
+  filledBackgroundSprite: {fileID: 0}
   emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   validDropColor: {r: 0.3, g: 0.6, b: 0.3, a: 0.8}
 --- !u!114 &291134859
@@ -2098,21 +2099,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &491805900
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 491805731}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c1e9a4b5d2f43a8b6c0e1d2f3a4b5c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pageName: Decklist
-  normalSprite: {fileID: 21300000, guid: 4f1b1f3ae4dcbdc4d8a6a7d79660456f, type: 3}
-  selectedSprite: {fileID: 21300000, guid: b21014932f26e1c48b93c7520baf4cee, type: 3}
 --- !u!224 &491805732
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2215,6 +2201,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 491805731}
   m_CullTransparentMesh: 1
+--- !u!114 &491805900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 491805731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c1e9a4b5d2f43a8b6c0e1d2f3a4b5c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pageName: Decklist
+  normalSprite: {fileID: 21300000, guid: 4f1b1f3ae4dcbdc4d8a6a7d79660456f, type: 3}
+  selectedSprite: {fileID: 21300000, guid: b21014932f26e1c48b93c7520baf4cee, type: 3}
 --- !u!1 &500970866
 GameObject:
   m_ObjectHideFlags: 0
@@ -2575,6 +2576,7 @@ MonoBehaviour:
   iconImage: {fileID: 1100054515}
   nameLabel: {fileID: 938442192}
   background: {fileID: 540449551}
+  filledBackgroundSprite: {fileID: 0}
   emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   validDropColor: {r: 0.3, g: 0.6, b: 0.3, a: 0.8}
 --- !u!114 &540449551
@@ -3335,21 +3337,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &743623900
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 743623704}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c1e9a4b5d2f43a8b6c0e1d2f3a4b5c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pageName: Inventory Slots
-  normalSprite: {fileID: 21300000, guid: 42863e67a4a4ea645acc2787a0aa9c4a, type: 3}
-  selectedSprite: {fileID: 21300000, guid: 845f8e633e911f749a926ed15adfe332, type: 3}
 --- !u!224 &743623705
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3452,6 +3439,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 743623704}
   m_CullTransparentMesh: 1
+--- !u!114 &743623900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 743623704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c1e9a4b5d2f43a8b6c0e1d2f3a4b5c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pageName: Inventory Slots
+  normalSprite: {fileID: 21300000, guid: 42863e67a4a4ea645acc2787a0aa9c4a, type: 3}
+  selectedSprite: {fileID: 21300000, guid: 845f8e633e911f749a926ed15adfe332, type: 3}
 --- !u!1 &762266409
 GameObject:
   m_ObjectHideFlags: 0
@@ -3708,13 +3710,10 @@ MonoBehaviour:
   trinket1Slot: {fileID: 540449550}
   trinket2Slot: {fileID: 291134858}
   trinket3Slot: {fileID: 1218298318}
+  filledSlotSprite: {fileID: 21300000, guid: 678f05a1c9513724d948f12c8a388217, type: 3}
   inventoryPanel: {fileID: 1256792577}
   inventorySlotPrefab: {fileID: 1729508797446202598, guid: 09d6cff7838e2354cabdf72cdcf8c672, type: 3}
-  deckListWidth: 360
-  equipmentSlotsWidth: 600
-  deckListGap: 12
-  rightPanelRightMargin: 62
-  rightPanelMinWidth: 300
+  defaultPage: Inventory Slots
 --- !u!1 &822580747
 GameObject:
   m_ObjectHideFlags: 0
@@ -4752,6 +4751,7 @@ MonoBehaviour:
   iconImage: {fileID: 500970868}
   nameLabel: {fileID: 461305261}
   background: {fileID: 1218298319}
+  filledBackgroundSprite: {fileID: 0}
   emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   validDropColor: {r: 0.3, g: 0.6, b: 0.3, a: 0.8}
 --- !u!114 &1218298319
@@ -4917,7 +4917,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 60, y: 50}
+  m_AnchoredPosition: {x: 60, y: 121}
   m_SizeDelta: {x: 650, y: 650}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &1256792578
@@ -4941,7 +4941,7 @@ MonoBehaviour:
   m_StartCorner: 0
   m_StartAxis: 0
   m_CellSize: {x: 100, y: 100}
-  m_Spacing: {x: 20, y: 20}
+  m_Spacing: {x: 15, y: 50}
   m_Constraint: 0
   m_ConstraintCount: 2
 --- !u!114 &1256792579
@@ -5261,6 +5261,7 @@ MonoBehaviour:
   iconImage: {fileID: 198018282}
   nameLabel: {fileID: 1909502355}
   background: {fileID: 1430007460}
+  filledBackgroundSprite: {fileID: 0}
   emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   validDropColor: {r: 0.3, g: 0.6, b: 0.3, a: 0.8}
 --- !u!114 &1430007460
@@ -5321,21 +5322,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1437587900
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1437587721}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c1e9a4b5d2f43a8b6c0e1d2f3a4b5c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pageName: Special
-  normalSprite: {fileID: 21300000, guid: 76ee8eb97d216d44180abc9167c9ac24, type: 3}
-  selectedSprite: {fileID: 21300000, guid: bca2499f181369d49a0c87892161d41e, type: 3}
 --- !u!224 &1437587722
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5438,6 +5424,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1437587721}
   m_CullTransparentMesh: 1
+--- !u!114 &1437587900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1437587721}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c1e9a4b5d2f43a8b6c0e1d2f3a4b5c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pageName: Special
+  normalSprite: {fileID: 21300000, guid: 76ee8eb97d216d44180abc9167c9ac24, type: 3}
+  selectedSprite: {fileID: 21300000, guid: bca2499f181369d49a0c87892161d41e, type: 3}
 --- !u!1 &1457910961
 GameObject:
   m_ObjectHideFlags: 0
@@ -6188,6 +6189,7 @@ MonoBehaviour:
   iconImage: {fileID: 789460006}
   nameLabel: {fileID: 1673733281}
   background: {fileID: 1697294534}
+  filledBackgroundSprite: {fileID: 0}
   emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   validDropColor: {r: 0.3, g: 0.6, b: 0.3, a: 0.8}
 --- !u!114 &1697294534
@@ -6921,6 +6923,7 @@ MonoBehaviour:
   iconImage: {fileID: 544847707}
   nameLabel: {fileID: 1119407165}
   background: {fileID: 1970268481}
+  filledBackgroundSprite: {fileID: 0}
   emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   validDropColor: {r: 0.3, g: 0.6, b: 0.3, a: 0.8}
 --- !u!114 &1970268481
@@ -7016,6 +7019,7 @@ MonoBehaviour:
   iconImage: {fileID: 298357107}
   nameLabel: {fileID: 1700849783}
   background: {fileID: 1992670567}
+  filledBackgroundSprite: {fileID: 0}
   emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   validDropColor: {r: 0.3, g: 0.6, b: 0.3, a: 0.8}
 --- !u!114 &1992670567
@@ -7828,6 +7832,7 @@ MonoBehaviour:
   iconImage: {fileID: 586904546978788367}
   nameLabel: {fileID: 1372326040090581061}
   background: {fileID: 1097523380491049310}
+  filledBackgroundSprite: {fileID: 0}
   emptyColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
   validDropColor: {r: 0.3, g: 0.6, b: 0.3, a: 0.8}
 --- !u!1 &6971468353119903606

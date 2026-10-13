@@ -5,6 +5,7 @@ using UnityEngine;
 using HexGrid;
 using Cards;
 using Equipment;
+using Game;
 
 namespace Characters
 {
@@ -104,7 +105,18 @@ namespace Characters
                 // root deltas to its own local transform, making the model lunge past the target
                 // and snap back when the state returns to Idle.
                 modelAnimator.applyRootMotion = false;
+                ApplyAnimatorSpeed();
             }
+        }
+
+        /// <summary>
+        /// Keeps the model's clip playback in step with <see cref="GamePace.Speed"/>, so attack
+        /// swings and walk cycles accelerate with the rest of the (enemy-heavy) turn pacing.
+        /// </summary>
+        private void ApplyAnimatorSpeed()
+        {
+            if (modelAnimator != null)
+                modelAnimator.speed = GamePace.Speed;
         }
 
         public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1, EquipmentLoadout loadout = null)
@@ -272,7 +284,7 @@ namespace Characters
         /// </summary>
         private void StepTowards(Vector3 destination)
         {
-            transform.position = Vector3.MoveTowards(transform.position, destination, WalkPace * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, destination, WalkPace * GamePace.Speed * Time.deltaTime);
         }
 
         /// <summary>
@@ -281,7 +293,10 @@ namespace Characters
         private void BeginWalking()
         {
             if (modelAnimator != null)
+            {
+                ApplyAnimatorSpeed();
                 modelAnimator.SetBool("IsWalking", true);
+            }
         }
 
         /// <summary>
@@ -300,6 +315,7 @@ namespace Characters
         public void PlayAttack()
         {
             if (modelAnimator == null) return;
+            ApplyAnimatorSpeed();
             modelAnimator.SetTrigger("Attack");
             isAttacking = true;
             if (attackAnimationTracker != null)
