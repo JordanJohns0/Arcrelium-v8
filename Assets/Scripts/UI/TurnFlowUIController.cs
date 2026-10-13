@@ -110,9 +110,10 @@ namespace UI
         private void HandlePassClicked()
         {
             if (!IsLocalTurn) return;
-            if (turnManager.Busy) return;
             if (requestPending) return;
             if (state != SelectionState.Idle) ResetSelection();
+            // Ending the turn is queued like a card play: if a card is still resolving the
+            // pass is deferred by the turn manager and takes effect once the board is idle.
             if (IsClient)
             {
                 requestPending = true;
@@ -125,8 +126,9 @@ namespace UI
         private void HandleCardClicked(CardInstance card)
         {
             if (!IsLocalTurn) return;
-            if (turnManager.Busy) return;
             if (requestPending) return;
+            // Once End Turn is queued the turn is committed to ending; ignore card clicks.
+            if (turnManager.HasQueuedPass) return;
 
             switch (state)
             {
@@ -204,10 +206,19 @@ namespace UI
         {
             Debug.Log($"[TurnFlow] HandleCellClicked: cell={cell.Coordinates}, state={state}, busy={turnManager.Busy}");
             if (!IsLocalTurn) return;
-            if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
             if (pendingCard.Data.TargetType != TargetType.HexCell)
             {
+                // A character-targeting card should treat a click on the tile under a character
+                // the same as clicking the model itself, so the player can hit the big hex
+                // instead of the small figure. Cards that target neither a cell nor a character
+                // still report the mismatch.
+                if (WantsCharacterTarget(pendingCard.Data) && cell != null && cell.Occupant != null)
+                {
+                    HandleCharacterClicked(cell.Occupant);
+                    return;
+                }
+
                 if (promptText != null) promptText.text = "This card targets a character, not a cell.";
                 return;
             }
@@ -308,7 +319,6 @@ namespace UI
         private void HandleCellHovered(HexCell cell)
         {
             if (!IsLocalTurn) return;
-            if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
             if (pendingCard == null || !IsMoveCard(pendingCard.Data)) return;
 
@@ -325,7 +335,6 @@ namespace UI
         private void HandleCharacterClicked(Character character)
         {
             if (!IsLocalTurn) return;
-            if (turnManager.Busy) return;
             if (state != SelectionState.SelectingTarget) return;
 
             // Clicking your own character ends a move-path build and submits the walked route.
@@ -340,13 +349,20 @@ namespace UI
                 return;
             }
 
-            bool wantsCharacterTarget =
-                pendingCard.Data.TargetType == TargetType.EnemyCharacter ||
-                pendingCard.Data.TargetType == TargetType.AllyCharacter ||
-                pendingCard.Data.TargetType == TargetType.AnyCharacter;
+            bool wantsCharacterTarget = WantsCharacterTarget(pendingCard.Data);
 
             if (!wantsCharacterTarget)
             {
+                // A cell-targeting card should treat a click on a character as a click on the
+                // cell they stand on, so the player doesn't have to hit the small tile under the
+                // model. Cards that target neither a cell nor a character still report the mismatch.
+                if (pendingCard.Data.TargetType == TargetType.HexCell
+                    && character != null && character.CurrentCell != null)
+                {
+                    HandleCellClicked(character.CurrentCell);
+                    return;
+                }
+
                 if (promptText != null) promptText.text = "This card targets a cell, not a character.";
                 return;
             }
@@ -358,6 +374,13 @@ namespace UI
             }
 
             SubmitPlay(targetCharacter: character);
+        }
+
+        private static bool WantsCharacterTarget(CardData card)
+        {
+            return card != null && (card.TargetType == TargetType.EnemyCharacter
+                || card.TargetType == TargetType.AllyCharacter
+                || card.TargetType == TargetType.AnyCharacter);
         }
 
         private static bool IsValidCharacterTarget(CardData card, Character source, Character target)
@@ -393,7 +416,8 @@ namespace UI
                     pathQ = ToQList(movePath),
                     pathR = ToRList(movePath)
                 });
-                requestPending = true;
+                // Unlike a pass, card requests may be queued on the host while an earlier play
+                // resolves, so don't block further card input on a confirmation.
                 ResetSelection();
                 return;
             }

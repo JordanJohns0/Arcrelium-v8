@@ -1,0 +1,40 @@
+UI asset pack (by Franuka) v1.8
+-------------------------
+Thank you for getting this asset pack!
+Make sure to check my other assets to complement this one (https://franuka.itch.io/)
+
+Free updates might be added in the future, so stay tuned!
+
+TERMS OF USE:
+------------
+* You may use this pack on both commercial AND non-commercial projects, just remember to add a link to my itch page and/or X/Instagram if possible. It's not mandatory, but it helps a lot :) (Links below)
+* You can edit this pack, but you can not redistribute it as is or resell it elsewhere. Feel free to send me a message regarding specific cases. Thanks!
+---
+Included are UI assets in three sizes: 100% (16x16px grid), 200% (32x32px grid) and 300% (48x48px grid), in .png format, transparent background. There's also three .ttf pixel fonts, for texts and titles.
+
+FONTS:
+------
+* In terms of font size, 'FantasyRPGtext' should be used at multiples of 12, 'FantasyRPGtitle' at multiples of 17, and 'FantasyRPGtitleOutline' at multiples of 20. All this while at 72PPI. This is important to retain the pixel look, since these are not vectorial fonts. Anti-aliasing should be disabled.
+
+---
+All assets were created from scratch by me.
+* Contact: franukai@gmail.com
+* Instagram: https://www.instagram.com/franuka.art/
+* X: https://x.com/franuka_art
+* More asset packs on Itch.io: https://franuka.itch.io/
+
+If you like what I do, consider supporting me by buying my packs, sharing, or sending your feedback.
+Have a good time making your games, and send me a link if you make something cool, I'd love to check your projects! :)
+
+---------------------------
+
+CHANGELOG
+----------
+v1.1: Added a page-flip animation to the Spellbook
+v1.2: Added an opening and closing animation to the Spellbook. Thanks Reconson for the idea and base frames!
+v1.3: Added individual png files for each asset.
+v1.4: Added an Item slot for gloves.
+v1.5: Added resource orbs (HP/MP/Energy) and an Outline font (titles). Please uninstall and reinstall the FantasyRPGtitle font for it to work properly with the new Outline font.
+v1.6: Added 4 new background boxes, 3 title banners, 7 line dividers, 12 cursors and 3 buttons.
+v1.7: Updated both FantasyRPGtitle and FantasyRPGtitleOutline fonts. Now they include many more special characters and glyphs to support languages such as French, Portuguese and German. Due to these changes, character size is updated to 17pt for 'FantasyRPGtitle' (before it was 11), and to 20pt for 'FantasyRPGtitleOutline' (before it was 13). Anti-aliasing should be disabled for an optimal look.
+v1.8: Added Turkish specific characters (Ğ ğ · Ş ş · İ ı). FantasyRPGtext size is updated to 12pt (before it was 8) at 72ppi.

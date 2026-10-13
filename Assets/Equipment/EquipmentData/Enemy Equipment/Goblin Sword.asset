@@ -19,7 +19,5 @@ MonoBehaviour:
   Cards:
   - {fileID: 11400000, guid: b2941d300a86dd74eaf20cae05967cd8, type: 2}
   - {fileID: 11400000, guid: b2941d300a86dd74eaf20cae05967cd8, type: 2}
-  - {fileID: 11400000, guid: b2941d300a86dd74eaf20cae05967cd8, type: 2}
-  - {fileID: 11400000, guid: b2941d300a86dd74eaf20cae05967cd8, type: 2}
   Triggers: []
   Enchantments: []

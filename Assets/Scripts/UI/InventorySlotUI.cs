@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -8,8 +7,10 @@ namespace UI
 {
     /// <summary>
     /// Represents one piece of equipment in the inventory panel. Draggable — can be dropped
-    /// onto an EquipmentSlotUI to equip it. Right-clicking shows the classic text tooltip;
-    /// actual-card hover previews live on the deck list rows instead (see DeckListUI).
+    /// onto an EquipmentSlotUI to equip it. Right-clicking shows the classic text tooltip,
+    /// which stays available even on non-interactable tiles (shop offers) so their info can
+    /// still be inspected; actual-card hover previews live on the deck list rows instead
+    /// (see DeckListUI).
     /// </summary>
     public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler,
         IPointerClickHandler
@@ -20,17 +21,25 @@ namespace UI
         [SerializeField] private float dragAlpha = 0.6f;
         [Tooltip("Shared Card prefab for hover previews. Storage point only — EquipmentUI hands this to the deck list; slots themselves never render previews.")]
         [SerializeField] private CardView cardPreviewPrefab;
+        [Tooltip("When false the slot ignores dragging (used for shop offer tiles); right-click tooltips still work.")]
+        [SerializeField] private bool interactable = true;
 
         private Equipment.EquipmentData equipmentData;
-        private Transform originalParent;
         private Canvas parentCanvas;
-        private readonly List<Graphic> childGraphics = new List<Graphic>();
+        private GameObject dragIcon;
 
         public Equipment.EquipmentData EquipmentData => equipmentData;
         public Equipment.EquipmentSlotType SlotType => equipmentData != null ? equipmentData.SlotType : default;
 
         /// <summary>Shared Card preview prefab (storage point for EquipmentUI → DeckListUI).</summary>
         public CardView CardPreviewPrefab => cardPreviewPrefab;
+
+        /// <summary>When false the slot ignores dragging (shop tiles) but still shows its tooltip.</summary>
+        public bool Interactable
+        {
+            get => interactable;
+            set => interactable = value;
+        }
 
         public void SetVisible(bool visible)
         {
@@ -66,51 +75,76 @@ namespace UI
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (equipmentData == null) return;
+            if (!interactable || equipmentData == null) return;
 
             Tooltip.Hide();
-            originalParent = transform.parent;
-            transform.SetParent(parentCanvas.transform);
-            transform.SetAsLastSibling();
-
-            if (canvasGroup != null)
-            {
-                canvasGroup.blocksRaycasts = false;
-                canvasGroup.alpha = dragAlpha;
-            }
-            else
-            {
-                childGraphics.Clear();
-                GetComponentsInChildren(childGraphics);
-                foreach (Graphic g in childGraphics)
-                    g.raycastTarget = false;
-            }
+            BeginDragIcon();
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (equipmentData == null) return;
-            transform.position = eventData.position;
+            if (!interactable || equipmentData == null || dragIcon == null) return;
+            dragIcon.GetComponent<RectTransform>().position = eventData.position;
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            if (equipmentData == null) return;
+            if (!interactable || equipmentData == null) return;
+            EndDragIcon();
+        }
 
-            transform.SetParent(originalParent);
-            transform.localPosition = Vector3.zero;
-
-            if (canvasGroup != null)
+        private void OnDisable()
+        {
+            if (dragIcon != null)
             {
-                canvasGroup.blocksRaycasts = true;
-                canvasGroup.alpha = 1f;
+                Destroy(dragIcon);
+                dragIcon = null;
+            }
+        }
+
+        /// <summary>
+        /// Drags a floating copy of just the item icon, leaving the slot — and its background —
+        /// anchored in the grid. The source icon is hidden while the copy is held, then restored
+        /// on drop (or when the slot is rebuilt).
+        /// </summary>
+        private void BeginDragIcon()
+        {
+            EndDragIcon();
+
+            Transform host = parentCanvas != null ? parentCanvas.transform : transform.root;
+            dragIcon = new GameObject("Drag Icon", typeof(RectTransform), typeof(Image));
+            var rect = dragIcon.GetComponent<RectTransform>();
+            rect.SetParent(host, false);
+            rect.SetAsLastSibling();
+
+            var image = dragIcon.GetComponent<Image>();
+            image.raycastTarget = false;
+
+            if (iconImage != null)
+            {
+                rect.sizeDelta = iconImage.rectTransform.rect.size;
+                image.sprite = iconImage.sprite;
+                image.preserveAspect = iconImage.preserveAspect;
+                Color color = iconImage.color;
+                image.color = new Color(color.r, color.g, color.b, color.a * dragAlpha);
+                iconImage.enabled = false;
             }
             else
             {
-                foreach (Graphic g in childGraphics)
-                    g.raycastTarget = true;
-                childGraphics.Clear();
+                rect.sizeDelta = new Vector2(100f, 100f);
             }
+        }
+
+        private void EndDragIcon()
+        {
+            if (dragIcon != null)
+            {
+                Destroy(dragIcon);
+                dragIcon = null;
+            }
+
+            if (iconImage != null)
+                iconImage.enabled = equipmentData != null && equipmentData.Icon != null;
         }
 
         public void OnPointerClick(PointerEventData eventData)

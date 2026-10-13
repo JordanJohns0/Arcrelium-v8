@@ -2176,8 +2176,8 @@ MonoBehaviour:
   turnOrder: []
   actionResolver: {fileID: 531838724}
   cardsDrawnPerTurn: 2
-  actionDelay: 0.5
-  turnEndDelay: 0.3
+  actionDelay: 0.33
+  turnEndDelay: 0.2
 --- !u!114 &531838724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2208,6 +2208,7 @@ MonoBehaviour:
   turnManager: {fileID: 531838723}
   playerCharacterPrefab: {fileID: 0}
   enemyCharacterPrefab: {fileID: 0}
+  structurePrefab: {fileID: 7177736162352147799, guid: 32b089a8fe802d24da570e3ff8c4442f, type: 3}
   baseEnemyCount: 2
   extraEnemiesPerLevel: 1
   allySpawnQ: 0
@@ -2260,7 +2261,7 @@ MonoBehaviour:
   actionResolver: {fileID: 531838724}
   grid: {fileID: 396940646}
   humanPlayerId: 0
-  aiDelay: 0.4
+  aiDelay: 0.27
 --- !u!1 &540449548
 GameObject:
   m_ObjectHideFlags: 0

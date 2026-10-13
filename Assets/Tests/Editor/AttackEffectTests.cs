@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Cards;
@@ -88,6 +89,54 @@ namespace Tests.Cards
             effect.Execute(ctx);
             Assert.AreEqual(5, target.Stats.MaxHealth - target.Stats.CurrentHealth,
                 "A negative bonus must not reduce (or heal through) card damage.");
+        }
+
+        [Test]
+        public void Execute_OnHitEffects_AppliedToTheHitEnemyAfterTheDamage()
+        {
+            var onHit = ScriptableObject.CreateInstance<AttackEffect>();
+            onHit.Damage = CardValue.MakeConstant(2);
+            effect.OnHitEffects = new List<CardEffectSO> { onHit };
+
+            var ctx = new CardContext { Source = source, TargetCharacter = target, Range = 5 };
+            effect.Execute(ctx);
+
+            Assert.AreEqual(7, target.Stats.MaxHealth - target.Stats.CurrentHealth,
+                "5 from the attack + 2 from the effect applied to the enemy that was hit.");
+        }
+
+        [Test]
+        public void Execute_OnHitEffect_SkippedWhenTheHitKills()
+        {
+            target.Stats.MaxHealth = 3;
+            target.Stats.CurrentHealth = 3;
+
+            var onHit = ScriptableObject.CreateInstance<AttackEffect>();
+            onHit.Damage = CardValue.MakeConstant(2);
+            effect.OnHitEffects = new List<CardEffectSO> { onHit };
+
+            var ctx = new CardContext { Source = source, TargetCharacter = target, Range = 5 };
+            effect.Execute(ctx);
+
+            Assert.IsFalse(target.Stats.IsAlive);
+            Assert.AreEqual(3, target.Stats.MaxHealth - target.Stats.CurrentHealth,
+                "A dead enemy is not 'the enemy that is hit' — the follow-up must not run.");
+        }
+
+        [Test]
+        public void Execute_OnHitEffect_KeepsSourceAndPicksTheVictimAsTarget()
+        {
+            var onHit = ScriptableObject.CreateInstance<GainBlockEffect>();
+            onHit.Amount = CardValue.MakeConstant(2);
+            effect.OnHitEffects = new List<CardEffectSO> { onHit };
+
+            var ctx = new CardContext { Source = source, TargetCharacter = target, Range = 5 };
+            effect.Execute(ctx);
+
+            Assert.AreEqual(2, source.Stats.Block,
+                "Non-damage follow-ups run too, with the original source and the hit enemy as target.");
+            Assert.AreEqual(5, target.Stats.MaxHealth - target.Stats.CurrentHealth,
+                "The primary attack still deals its own damage.");
         }
     }
 }

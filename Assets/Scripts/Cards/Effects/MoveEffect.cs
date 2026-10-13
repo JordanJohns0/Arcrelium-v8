@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Characters;
 using HexGrid;
+using TileEffects;
 
 namespace Cards.Effects
 {
@@ -78,22 +79,38 @@ namespace Cards.Effects
 
             // Step through each cell in the path so OnMovedToCell fires per step,
             // allowing equipment triggers (like Null Amulet) to activate on each move.
+            // With a TileEffectSystem present, movement routes through it so tile effects
+            // (fire on entry, oil slipping) resolve per step and the returned route reflects
+            // where the character actually ends up.
+            TileEffectSystem environment = TileEffectSystem.Instance;
+            List<HexCell> resolved = path;
+
             if (path != null && path.Count > 0)
             {
-                foreach (HexCell cell in path)
+                if (environment != null)
                 {
-                    context.Source.SetCellOnly(cell);
+                    resolved = environment.MoveCharacter(context.Source, path);
+                }
+                else
+                {
+                    foreach (HexCell cell in path)
+                    {
+                        context.Source.SetCellOnly(cell);
+                    }
                 }
 
                 if (Application.isPlaying)
-                    context.Source.AnimateAlongPath(path);
+                    context.Source.AnimateAlongPath(resolved);
             }
             else
             {
-                context.Source.SetCellOnly(target);
+                if (environment != null)
+                    environment.WalkInto(context.Source, target);
+                else
+                    context.Source.SetCellOnly(target);
 
                 if (Application.isPlaying)
-                    context.Source.AnimateToCell(target);
+                    context.Source.AnimateToCell(context.Source.CurrentCell);
             }
         }
     }

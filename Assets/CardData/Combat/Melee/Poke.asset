@@ -13,10 +13,15 @@ MonoBehaviour:
   m_Name: Poke
   m_EditorClassIdentifier: Assembly-CSharp::Cards.CardData
   CardName: Poke
-  Description: Deal 2 damage
+  Description: Deal 1 damage
   Artwork: {fileID: 0}
   Cost: 1
   Steps:
   - Effect: {fileID: 11400000, guid: fff86a3acb77cb941989053105cb08c9, type: 2}
     TargetType: 3
     Range: 1
+    CellConstraint: 0
+    CardModifiers: []
+    Condition: {fileID: 0}
+  OnDrawnModifiers: []
+  PlaysOnDiscard: 0

@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using Equipment;
 using UI;
+using Game;
 
 namespace Tests.PlayMode
 {
@@ -17,6 +18,10 @@ namespace Tests.PlayMode
         [SetUp]
         public void SetUp()
         {
+            PlayerPrefs.SetFloat(GamePace.PrefKey, 1f);
+            GamePace.ResetManualCache();
+            GamePace.Reset();
+
             var go = new GameObject("PlayedCardDisplay");
             display = go.AddComponent<PlayedCardDisplay>();
         }

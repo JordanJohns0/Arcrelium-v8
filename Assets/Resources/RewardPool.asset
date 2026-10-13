@@ -13,21 +13,37 @@ MonoBehaviour:
   m_Name: RewardPool
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.RewardPool
   rewards:
+  - {fileID: 11400000, guid: 5c17eed0a26504241b10d6294c8c8ae9, type: 2}
   - {fileID: 11400000, guid: 7ae34eede51a4404098232169ea3f68e, type: 2}
+  - {fileID: 11400000, guid: 4388bb9792001964eb9a90cb59bdee17, type: 2}
   - {fileID: 11400000, guid: b594333b81410884ab4cdcd374337d13, type: 2}
+  - {fileID: 11400000, guid: a4444efcd49f47941978d16d6f0e2dc6, type: 2}
   - {fileID: 11400000, guid: 8fef389436388974891de19d8e930490, type: 2}
   - {fileID: 11400000, guid: 4c21f668fb862b0428f4382a5a8ee1a3, type: 2}
   - {fileID: 11400000, guid: 4e1a0a72811e8da459fc89e31872bbd7, type: 2}
+  - {fileID: 11400000, guid: 4cc59afbf4ba9824c8f3b0a5e47602be, type: 2}
   - {fileID: 11400000, guid: b1e0717c459915f4fbca3907934f2c3f, type: 2}
+  - {fileID: 11400000, guid: 914b41d38fd244e4492e4345a8c9b962, type: 2}
   - {fileID: 11400000, guid: e11a3a3d65215394c8d4121cedcda126, type: 2}
   - {fileID: 11400000, guid: 2282fc635592ae144929cb003fc045e6, type: 2}
   - {fileID: 11400000, guid: b542c6cf5ddb0484780c7b3f6b7ec2f1, type: 2}
   - {fileID: 11400000, guid: ed81d0b3554e5a34ea162f2275e298b6, type: 2}
+  - {fileID: 11400000, guid: 52d31c15258521348a2139a318d8bd91, type: 2}
   - {fileID: 11400000, guid: 4e3b9f6d0bdd0ff418900d4be2a72e12, type: 2}
+  - {fileID: 11400000, guid: 3815df354b52a4341a5154357bcc276f, type: 2}
+  - {fileID: 11400000, guid: 9e461c617fb9191449edd9833edad0ad, type: 2}
+  - {fileID: 11400000, guid: ba36809cb3e4bcd44b606c7b09a52d8d, type: 2}
   - {fileID: 11400000, guid: bb5826e0ee8037b489fb6251e5e4b98c, type: 2}
+  - {fileID: 11400000, guid: 2b8e4f6a1c9d47e5b3a8f0c6d1e25749, type: 2}
+  - {fileID: 11400000, guid: 74342c43c55239e4c94d98766dad42aa, type: 2}
   - {fileID: 11400000, guid: 393cdedbd45026b4ead744f8ba6d6ff7, type: 2}
   - {fileID: 11400000, guid: 1d2e276c309185c4ca5fea73160b43aa, type: 2}
   - {fileID: 11400000, guid: 19f8d7376a42df34993046bc4ea1f9c4, type: 2}
+  - {fileID: 11400000, guid: aa0d27ddffe96f944bb941ebeeca3fec, type: 2}
+  - {fileID: 11400000, guid: 231d381c34b40b44d9fe09a84821a0c2, type: 2}
   - {fileID: 11400000, guid: 453d78c5d32115f4b818eb33b2892c63, type: 2}
+  - {fileID: 11400000, guid: 9148876ffb1ba384db70b02ce06659d7, type: 2}
+  - {fileID: 11400000, guid: bebff0494e0d6a145b1189297310239d, type: 2}
+  - {fileID: 11400000, guid: 6e46e1068b2fae14c8e81a1e1764e807, type: 2}
   - {fileID: 11400000, guid: f4a6d92b94ded42478f8af94ff35fa0a, type: 2}
   - {fileID: 11400000, guid: bcaf314abb411bb43aa21ca011fa1060, type: 2}

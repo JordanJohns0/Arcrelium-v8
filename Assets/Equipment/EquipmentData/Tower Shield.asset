@@ -21,5 +21,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ac95cd6ae754a4b4299c65d77a340215, type: 2}
   - {fileID: 11400000, guid: ac95cd6ae754a4b4299c65d77a340215, type: 2}
   - {fileID: 11400000, guid: c03e677d0a525b54aaadf1e5e807c43e, type: 2}
+  - {fileID: 11400000, guid: 60f63f2b03b17cc4584c94cb0f190db1, type: 2}
   Triggers: []
   Enchantments: []

@@ -130,8 +130,10 @@ namespace UI
         /// Opens the loadout screen. <paramref name="unlockedReward"/> is the item earned
         /// at victory (null at the start of a run). <paramref name="onConfirmCallback"/>
         /// fires once when this player confirms; the host uses it to collect loadouts.
+        /// When <paramref name="withShop"/> is set the Special column is filled with shop
+        /// offers and the gold display tracks the balance (end-of-level loadout).
         /// </summary>
-        public void Show(EquipmentData unlockedReward, System.Action onConfirmCallback)
+        public void Show(EquipmentData unlockedReward, System.Action onConfirmCallback, bool withShop = false)
         {
             onConfirmed = onConfirmCallback;
             multiplayer = LobbyManager.Instance.CurrentLobby.HasValue;
@@ -143,20 +145,47 @@ namespace UI
 
             Debug.Log($"[LoadoutScreen] Show unlocked={localInventory.UnlockedEquipment.Count} loadout={string.Join(",", localInventory.Loadout.ToNames())}");
 
-            var gameCanvas = GameObject.Find("Canvas");
-            equipmentUI = gameCanvas != null ? gameCanvas.transform.Find("Equipment UI")?.gameObject : null;
-            handPanel = gameCanvas != null ? gameCanvas.transform.Find("HandPanel")?.gameObject : null;
-            buttonsPanel = gameCanvas != null ? gameCanvas.transform.Find("Buttons")?.gameObject : null;
+            // The scene canvas is named "UI" (was "Canvas"), so find the equipment panel by
+            // component (including inactive — EquipmentUI deactivates itself in Awake) and
+            // reach the rest of the HUD through its parent canvas.
+            var equipmentPanels = Object.FindObjectsByType<EquipmentUI>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+            EquipmentUI equipmentPanelComponent = equipmentPanels != null && equipmentPanels.Length > 0
+                ? equipmentPanels[0]
+                : null;
+            equipmentUI = equipmentPanelComponent != null ? equipmentPanelComponent.gameObject : null;
+
+            Transform gameCanvas = equipmentUI != null ? equipmentUI.transform.parent : null;
+            handPanel = gameCanvas != null ? gameCanvas.Find("HandPanel")?.gameObject : null;
+            buttonsPanel = gameCanvas != null ? gameCanvas.Find("Buttons")?.gameObject : null;
 
             if (equipmentUI != null)
             {
-                var eq = equipmentUI.GetComponent<EquipmentUI>();
                 equipmentUI.SetActive(true);
-                if (eq != null)
+                if (equipmentPanelComponent != null)
                 {
-                    eq.SetInventory(localInventory);
-                    eq.SetEditLoadout(localInventory.Loadout);
-                    eq.Refresh();
+                    equipmentPanelComponent.SetInventory(localInventory);
+                    equipmentPanelComponent.SetEditLoadout(localInventory.Loadout);
+                    equipmentPanelComponent.Refresh();
+
+                    ShopScreen shop = withShop
+                        ? ShopScreen.Attach(
+                            equipmentPanelComponent.ShopPanel,
+                            equipmentPanelComponent.InventorySlotPrefab != null
+                                ? equipmentPanelComponent.InventorySlotPrefab.gameObject
+                                : null,
+                            equipmentPanelComponent.GoldLabel)
+                        : equipmentPanelComponent.ShopPanel != null
+                            ? equipmentPanelComponent.ShopPanel.GetComponent<ShopScreen>()
+                            : null;
+                    if (shop != null)
+                    {
+                        if (withShop) shop.Show();
+                        else shop.Hide();
+                    }
+
+                    // Open on the shop page after a victory; otherwise start on the inventory.
+                    equipmentPanelComponent.SelectPage(withShop ? "Special" : "Inventory Slots");
                 }
             }
 

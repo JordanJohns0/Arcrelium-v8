@@ -17,6 +17,11 @@ namespace Equipment
     {
         public List<CardData> allCards = new List<CardData>();
         public List<EquipmentData> allEquipment = new List<EquipmentData>();
+        [Header("Ambient visuals")]
+        [Tooltip("Prefab shown on tiles covered in fire.")]
+        public GameObject fireEffectVisualPrefab;
+        [Tooltip("Prefab shown on tiles slicked with oil.")]
+        public GameObject oilEffectVisualPrefab;
 
         private static GameDataLibrary instance;
         private static bool instanceSearched;

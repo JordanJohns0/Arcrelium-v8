@@ -142,7 +142,7 @@ PrefabInstance:
     - target: {fileID: 1087468177673829988, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: feetEquipment
       value: 
-      objectReference: {fileID: 11400000, guid: eb56d6b1a99f56f459f4f9ac40cc95cd, type: 2}
+      objectReference: {fileID: 11400000, guid: b8cb6536830d7cf408663fd2fddb7743, type: 2}
     - target: {fileID: 1087468177673829988, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: chestEquipment
       value: 
@@ -154,7 +154,7 @@ PrefabInstance:
     - target: {fileID: 1087468177673829988, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: rightHandEquipment
       value: 
-      objectReference: {fileID: 11400000, guid: 151b99a4097d9264f9fbcb13f95bd8ea, type: 2}
+      objectReference: {fileID: 11400000, guid: 3b3e74d93d733f44db13774a79fe0e07, type: 2}
     - target: {fileID: 4685556682356975011, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: m_Mesh
       value: 
@@ -168,8 +168,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
+      propertyPath: stats.Block
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: stats.MaxHealth
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7177736162352147799, guid: 19c745e6b0e14de4c83b5e21bfd225c2, type: 3}
       propertyPath: stats.CharacterName

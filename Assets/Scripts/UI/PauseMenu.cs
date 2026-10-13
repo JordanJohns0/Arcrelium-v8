@@ -3,11 +3,15 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using Game;
 
 namespace UI
 {
     public class PauseMenu : MonoBehaviour
     {
+        private static readonly float[] SpeedValues = { 1f, 1.5f, 2f };
+        private static readonly string[] SpeedLabels = { "Watch Speed: Normal", "Watch Speed: Fast", "Watch Speed: 2x" };
+
         [Header("Prefab")]
         [SerializeField] private GameObject uiPrefab;
 
@@ -17,7 +21,7 @@ namespace UI
 
         [Header("Overlay & Panel")]
         [SerializeField] private Color overlayColor = new Color(0, 0, 0, 0.6f);
-        [SerializeField] private Vector2 panelSize = new Vector2(350, 350);
+        [SerializeField] private Vector2 panelSize = new Vector2(350, 430);
         [SerializeField] private Color panelColor = new Color(0.12f, 0.12f, 0.12f, 1f);
         [SerializeField] private float panelSpacing = 20f;
         [SerializeField] private int paddingLeft = 30;
@@ -46,6 +50,7 @@ namespace UI
         private bool isVisible;
         private static PauseMenu instance;
         private static GameObject staticPrefab;
+        private TextMeshProUGUI speedButtonText;
 
         private void Awake()
         {
@@ -150,7 +155,36 @@ namespace UI
             title.rectTransform.sizeDelta = titleSize;
 
             CreateButton(panel, resumeLabel, Hide);
+            CreateSpeedButton(panel);
             CreateButton(panel, mainMenuLabel, GoToMainMenu);
+        }
+
+        /// <summary>
+        /// Adds the "Watch Speed" cycle button. It steps through the manual override
+        /// multiplier applied on top of the automatic enemy-count scaling, persists it,
+        /// and applies it immediately (see <see cref="GamePace"/>).
+        /// </summary>
+        private void CreateSpeedButton(Transform parent)
+        {
+            GameObject btnObj = CreateButton(parent, SpeedLabels[CurrentSpeedIndex()], CycleSpeed);
+            speedButtonText = btnObj.GetComponentInChildren<TextMeshProUGUI>();
+        }
+
+        private static int CurrentSpeedIndex()
+        {
+            float current = GamePace.ManualMultiplier;
+            for (int i = 0; i < SpeedValues.Length; i++)
+            {
+                if (Mathf.Approximately(SpeedValues[i], current)) return i;
+            }
+            return 0;
+        }
+
+        private void CycleSpeed()
+        {
+            int next = (CurrentSpeedIndex() + 1) % SpeedValues.Length;
+            GamePace.ManualMultiplier = SpeedValues[next];
+            if (speedButtonText != null) speedButtonText.text = SpeedLabels[next];
         }
 
         private GameObject CreateButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)

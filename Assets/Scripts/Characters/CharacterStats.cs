@@ -63,6 +63,17 @@ namespace Characters
             OnStatsChanged?.Invoke(this);
         }
 
+        /// <summary>
+        /// Instant defeat regardless of block (execution-style effects). Clears block and
+        /// zeroes health so the character dies.
+        /// </summary>
+        public void Kill()
+        {
+            Block = 0;
+            CurrentHealth = 0;
+            OnStatsChanged?.Invoke(this);
+        }
+
         public void GainBlock(int amount)
         {
             Block = Mathf.Min(MaxHealth, Block + amount);

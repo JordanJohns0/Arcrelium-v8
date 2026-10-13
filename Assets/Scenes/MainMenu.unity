@@ -163,7 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e87f8a9b3c2d4e5f6a7b8c9d0e1f2a3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UI::MainMenuController
-  version: v0.3.0
+  version: v0.4.0
   sortingOrder: 100
   referenceResolution: {x: 1920, y: 1080}
   backgroundColor: {r: 0.08, g: 0.08, b: 0.08, a: 1}

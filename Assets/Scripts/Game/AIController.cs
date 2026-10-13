@@ -5,6 +5,7 @@ using Characters;
 using Cards;
 using Cards.Effects;
 using HexGrid;
+using TileEffects;
 
 namespace Game
 {
@@ -13,15 +14,15 @@ namespace Game
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionResolver actionResolver;
         [SerializeField] private HexGridManager grid;
-        [SerializeField] private float aiDelay = 0.4f;
+        [SerializeField] private float aiDelay = 0.27f;
 
         /// <summary>
         /// Minimum real seconds between AI card plays so everyone can follow each
         /// resolution. Human players are never throttled by this.
         /// </summary>
-        internal const float MinPlayIntervalSeconds = 1f;
+        internal const float MinPlayIntervalSeconds = 0.67f;
 
-        [SerializeField] private float aiPlayInterval = 1f;
+        [SerializeField] private float aiPlayInterval = 0.67f;
 
         private struct Candidate
         {
@@ -56,20 +57,19 @@ namespace Game
 
         private IEnumerator PlayAITurn(Character character)
         {
-            while (turnManager.Busy)
-                yield return null;
+            yield return WaitUntilIdle();
 
-            yield return new WaitForSeconds(aiDelay);
+            yield return new WaitForSeconds(GamePace.Scale(aiDelay));
 
             while (true)
             {
                 Candidate best = ChooseBestPlay(character);
                 if (best.Card == null || best.Score <= AICardScoring.PassThreshold)
                 {
-                    // The previous card's animation must finish before passing, otherwise the
-                    // Pass would be rejected while the turn is busy and the turn would stall.
-                    while (turnManager.Busy)
-                        yield return null;
+                    // The previous card's animation and popup must finish before passing,
+                    // otherwise the Pass would be rejected while the turn is busy and the
+                    // turn would stall.
+                    yield return WaitUntilIdle();
                     turnManager.Pass();
                     yield break;
                 }
@@ -79,18 +79,29 @@ namespace Game
                     // Every candidate is pre-validated, so a rejection means the turn
                     // is no longer playable (e.g. a state change mid-AI). End the turn
                     // cleanly instead of soft-locking on an unplayable hand.
-                    while (turnManager.Busy)
-                        yield return null;
+                    yield return WaitUntilIdle();
                     turnManager.Pass();
                     yield break;
                 }
 
-                // Pace the turn: wait for this card's animation to finish (and keep a readable
-                // minimum gap between plays) before the next one is submitted.
-                float minGapEnd = Time.time + Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval);
-                while (Time.time < minGapEnd || turnManager.Busy)
+                // Pace the turn: wait for this card's animation to finish, let its popup clear,
+                // and keep a readable minimum gap between plays before the next is submitted.
+                float minGapEnd = Time.time + GamePace.Scale(Mathf.Max(MinPlayIntervalSeconds, aiPlayInterval));
+                while (Time.time < minGapEnd || turnManager.Busy || UI.PlayedCardDisplay.IsBusy)
                     yield return null;
             }
+        }
+
+        /// <summary>
+        /// Blocks the AI until the board is idle: no card animation resolving (turnManager.Busy)
+        /// and no played-card popup still on screen. Enemies therefore never play a card on top
+        /// of an unfinished animation or while a popup is being read, so each enemy action and
+        /// its visual stay in step.
+        /// </summary>
+        private IEnumerator WaitUntilIdle()
+        {
+            while (turnManager.Busy || UI.PlayedCardDisplay.IsBusy)
+                yield return null;
         }
 
         private Candidate ChooseBestPlay(Character character)
@@ -102,10 +113,15 @@ namespace Game
             best.Score = float.MinValue;
 
             int nearestEnemyDistance = DistanceToNearest(enemies, character.CurrentCell.Coordinates);
+            // Where this character wants to stand based on its own attack reach: a purely
+            // ranged kit hangs back at the edge of its range rather than closing to contact.
+            int preferredRange = AICardScoring.PreferredRange(character);
 
             foreach (CardInstance card in hand)
             {
                 if (card == null || card.Data == null || card.Data.Steps == null || card.Data.Steps.Count == 0) continue;
+                // A "can't move" status on the AI roots it in place even when its hand has moves.
+                if (card.Data.IsMove && !character.CanMoveThisTurn) continue;
                 if (card.Cost > hand.Count - 1) continue;
                 List<CardInstance> cost = PickCostCards(hand, card);
 
@@ -131,8 +147,9 @@ namespace Game
                             int before = nearestEnemyDistance;
                             int after = DistanceToNearest(enemies, cell.Coordinates);
                             float score = AICardScoring.Score(card.Data, character, null, after, card.Cost)
-                                + AICardScoring.ScoreMove(before, after)
-                                + AreaDamageValue(card.Data, character, enemies, cell);
+                                + AICardScoring.ScoreMove(before, after, preferredRange)
+                                + AreaDamageValue(card.Data, character, enemies, cell)
+                                + TileEffectValue(card.Data, character, cell);
                             AddCandidate(ref best, card, cost, cell, null, score);
                         }
                         break;
@@ -170,7 +187,8 @@ namespace Game
         /// <summary>
         /// Every step of the card must be executable against its own context (per-step range
         /// and target type) for the candidate to be valid — same all-or-nothing rule as the
-        /// resolver, so a multi-step card is only played if it fully resolves.
+        /// resolver, so a multi-step card is only played if it fully resolves. Steps whose
+        /// condition fails are skipped, exactly like the resolver.
         /// </summary>
         private bool AllStepsCanExecute(Character source, CardData card, HexCell cell, Character target)
         {
@@ -178,6 +196,7 @@ namespace Game
             {
                 if (step == null || step.Effect == null) return false;
                 CardContext ctx = MakeContext(source, card, step, cell, target);
+                if (step.Condition != null && !step.Condition.Evaluate(ctx)) continue;
                 if (!step.Effect.CanExecute(ctx)) return false;
             }
             return true;
@@ -229,6 +248,66 @@ namespace Game
         }
 
         /// <summary>
+        /// Control value for cards that manipulate tile effects directly: a fire wall is worth
+        /// the burn damage of every enemy standing in it, and mould earth displacing or crushing
+        /// a standing enemy has matchup value. Grease (oil placement) has no direct payoff so it
+        /// scores nothing on its own.
+        /// </summary>
+        private float TileEffectValue(CardData card, Character source, HexCell cell)
+        {
+            if (card.Steps == null || grid == null) return 0f;
+            float value = 0f;
+
+            foreach (CardEffectStep step in card.Steps)
+            {
+                switch (step?.Effect)
+                {
+                    case TilePatternEffect pattern:
+                    {
+                        int burn = (pattern.Definition as FireTileEffectSO)?.FireDamage ?? 0;
+                        if (burn <= 0) break;
+                        foreach (HexCoordinates burnedCoords in pattern.Cells(source.CurrentCell, cell))
+                        {
+                            HexCell burned = grid.GetCell(burnedCoords);
+                            if (burned?.Occupant == null || burned.Occupant.IsAllyOf(source)) continue;
+                            if (burned.Occupant.Stats == null || !burned.Occupant.Stats.IsAlive) continue;
+                            int needed = AICardScoring.EffectiveHpToKill(burned.Occupant);
+                            value += Mathf.Min(burn, needed) * AICardScoring.DamagePerHp;
+                            if (burn >= needed) value += AICardScoring.LethalBonus;
+                        }
+                        break;
+                    }
+                    case PushOccupantsEffect when cell.Occupant != null && cell.Occupant.IsEnemyOf(source):
+                    {
+                        bool hasExit = false;
+                        foreach (HexCell neighbor in grid.GetNeighbors(cell.Coordinates))
+                        {
+                            if (neighbor != null && neighbor.IsWalkable)
+                            {
+                                hasExit = true;
+                                break;
+                            }
+                        }
+                        value += hasExit ? 3f : AICardScoring.LethalBonus;
+                        break;
+                    }
+                    case SpawnRockEffect:
+                        // A rising rock walls adjacent enemies into place; worth a bit for each one caged.
+                        foreach (HexCell neighbor in grid.GetNeighbors(cell.Coordinates))
+                        {
+                            Character victim = neighbor == null ? null : neighbor.Occupant;
+                            if (victim != null && victim.IsEnemyOf(source)
+                                && victim.Stats != null && victim.Stats.IsAlive && !victim.IsStructure)
+                                value += AICardScoring.MovePerHex * 0.5f;
+                        }
+                        break;
+                }
+            }
+
+            return value;
+        }
+
+        /// <summary>
         /// Every character in range of the card that matches its target type (enemy/ally
         /// decided by TeamId so PvP treats each player as a lone team).
         /// </summary>
@@ -246,6 +325,9 @@ namespace Game
                     case TargetType.AllyCharacter when !occupant.IsAllyOf(source):
                         continue;
                 }
+
+                // Statuses such as "this enemy cannot target you" take the victim out of reach.
+                if (!source.CanTarget(occupant)) continue;
 
                 yield return occupant;
             }

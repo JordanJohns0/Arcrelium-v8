@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using TileEffects;
 
 namespace HexGrid
 {
@@ -18,6 +19,17 @@ namespace HexGrid
 
         public int Radius => radius;
         public float HexSize => hexSize;
+
+        /// <summary>
+        /// Every board hosts a TileEffectSystem so oil/fire/rocks actually work in play
+        /// (placement, entry damage, oil slides and turn-start burning all run through it).
+        /// Added here because no scene had one and the effects silently no-op without it.
+        /// </summary>
+        private void Start()
+        {
+            if (TileEffectSystem.Instance == null)
+                gameObject.AddComponent<TileEffectSystem>();
+        }
 
         public void GenerateGrid()
         {

@@ -64,7 +64,9 @@ namespace Equipment
             }
 
             character.OnMovedToCell += HandleMovedToCell;
+            character.OnLeftCell += HandleLeftCell;
             character.OnDamageTaken += HandleDamageTaken;
+            character.OnDamageDealt += HandleDamageDealt;
             character.OnBlockGained += HandleBlockGained;
         }
 
@@ -467,6 +469,26 @@ namespace Equipment
             }
         }
 
+        private void HandleLeftCell(HexCell cell)
+        {
+            if (cell == null) return;
+
+            var context = new EquipmentContext
+            {
+                Source = character,
+                Grid = grid,
+                TurnManager = turnManager,
+                Timing = TriggerTiming.OnLeftCell,
+                TargetCell = cell
+            };
+
+            foreach (var trigger in GetTriggers(TriggerTiming.OnLeftCell))
+            {
+                if (trigger.Effect != null)
+                    trigger.Effect.Execute(context);
+            }
+        }
+
         private void HandleDamageTaken(int amount)
         {
             var context = new EquipmentContext
@@ -478,6 +500,27 @@ namespace Equipment
             };
 
             foreach (var trigger in GetTriggers(TriggerTiming.OnDamageTaken))
+            {
+                if (trigger.Effect == null) continue;
+                if (trigger.OnlyOnWearersTurn && turnManager != null &&
+                    turnManager.ActiveCharacter != character) continue;
+                trigger.Effect.Execute(context);
+            }
+        }
+
+        private void HandleDamageDealt(int amount, Character target)
+        {
+            var context = new EquipmentContext
+            {
+                Source = character,
+                Grid = grid,
+                TurnManager = turnManager,
+                Timing = TriggerTiming.OnDealDamage,
+                Amount = amount,
+                Other = target
+            };
+
+            foreach (var trigger in GetTriggers(TriggerTiming.OnDealDamage))
             {
                 if (trigger.Effect == null) continue;
                 if (trigger.OnlyOnWearersTurn && turnManager != null &&
@@ -560,7 +603,9 @@ namespace Equipment
             if (character != null)
             {
                 character.OnMovedToCell -= HandleMovedToCell;
+                character.OnLeftCell -= HandleLeftCell;
                 character.OnDamageTaken -= HandleDamageTaken;
+                character.OnDamageDealt -= HandleDamageDealt;
                 character.OnBlockGained -= HandleBlockGained;
             }
         }

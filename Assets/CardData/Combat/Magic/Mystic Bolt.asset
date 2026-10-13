@@ -22,5 +22,6 @@ MonoBehaviour:
     TargetType: 3
     Range: 2
     CellConstraint: 0
-  OnDrawnEffect: {fileID: 11400000, guid: 90817e86607d1f04392a7f463fe3b740, type: 2}
+  OnDrawnModifiers:
+  - {fileID: 11400000, guid: 5b88d8e3fa4c48c19037028773ab0ba1, type: 2}
   PlaysOnDiscard: 0

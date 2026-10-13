@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Cards;
 using Equipment;
+using Game;
 
 namespace UI
 {
@@ -16,9 +17,10 @@ namespace UI
     /// Plays made by other players (and AI) are queued and shown strictly one at a
     /// time, each visible for at least MinVisibleSeconds before the next appears — so a
     /// card played right after another still gets read instead of flashing by. The
-    /// local player's own plays are never displayed (they just played them). This is
-    /// purely visual: playing cards is never blocked or slowed by the queue;
-    /// resolution stays instant while the display catches up in the background.
+    /// local player's own plays are never displayed (they just played them). The queue
+    /// itself never blocks card resolution (effects still commit in turn order), but
+    /// the AI waits on <see cref="IsBusy"/> so an enemy never plays its next card while
+    /// a popup is still on screen — keeping each enemy action and its visual in step.
     /// </summary>
     public class PlayedCardDisplay : MonoBehaviour
     {
@@ -58,9 +60,18 @@ namespace UI
         private Canvas canvas;
         private readonly Queue<DisplayRequest> queue = new Queue<DisplayRequest>();
         private Coroutine playRoutine;
+        private GameObject resolvedCardPrefab;
 
         /// <summary>Each played card stays on screen at least this long, in seconds.</summary>
         internal const float MinVisibleSeconds = 1f;
+
+        /// <summary>
+        /// True while a played-card popup is on screen or waiting to be shown. The AI waits on
+        /// this before its next play so an enemy never acts while its previous card (or anyone
+        /// else's) is still being displayed, keeping the visuals in step with the action.
+        /// No instance (headless/tests) means nothing is showing.
+        /// </summary>
+        public static bool IsBusy => instance != null && (instance.playRoutine != null || instance.queue.Count > 0);
 
         private struct DisplayRequest
         {
@@ -119,6 +130,24 @@ namespace UI
         {
             EnsureInstance();
             instance.cardPrefab = prefab != null ? prefab.gameObject : null;
+        }
+
+        /// <summary>
+        /// The prefab used to render played cards. Prefers the explicitly injected prefab
+        /// (EquipmentUI hands it the deck-window preview) and otherwise borrows the hand's card
+        /// prefab, which is always wired in the scene. Without this the popup fell back to a
+        /// name-only card whenever no deck UI had opened yet — which is why enemy plays showed
+        /// a name instead of the real card "sometimes".
+        /// </summary>
+        private GameObject ResolveCardPrefab()
+        {
+            if (cardPrefab != null) return cardPrefab;
+            if (resolvedCardPrefab != null) return resolvedCardPrefab;
+
+            HandView hand = FindAnyObjectByType<HandView>(FindObjectsInactive.Include);
+            if (hand != null && hand.ViewPrefab != null)
+                resolvedCardPrefab = hand.ViewPrefab.gameObject;
+            return resolvedCardPrefab;
         }
 
         private static void EnsureInstance()
@@ -203,7 +232,8 @@ namespace UI
             GameObject card;
             if (data != null)
             {
-                card = cardPrefab != null ? Instantiate(cardPrefab, canvas.transform) : BuildFallbackCard(name);
+                GameObject prefab = ResolveCardPrefab();
+                card = prefab != null ? Instantiate(prefab, canvas.transform) : BuildFallbackCard(name);
                 card.name = "PlayedCard";
 
                 var view = card.GetComponent<CardView>();
@@ -254,19 +284,23 @@ namespace UI
             Vector2 from = basePosition;
             Vector2 to = endPosition;
 
+            // Popups shrink with GamePace so a swarm's worth of enemy plays doesn't hold
+            // the turn up. At speed 1 these are exactly the serialized timings.
+            float rise = GamePace.Scale(riseTime);
+            float fade = GamePace.Scale(fadeTime);
             // Guarantee the minimum visible time even if the serialized timings are
             // tuned shorter: stretch the hold to make up the difference.
-            float hold = Mathf.Max(holdTime, MinVisibleSeconds - riseTime - fadeTime);
+            float hold = Mathf.Max(GamePace.Scale(holdTime), GamePace.Scale(MinVisibleSeconds) - rise - fade);
 
             group.alpha = 0f;
             rect.anchoredPosition = from;
             rect.localScale = Vector3.one * baseScale;
 
             float t = 0f;
-            while (t < riseTime)
+            while (t < rise)
             {
                 t += Time.deltaTime;
-                float p = Mathf.Clamp01(t / riseTime);
+                float p = Mathf.Clamp01(t / rise);
                 group.alpha = Mathf.Lerp(0f, 1f, p);
                 rect.anchoredPosition = Vector2.Lerp(from, to, p);
                 rect.localScale = Vector3.one * Mathf.Lerp(startScale, baseScale, p);
@@ -280,10 +314,10 @@ namespace UI
             yield return new WaitForSeconds(hold);
 
             t = 0f;
-            while (t < fadeTime)
+            while (t < fade)
             {
                 t += Time.deltaTime;
-                group.alpha = Mathf.Lerp(1f, 0f, Mathf.Clamp01(t / fadeTime));
+                group.alpha = Mathf.Lerp(1f, 0f, Mathf.Clamp01(t / fade));
                 yield return null;
             }
         }

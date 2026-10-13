@@ -40,25 +40,35 @@ namespace Game
             Character targetCharacter = null,
             List<HexCell> movePath = null,
             bool ignoreCost = false,
-            bool ignoreHandMembership = false)
+            bool ignoreHandMembership = false,
+            bool cardsAlreadyDiscarded = false)
         {
             if (source == null || card == null) return false;
-            if (!ignoreHandMembership && !source.Hand.Contains(card)) return false;
+            if (!ignoreHandMembership && !cardsAlreadyDiscarded && !source.Hand.Contains(card)) return false;
             if (!HasBoundSteps(card.Data)) return false;
 
             costCards ??= new List<CardInstance>();
-            if (!ignoreCost && !IsCostValid(source, card, costCards)) return false;
+            if (!ignoreCost && !cardsAlreadyDiscarded && !IsCostValid(source, card, costCards)) return false;
             if (!IsTargetValid(source, card.Data, targetCell, targetCharacter)) return false;
 
             // Validate every step against its own context (its own range and target type)
             // before any step executes, so a multi-step card never partially resolves.
+            // Steps whose condition fails are skipped entirely (never validated, never run).
             var executions = new List<(CardEffectStep Step, CardContext Context)>(card.Data.Steps.Count);
+            CardContext firstContext = null;
             foreach (CardEffectStep step in card.Data.Steps)
             {
                 CardContext context = MakeContext(source, card, step, targetCell, targetCharacter, movePath);
+                firstContext ??= context;
+                if (StepConditionFails(step, context)) continue;
                 if (!step.Effect.CanExecute(context)) return false;
                 executions.Add((step, context));
             }
+
+            // When every step was skipped by its condition (e.g. Parry with no adjacent enemy),
+            // keep the first step's context so equipment still sees a target/range on play.
+            if (executions.Count == 0 && firstContext != null)
+                executions.Add((card.Data.Steps[0], firstContext));
 
             // Equipment may boost range before execution; the bonus applies to every step.
             CardContext equipmentContext = PrimaryContext(executions);
@@ -83,8 +93,10 @@ namespace Game
             // Pay cost: discard the other cards, then the played card itself. Must happen
             // before effects execute so draw effects see the freed hand slots. A card played
             // from outside the hand (free "when discarded, play it") was already discarded,
-            // so its membership/hand state is left untouched.
-            if (!ignoreHandMembership)
+            // so its membership/hand state is left untouched. A queued play had its cards
+            // removed the moment it was submitted (so the hand updates instantly), so there
+            // is nothing left to discard here.
+            if (!ignoreHandMembership && !cardsAlreadyDiscarded)
             {
                 foreach (CardInstance costCard in costCards)
                 {
@@ -93,24 +105,51 @@ namespace Game
                 source.DiscardFromHand(card);
             }
 
-            // Cards drawn by one step are visible to later steps via context.DrawnCards,
-            // so chains like "Draw a card." then "Set its cost to 1." work across steps.
-            List<CardInstance> chainDrawn = null;
             foreach (var (step, context) in executions)
             {
-                if (chainDrawn != null && chainDrawn.Count > 0)
-                {
-                    context.DrawnCards ??= new List<CardInstance>();
-                    context.DrawnCards.AddRange(chainDrawn);
-                }
-
+                if (StepConditionFails(step, context)) continue;
                 step.Effect.Execute(context);
-
-                if (context.DrawnCards != null && context.DrawnCards.Count > 0)
-                    chainDrawn = context.DrawnCards;
             }
 
             OnCardPlayed?.Invoke(source, card.Data);
+            return true;
+        }
+
+        /// <summary>
+        /// Non-mutating validation of a would-be play: the same checks PlayCard performs before
+        /// it commits (card carries bound steps, cost is payable, target is valid, and every
+        /// non-skipped step is executable). Used to reject an invalid play up front — e.g. when
+        /// queueing a play while an earlier card is still resolving — without touching the board.
+        ///
+        /// Equipment range/damage bonuses are intentionally not applied here: they only extend
+        /// how far a step reaches, and the target UI already works from the card's base range,
+        /// so anything this accepts will also be accepted when it actually resolves.
+        /// </summary>
+        public bool CanPlay(
+            Character source,
+            CardInstance card,
+            List<CardInstance> costCards = null,
+            HexCell targetCell = null,
+            Character targetCharacter = null,
+            List<HexCell> movePath = null,
+            bool ignoreCost = false,
+            bool ignoreHandMembership = false)
+        {
+            if (source == null || card == null) return false;
+            if (!ignoreHandMembership && !source.Hand.Contains(card)) return false;
+            if (!HasBoundSteps(card.Data)) return false;
+
+            costCards ??= new List<CardInstance>();
+            if (!ignoreCost && !IsCostValid(source, card, costCards)) return false;
+            if (!IsTargetValid(source, card.Data, targetCell, targetCharacter)) return false;
+
+            foreach (CardEffectStep step in card.Data.Steps)
+            {
+                CardContext context = MakeContext(source, card, step, targetCell, targetCharacter, movePath);
+                if (StepConditionFails(step, context)) continue;
+                if (!step.Effect.CanExecute(context)) return false;
+            }
+
             return true;
         }
 
@@ -151,6 +190,12 @@ namespace Game
             return true;
         }
 
+        /// <summary>True when the step carries a condition that currently fails (step is skipped).</summary>
+        private static bool StepConditionFails(CardEffectStep step, CardContext context)
+        {
+            return step.Condition != null && !step.Condition.Evaluate(context);
+        }
+
         private CardContext MakeContext(Character source, CardInstance card, CardEffectStep step,
             HexCell targetCell, Character targetCharacter, List<HexCell> movePath = null)
         {
@@ -162,6 +207,7 @@ namespace Game
                 TargetCell = targetCell,
                 TargetCharacter = targetCharacter,
                 Range = step.Range,
+                StepModifiers = step.CardModifiers,
                 MovePath = movePath
             };
         }

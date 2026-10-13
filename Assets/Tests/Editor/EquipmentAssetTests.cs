@@ -10,6 +10,10 @@ using Equipment;
 using Equipment.Effects;
 using HexGrid;
 
+// Cards.Effects also defines a HealEffect, so alias the one card effect this file needs
+// instead of importing the whole namespace.
+using AttackEffect = Cards.Effects.AttackEffect;
+
 namespace Tests.Equipment
 {
     /// <summary>
@@ -78,6 +82,13 @@ namespace Tests.Equipment
             },
             new Spec
             {
+                Name = "Snake Oil Flask",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = Array.Empty<string>(),
+                Triggers = new[] { (TriggerTiming.OnDealDamage, typeof(ShuffleCardIntoDeckEffect)) }
+            },
+            new Spec
+            {
                 Name = "Null Amulet",
                 Slot = EquipmentSlotType.Trinket,
                 Cards = Array.Empty<string>(),
@@ -94,7 +105,21 @@ namespace Tests.Equipment
             {
                 Name = "Staff of Fire",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Fireball", "Fireball", "Bonk" },
+                Cards = new[] { "Fireball", "Wall of Flames", "Flame Bolt" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Staff of Stone",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Mould Earth" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Bottle of Grease",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Grease" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -115,7 +140,7 @@ namespace Tests.Equipment
             {
                 Name = "Tower Shield",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Bulwark", "Fortify", "Fortify", "Shield Bash" },
+                Cards = new[] { "Bulwark", "Fortify", "Fortify", "Shield Bash", "Defend" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -136,7 +161,42 @@ namespace Tests.Equipment
             {
                 Name = "Goblin Sword",
                 Slot = EquipmentSlotType.Hand,
-                Cards = new[] { "Poke", "Poke", "Poke", "Poke" },
+                Cards = new[] { "Poke", "Poke" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Kobold Shoes",
+                Slot = EquipmentSlotType.Feet,
+                Cards = new[] { "Walk", "Walk", "Walk", "Walk" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Kobold Sling",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Shoot Pebble", "Shoot Pebble", "Shoot Pebble" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Kobold Stick",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Poke", "Poke" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Orc Club",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Bonk", "Bonk" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Orc Shoes",
+                Slot = EquipmentSlotType.Feet,
+                Cards = new[] { "Heavy Footsteps", "Heavy Footsteps", "Heavy Footsteps" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -227,7 +287,7 @@ namespace Tests.Equipment
             {
                 Name = "Backpack",
                 Slot = EquipmentSlotType.Trinket,
-                Cards = new[] { "Prepare" },
+                Cards = new[] { "Prepare", "Sleight of Hand" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
             new Spec
@@ -246,15 +306,65 @@ namespace Tests.Equipment
             },
             new Spec
             {
+                Name = "Soul-Sight Magnifying Glass",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Sense Evil" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Tome of Knowledge",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Papercut" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Steel Net",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Entrap" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Thieve's Tools",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Pickpocket", "Prepare" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Boots of Flame",
+                Slot = EquipmentSlotType.Feet,
+                Cards = new[] { "Walk", "Walk", "Walk" },
+                Triggers = new[] { (TriggerTiming.OnLeftCell, typeof(PlaceFireTileEffect)) }
+            },
+            new Spec
+            {
                 Name = "Ring of Clarity",
                 Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Clarity" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Ring of Foresight",
+                Slot = EquipmentSlotType.Trinket,
                 Cards = new[] { "Foretell" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Snake Oil Vial",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = new[] { "Snake Oil" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
         };
 
         // Timings EquipmentManager actually fires during gameplay (see EquipmentManager.Initialize
-        // and its handlers: StartOfTurn, EndOfTurn, OnBeforeCardPlay, OnMovedToCell, OnDamageTaken).
+        // and its handlers: StartOfTurn, EndOfTurn, OnBeforeCardPlay, OnMovedToCell, OnDamageTaken,
+        // OnDealDamage, OnGainBlock, OnEnemyTurnEnded).
         private static readonly HashSet<TriggerTiming> WiredTimings = new HashSet<TriggerTiming>
         {
             TriggerTiming.StartOfTurn,
@@ -262,8 +372,10 @@ namespace Tests.Equipment
             TriggerTiming.OnBeforeCardPlay,
             TriggerTiming.OnMovedToCell,
             TriggerTiming.OnDamageTaken,
+            TriggerTiming.OnDealDamage,
             TriggerTiming.OnGainBlock,
-            TriggerTiming.OnEnemyTurnEnded
+            TriggerTiming.OnEnemyTurnEnded,
+            TriggerTiming.OnLeftCell
         };
 
         private static IEnumerable<EquipmentData> AllEquipmentAssets()
@@ -363,6 +475,63 @@ namespace Tests.Equipment
         }
 
         /// <summary>
+        /// Mirrors EquipmentManager.GetAllCards (Character.cs builds the deck from it): every
+        /// card the player can end up holding SHOULD be reachable through at least one
+        /// equipment's granted-cards list (the Cards field) OR through one of its enchantments'
+        /// CollectGrantedCards. This is informational only — it is not an error for a card to
+        /// have no granting equipment (it may be enemy-only, a future reward, etc.) — so any
+        /// uncovered cards are logged for design review instead of failing the suite. Cards are
+        /// matched by asset identity, not display name, so coverage only counts when the exact
+        /// CardData an equipment grants is the same object.
+        /// </summary>
+        [Test]
+        public void EveryCard_GrantableBySomeEquipment()
+        {
+            var granted = new HashSet<CardData>();
+            foreach (var equipment in AllEquipmentAssets())
+            {
+                if (equipment.Cards != null)
+                {
+                    foreach (CardData card in equipment.Cards)
+                    {
+                        if (card != null) granted.Add(card);
+                    }
+                }
+
+                if (equipment.Enchantments == null) continue;
+                foreach (EquipmentEnchantmentSO enchantment in equipment.Enchantments)
+                {
+                    if (enchantment == null) continue;
+                    var grantedByEnchantment = new List<CardData>();
+                    enchantment.CollectGrantedCards(grantedByEnchantment);
+                    foreach (CardData card in grantedByEnchantment)
+                    {
+                        if (card != null) granted.Add(card);
+                    }
+                }
+            }
+
+            var unobtainable = new List<string>();
+            foreach (string guid in AssetDatabase.FindAssets("t:CardData"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var card = AssetDatabase.LoadAssetAtPath<CardData>(path);
+                if (card == null)
+                {
+                    unobtainable.Add($"<asset fails to load at {path}>");
+                    continue;
+                }
+                if (!granted.Contains(card)) unobtainable.Add(card.CardName);
+            }
+
+            if (unobtainable.Count > 0)
+            {
+                Debug.Log("No equipment grants these cards (informational — not a failure): "
+                    + string.Join(", ", unobtainable));
+            }
+        }
+
+        /// <summary>
         /// Every trigger effect asset used by equipment must be present and use the designed
         /// numeric parameters. Guards against, e.g., Heal_1 silently healing 5.
         /// </summary>
@@ -373,6 +542,7 @@ namespace Tests.Equipment
             AssertTriggerEffect<AOEDamageEffect>("Metal Fist", e => e.Damage == 1 && e.Range == 1, "should deal 1 damage in range 1");
             AssertTriggerEffect<MoveStepDamageEffect>("Null Amulet", e => e.Damage == 1, "should deal exactly 1 damage");
             AssertTriggerEffect<AutoMoveEffect>("Wanderer's Token", e => e.Range == 1, "should move exactly 1 cell");
+            AssertTriggerEffect<PlaceFireTileEffect>("Boots of Flame", e => e.FireDefinition != null, "should reference a fire tile effect asset");
         }
 
         private static void AssertTriggerEffect<T>(string equipmentName, Func<T, bool> predicate, string message) where T : EquipmentEffect
@@ -653,6 +823,152 @@ namespace Tests.Equipment
             }
             finally
             {
+                DestroyAll(grid, source, manager);
+            }
+        }
+
+        /// <summary>
+        /// Snake Oil Flask's trigger is OnDealDamage -> shuffle a Snake Oil into the damaged
+        /// enemy's deck. The owner and the victim must be distinct, and only the victim's
+        /// deck (not the owner's) gains the card.
+        /// </summary>
+        [Test]
+        public void SnakeOilFlask_OnDealDamage_ShufflesSnakeOilIntoVictimsDeck()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Snake Oil Flask")));
+
+                Character enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0);
+
+                Assert.AreEqual(10, enemy.Stats.CurrentHealth, "Enemy should start at full health.");
+                Assert.AreEqual(0, enemy.Deck.DrawPile.Count, "Victim's deck should start empty.");
+                Assert.AreEqual(0, source.Deck.DrawPile.Count, "Owner's deck should start empty.");
+
+                enemy.TakeDamage(2, source);
+
+                Assert.AreEqual(8, enemy.Stats.CurrentHealth, "Enemy should have taken the damage.");
+                Assert.AreEqual(1, enemy.Deck.DrawPile.Count,
+                    "Dealing damage should shuffle exactly one Snake Oil into the victim's deck.");
+                Assert.AreEqual(0, source.Deck.DrawPile.Count,
+                    "The card must go into the victim's deck, not the owner's.");
+
+                CardInstance shuffled = enemy.Deck.DrawPile[0];
+                Assert.AreEqual("Snake Oil", shuffled.Data.CardName,
+                    "The shuffled card should be Snake Oil.");
+
+                UnityEngine.Object.DestroyImmediate(enemy.gameObject);
+            }
+            finally
+            {
+                DestroyAll(grid, source, manager);
+            }
+        }
+
+        /// <summary>
+        /// The trigger fires once per hit, so repeated damage keeps bloating the victim's deck.
+        /// </summary>
+        [Test]
+        public void SnakeOilFlask_FiresOncePerHit()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Snake Oil Flask")));
+
+                Character enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0);
+                enemy.Stats.Heal(10); // survive three hits
+
+                enemy.TakeDamage(1, source);
+                Assert.AreEqual(1, enemy.Deck.DrawPile.Count, "First hit should add one Snake Oil.");
+
+                enemy.TakeDamage(1, source);
+                Assert.AreEqual(2, enemy.Deck.DrawPile.Count, "Second hit should add another.");
+
+                enemy.TakeDamage(1, source);
+                Assert.AreEqual(3, enemy.Deck.DrawPile.Count, "Third hit should add another.");
+
+                UnityEngine.Object.DestroyImmediate(enemy.gameObject);
+            }
+            finally
+            {
+                DestroyAll(grid, source, manager);
+            }
+        }
+
+        /// <summary>
+        /// Only the wearer that dealt the damage reacts: an ally dealing damage (or the
+        /// victim dealing it) must not shuffle cards into anyone's deck.
+        /// </summary>
+        [Test]
+        public void SnakeOilFlask_OnlyFiresForItsOwnWearer()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            Character ally = null;
+            Character enemy = null;
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Snake Oil Flask")));
+
+                ally = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 2);
+                enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0);
+
+                // The wearer hits an ally: damage still counts, but the ally is not an enemy,
+                // so the effect's enemy check must keep its deck clean.
+                ally.TakeDamage(1, source);
+                Assert.AreEqual(0, ally.Deck.DrawPile.Count,
+                    "Damaging an ally must not shuffle Snake Oil into the ally's deck.");
+
+                // The enemy damages the wearer: the wearer's own trigger must not fire for it.
+                source.TakeDamage(1, enemy);
+                Assert.AreEqual(0, enemy.Deck.DrawPile.Count,
+                    "Taking damage must not trigger OnDealDamage.");
+            }
+            finally
+            {
+                if (ally != null) UnityEngine.Object.DestroyImmediate(ally.gameObject);
+                if (enemy != null) UnityEngine.Object.DestroyImmediate(enemy.gameObject);
+                DestroyAll(grid, source, manager);
+            }
+        }
+
+        /// <summary>
+        /// Damage from an attack card is routed through Character.TakeDamage with the card's
+        /// source as the dealer, so an OnDealDamage trigger reacts to real card attacks too —
+        /// not just to direct TakeDamage calls.
+        /// </summary>
+        [Test]
+        public void SnakeOilFlask_ReactsToDamageFromAnAttackCard()
+        {
+            var grid = TestHelper.CreateTestGrid(3);
+            var source = TestHelper.CreateCharacterOnGrid(grid, 0, 0, 0);
+            var manager = BuildManager(grid, source);
+            Character enemy = null;
+            try
+            {
+                Assert.IsTrue(manager.Equip(LoadAsset("Snake Oil Flask")));
+                enemy = TestHelper.CreateCharacterOnGrid(grid, 1, 1, 0);
+
+                var attack = ScriptableObject.CreateInstance<AttackEffect>();
+                attack.Damage = CardValue.MakeConstant(1);
+                attack.Execute(new CardContext { Source = source, TargetCharacter = enemy });
+
+                Assert.AreEqual(9, enemy.Stats.CurrentHealth, "The attack card should deal its damage.");
+                Assert.AreEqual(1, enemy.Deck.DrawPile.Count,
+                    "Damage dealt by an attack card should shuffle a Snake Oil into the target's deck.");
+
+                UnityEngine.Object.DestroyImmediate(attack);
+            }
+            finally
+            {
+                if (enemy != null) UnityEngine.Object.DestroyImmediate(enemy.gameObject);
                 DestroyAll(grid, source, manager);
             }
         }

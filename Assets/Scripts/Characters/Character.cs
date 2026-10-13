@@ -5,6 +5,7 @@ using UnityEngine;
 using HexGrid;
 using Cards;
 using Equipment;
+using Game;
 
 namespace Characters
 {
@@ -22,6 +23,7 @@ namespace Characters
         [SerializeField] private EquipmentManager equipmentManager;
         [SerializeField] private int maxHandSize = 5;
         [SerializeField] private Animator modelAnimator;
+        [SerializeField] private bool isStructure;
 
         public CharacterStats Stats => stats;
         public Deck Deck => deck;
@@ -29,11 +31,25 @@ namespace Characters
         public EquipmentManager Equipment => equipmentManager;
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
+
+        /// <summary>Active temporary conditions (debuffs) on this character.</summary>
+        public IReadOnlyList<CharacterStatus> Statuses => statuses;
+
+        /// <summary>The cell the character was on before the current one; used to infer travel
+        /// direction (e.g. which way to slide when entering an oil tile).</summary>
+        public HexCell LastCell { get; private set; }
+
         public int OwnerPlayerId { get; private set; }
         public int TeamId { get; private set; }
         public Team Team => TeamId == 0 ? Team.Ally : Team.Enemy;
         public Color? PlayerColor { get; private set; }
         public Color? NameColor { get; private set; }
+
+        /// <summary>
+        /// True for immovable fixtures (rocks): never take turns, are never displaced by
+        /// pushes, and never move — but can still be damaged and destroyed.
+        /// </summary>
+        public bool IsStructure => isStructure;
 
         /// <summary>
         /// Two characters are allies iff their TeamIds match. In PvE all human players
@@ -52,7 +68,11 @@ namespace Characters
 
         public event Action<Character> OnDefeated;
         public event Action<HexCell> OnMovedToCell;
+
+        /// <summary>Fired after the character leaves a cell (the cell just vacated is passed).</summary>
+        public event Action<HexCell> OnLeftCell;
         public event Action<int> OnDamageTaken;
+        public event Action<int, Character> OnDamageDealt;
         public event Action<int> OnBlockGained;
         public event Action<Character, CardInstance> OnCardDiscarded;
 
@@ -65,10 +85,11 @@ namespace Characters
         // Walking travel pace (world units/sec). Deliberately slow so the walk stance reads clearly
         // while the transform lerp carries the character cell-to-cell. Chosen so a ~1.3s walk gait
         // cycle lands on roughly one board space, keeping the legs in step with the travel.
-        private const float WalkPace = 2f;
+        private const float WalkPace = 3f;
         private const float ArrivalThreshold = 0.05f;
         private readonly List<Renderer> renderers = new List<Renderer>();
         private readonly List<(Renderer renderer, Color originalColor, Color originalBaseColor)> originalColors = new List<(Renderer, Color, Color)>();
+        private readonly List<CharacterStatus> statuses = new List<CharacterStatus>();
         private static readonly int colorID = Shader.PropertyToID("_Color");
         private static readonly int baseColorID = Shader.PropertyToID("_BaseColor");
 
@@ -84,7 +105,18 @@ namespace Characters
                 // root deltas to its own local transform, making the model lunge past the target
                 // and snap back when the state returns to Idle.
                 modelAnimator.applyRootMotion = false;
+                ApplyAnimatorSpeed();
             }
+        }
+
+        /// <summary>
+        /// Keeps the model's clip playback in step with <see cref="GamePace.Speed"/>, so attack
+        /// swings and walk cycles accelerate with the rest of the (enemy-heavy) turn pacing.
+        /// </summary>
+        private void ApplyAnimatorSpeed()
+        {
+            if (modelAnimator != null)
+                modelAnimator.speed = GamePace.Speed;
         }
 
         public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1, EquipmentLoadout loadout = null)
@@ -147,9 +179,12 @@ namespace Characters
                 CurrentCell.ClearOccupant();
             }
 
+            LastCell = CurrentCell;
             CurrentCell = cell;
             cell.SetOccupant(this);
             OnMovedToCell?.Invoke(cell);
+            if (LastCell != null)
+                OnLeftCell?.Invoke(LastCell);
         }
 
         /// <summary>
@@ -249,7 +284,7 @@ namespace Characters
         /// </summary>
         private void StepTowards(Vector3 destination)
         {
-            transform.position = Vector3.MoveTowards(transform.position, destination, WalkPace * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, destination, WalkPace * GamePace.Speed * Time.deltaTime);
         }
 
         /// <summary>
@@ -258,7 +293,10 @@ namespace Characters
         private void BeginWalking()
         {
             if (modelAnimator != null)
+            {
+                ApplyAnimatorSpeed();
                 modelAnimator.SetBool("IsWalking", true);
+            }
         }
 
         /// <summary>
@@ -277,6 +315,7 @@ namespace Characters
         public void PlayAttack()
         {
             if (modelAnimator == null) return;
+            ApplyAnimatorSpeed();
             modelAnimator.SetTrigger("Attack");
             isAttacking = true;
             if (attackAnimationTracker != null)
@@ -341,7 +380,7 @@ namespace Characters
 
         /// <summary>
         /// Draws cards and returns the instances actually drawn (up to the hand limit).
-        /// Each drawn card's OnDrawnEffect runs before the card enters the hand, so draw
+        /// Each drawn card's OnDrawnModifiers run before the card enters the hand, so draw
         /// triggers can set up the copy (e.g. randomize its cost) before it is displayed.
         /// </summary>
         public List<CardInstance> DrawCards(int count)
@@ -364,14 +403,80 @@ namespace Characters
 
         private void TriggerOnDrawn(CardInstance card)
         {
-            if (card == null || card.Data == null || card.Data.OnDrawnEffect == null) return;
-            card.Data.OnDrawnEffect.Execute(new CardContext { Source = this, Card = card });
+            if (card == null || card.Data == null || card.Data.OnDrawnModifiers == null) return;
+            var context = new CardContext { Source = this, Card = card };
+            foreach (CardModifierSO modifier in card.Data.OnDrawnModifiers)
+            {
+                if (modifier == null) continue;
+                modifier.Modify(card, context);
+            }
         }
 
-        /// <summary>Draws cards until the hand reaches the character's max hand size.</summary>
+        /// <summary>Draws cards until the hand reaches the character's max hand size, adjusted
+        /// by any active draw-modifying statuses.</summary>
         public void DrawToHandLimit()
         {
-            DrawCards(maxHandSize);
+            DrawCards(GetModifiedDrawCount(maxHandSize));
+        }
+
+        // ------------------------------------------------------------ statuses
+
+        /// <summary>Attaches a status. It lies dormant until this character's next turn begins.</summary>
+        public void AddStatus(CharacterStatus status)
+        {
+            if (status != null)
+                statuses.Add(status);
+        }
+
+        /// <summary>Called at the start of this character's turn so statuses become active.</summary>
+        public void TickStatusesAtTurnStart()
+        {
+            foreach (CharacterStatus status in statuses)
+                status.OnTurnStarted();
+        }
+
+        /// <summary>Called at the end of this character's turn; expends/removes spent statuses.</summary>
+        public void TickStatusesAtTurnEnd()
+        {
+            foreach (CharacterStatus status in statuses)
+                status.OnTurnEnded();
+            statuses.RemoveAll(status => status.Expired);
+        }
+
+        /// <summary>The hand-size draw count after active statuses are applied.</summary>
+        public int GetModifiedDrawCount(int baseCount)
+        {
+            foreach (CharacterStatus status in statuses)
+            {
+                if (status.ActiveThisTurn)
+                    baseCount = status.ModifyDrawCount(baseCount);
+            }
+            return Mathf.Max(0, baseCount);
+        }
+
+        /// <summary>Whether this character is allowed to move during their current turn.</summary>
+        public bool CanMoveThisTurn
+        {
+            get
+            {
+                foreach (CharacterStatus status in statuses)
+                {
+                    if (status.ActiveThisTurn && !status.AllowsMovement)
+                        return false;
+                }
+                return true;
+            }
+        }
+
+        /// <summary>Whether this character is allowed to target <paramref name="target"/> this turn.</summary>
+        public bool CanTarget(Character target)
+        {
+            foreach (CharacterStatus status in statuses)
+            {
+                if (status.ActiveThisTurn && !status.AllowsTargeting(target))
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>Moves every card in the hand to the deck's discard pile.</summary>
@@ -396,10 +501,25 @@ namespace Characters
             OnCardDiscarded?.Invoke(this, card);
         }
 
-        public void TakeDamage(int amount)
+        public void TakeDamage(int amount, Character dealer = null)
         {
             stats.ApplyDamage(amount);
+            if (dealer != null) dealer.OnDamageDealt?.Invoke(amount, this);
             OnDamageTaken?.Invoke(amount);
+            if (!stats.IsAlive)
+            {
+                Die();
+            }
+        }
+
+        /// <summary>
+        /// Instantly defeats the character, bypassing any remaining block (armor does not
+        /// stop an execution). Used by execution-style effects ("kill an enemy with X or
+        /// less health") that ignore block.
+        /// </summary>
+        public void Kill()
+        {
+            stats.Kill();
             if (!stats.IsAlive)
             {
                 Die();
@@ -435,6 +555,18 @@ namespace Characters
             if (string.IsNullOrEmpty(name)) return;
             stats.CharacterName = name;
             stats.NotifyChanged();
+        }
+
+        /// <summary>Marks this character as an immovable board fixture (a rock).</summary>
+        public void MarkAsStructure()
+        {
+            isStructure = true;
+        }
+
+        /// <summary>Forces the team id. A neutral (-1) structure is an enemy of every team.</summary>
+        public void SetTeamId(int teamId)
+        {
+            TeamId = teamId;
         }
 
         /// <summary>

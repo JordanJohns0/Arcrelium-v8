@@ -17,9 +17,9 @@ MonoBehaviour:
   Artwork: {fileID: 0}
   Cost: 1
   Steps:
-  - Effect: {fileID: 11400000, guid: 118ed960891ac444cba831629caee2b0, type: 2}
+  - Effect: {fileID: 11400000, guid: e9e8766246d043778718a358a2772130, type: 2}
     TargetType: 0
     Range: 0
     CellConstraint: 0
-  OnDrawnEffect: {fileID: 0}
-  PlaysOnDiscard: 0
+    CardModifiers:
+    - {fileID: 11400000, guid: ac09c2a7790746ec8c7666fd63e97eea, type: 2}

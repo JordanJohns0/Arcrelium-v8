@@ -4,6 +4,7 @@ using UnityEngine;
 using HexGrid;
 using Characters;
 using Cards;
+using Enemies;
 using Equipment;
 using UI;
 using Steamworks;
@@ -36,11 +37,22 @@ namespace Game
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private Character playerCharacterPrefab;
         [SerializeField] private Character enemyCharacterPrefab;
+        [SerializeField] private Character structurePrefab;
         [SerializeField] private UnityEngine.InputSystem.InputActionAsset inputActions;
         [SerializeField] [Min(1)] private int baseEnemyCount = 2;
         [SerializeField] [Min(0)] private int extraEnemiesPerLevel = 1;
+
+        [Header("Procedural Enemies")]
+        [SerializeField] private List<EnemyGroup> enemyGroups = new List<EnemyGroup>();
+        [SerializeField] [Min(0)] private int enemyBaseDifficulty = 40;
+        [SerializeField] [Min(0)] private int enemyDifficultyPerLevel = 20;
+
         [SerializeField] private int allySpawnQ = 0;
         [SerializeField] private int allySpawnR = -2;
+
+        [Header("Shop")]
+        [Tooltip("Gold awarded to each player after every victory, spent in the end-of-level shop.")]
+        [SerializeField] [Min(0)] private int goldPerVictory = 25;
 
         [System.Serializable]
         public class CharacterSpawn
@@ -54,6 +66,10 @@ namespace Game
         [SerializeField] private List<CharacterSpawn> spawns = new List<CharacterSpawn>();
 
         internal List<Character> activeCharacters = new List<Character>();
+
+        /// <summary>Immovable board fixtures (rocks). Kept separate from activeCharacters so
+        /// they never join the turn order or the alive/dead match logic.</summary>
+        internal List<Character> structures = new List<Character>();
 
         /// <summary>
         /// Steam id → player index captured at match setup. Kept so requests and
@@ -123,7 +139,7 @@ namespace Game
 
             if (GameState.ShowLoadoutScreen)
             {
-                ShowLoadoutScreen(null);
+                ShowLoadoutScreen();
                 return;
             }
 
@@ -149,6 +165,7 @@ namespace Game
             if (turnManager != null)
             {
                 turnManager.OnActionResolved -= HandleActionResolved;
+                turnManager.OnPlayQueued -= HandleActionResolved;
                 turnManager.OnTurnStarted -= HandleTurnStartedBroadcast;
                 turnManager.OnCardPlayed -= HandleCardPlayed;
             }
@@ -172,6 +189,7 @@ namespace Game
             if (turnManager != null)
             {
                 turnManager.OnActionResolved += HandleActionResolved;
+                turnManager.OnPlayQueued += HandleActionResolved;
                 turnManager.OnTurnStarted += HandleTurnStartedBroadcast;
                 turnManager.OnCardPlayed += HandleCardPlayed;
             }
@@ -236,13 +254,13 @@ namespace Game
             Networking.NetworkManager.Instance.SendRequestInitialState();
         }
 
-        private void ShowLoadoutScreen(EquipmentData reward)
+        private void ShowLoadoutScreen(bool showShop = false)
         {
             var lobby = LobbyManager.Instance.CurrentLobby;
             ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
 
             loadoutScreen = LoadoutScreen.Create();
-            loadoutScreen.Show(reward, OnLoadoutConfirmed);
+            loadoutScreen.Show(null, OnLoadoutConfirmed, showShop);
         }
 
         private static int CountExpectedLoadouts(Lobby lobby)
@@ -379,6 +397,7 @@ namespace Game
             GameState.MatchLoadouts.Clear();
 
             turnManager.SetTurnOrder(new List<Character>(activeCharacters));
+            UpdateGamePace();
             turnManager.StartMatch();
         }
 
@@ -392,6 +411,14 @@ namespace Game
                 Destroy(c.gameObject);
             }
             activeCharacters.Clear();
+
+            foreach (Character s in structures)
+            {
+                if (s == null) continue;
+                if (s.CurrentCell != null) s.CurrentCell.ClearOccupant();
+                Destroy(s.gameObject);
+            }
+            structures.Clear();
         }
 
         private void SetupDynamicMatch()
@@ -410,6 +437,19 @@ namespace Game
             {
                 turnManager.SetTurnOrder(new List<Character>(activeCharacters));
                 GameState.MatchLoadouts.Clear();
+                UpdateGamePace();
+                turnManager.StartMatch();
+                return;
+            }
+
+            // Procedural enemies take priority when any group is set up in the inspector.
+            // PvP never reaches here, so the RNG call below only happens on the decision
+            // maker (host / single player), keeping clients in sync.
+            if (TrySpawnProceduralEnemyGroup())
+            {
+                turnManager.SetTurnOrder(new List<Character>(activeCharacters));
+                GameState.MatchLoadouts.Clear();
+                UpdateGamePace();
                 turnManager.StartMatch();
                 return;
             }
@@ -431,7 +471,55 @@ namespace Game
 
             turnManager.SetTurnOrder(new List<Character>(activeCharacters));
             GameState.MatchLoadouts.Clear();
+            UpdateGamePace();
             turnManager.StartMatch();
+        }
+
+        /// <summary>
+        /// Picks a random configured group, derives the encounter budget from the current level and
+        /// spawns the generated composition. Returns false (falling back to the legacy count formula)
+        /// when no usable groups are configured.
+        /// </summary>
+        private bool TrySpawnProceduralEnemyGroup()
+        {
+            var pool = new List<EnemyGroup>();
+            for (int i = 0; i < enemyGroups.Count; i++)
+            {
+                EnemyGroup group = enemyGroups[i];
+                if (group == null || group.MemberTypes == null || group.MemberTypes.Count == 0) continue;
+                pool.Add(group);
+            }
+
+            if (pool.Count == 0) return false;
+
+            EnemyGroup selected = pool[Random.Range(0, pool.Count)];
+            int budget = EnemySpawnGenerator.BudgetForLevel(enemyBaseDifficulty, enemyDifficultyPerLevel, GameState.CurrentLevel);
+            EncounterPlan plan = EnemySpawnGenerator.Generate(selected, budget, new System.Random());
+
+            var spawnCells = GetValidSpawnCells(plan.TotalCount);
+            int index = 0;
+            foreach (CountedEnemy counted in plan.Enemies)
+            {
+                Character prefab = counted.Type.characterPrefab != null ? counted.Type.characterPrefab : enemyCharacterPrefab;
+                string displayName = string.IsNullOrEmpty(counted.Type.EnemyName) ? counted.Type.name : counted.Type.EnemyName;
+                for (int j = 0; j < counted.Count; j++)
+                {
+                    if (index >= spawnCells.Count) break;
+
+                    Character enemy = Instantiate(prefab);
+                    enemy.Initialize(GameState.EnemyOwnerPlayerId + index, spawnCells[index], teamId: 1);
+                    enemy.SetName(displayName);
+                    enemy.SetNameColor(EnemyColor);
+                    enemy.OnDefeated += HandleCharacterDefeated;
+                    activeCharacters.Add(enemy);
+                    index++;
+                }
+            }
+
+            if (plan.Overshot)
+                Debug.LogWarning($"[GameManager] Enemy group '{selected.GroupName}' required a minimum cost of {plan.TotalCost} over the difficulty budget of {budget}; spawning the minima anyway.", selected);
+
+            return true;
         }
 
         private void SetupMultiplayerPlayers()
@@ -572,6 +660,7 @@ namespace Game
         {
             activeCharacters.Remove(character);
             turnManager.RemoveFromTurnOrder(character);
+            UpdateGamePace();
 
             if (IsMatchOver())
             {
@@ -622,6 +711,53 @@ namespace Game
             return true;
         }
 
+        /// <summary>
+        /// Recomputes <see cref="GamePace.Speed"/> from the current board so the enemy phase
+        /// speeds up as its ranks grow (and eases back as they thin out). Clients run this
+        /// locally too, against the characters they rebuilt from the host's sync.
+        /// </summary>
+        private void UpdateGamePace()
+        {
+            int aliveEnemies = 0;
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null || c.IsStructure) continue;
+                if (c.OwnerPlayerId < GameState.EnemyOwnerPlayerId) continue;
+                if (c.Stats == null || !c.Stats.IsAlive) continue;
+                aliveEnemies++;
+            }
+            GamePace.Update(aliveEnemies);
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Debug cheat (editor Play mode only): instantly defeats every live AI enemy.
+        /// Host/single-player only — clients aren't authoritative, so it is a no-op there.
+        /// Each kill runs through the normal defeat flow, so the last enemy triggers victory
+        /// and any clients get the resulting state broadcast.
+        /// </summary>
+        public void KillAllEnemies()
+        {
+            if (GameState.ActiveMode == GameMode.Client) return;
+
+            // Kill() mutates activeCharacters (via HandleCharacterDefeated), so snapshot
+            // the targets before defeating them.
+            var enemies = new List<Character>();
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null || c.IsStructure) continue;
+                if (c.OwnerPlayerId < GameState.EnemyOwnerPlayerId) continue;
+                if (!c.Stats.IsAlive) continue;
+                enemies.Add(c);
+            }
+
+            foreach (Character enemy in enemies)
+            {
+                if (enemy != null) enemy.Kill();
+            }
+        }
+#endif
+
         public void BroadcastGameState()
         {
             if (!Networking.NetworkManager.Instance.IsHost) return;
@@ -664,6 +800,20 @@ namespace Game
                     colorG = color.g,
                     colorB = color.b,
                     handCardNames = handNames.ToArray()
+                });
+            }
+
+            structures.RemoveAll(s => s == null || s.Stats == null || !s.Stats.IsAlive);
+            foreach (var s in structures)
+            {
+                if (s.CurrentCell == null) continue;
+                sync.structures.Add(new Networking.StructureState
+                {
+                    q = s.CurrentCell.Coordinates.Q,
+                    r = s.CurrentCell.Coordinates.R,
+                    currentHp = s.Stats.CurrentHealth,
+                    maxHp = s.Stats.MaxHealth,
+                    block = s.Stats.Block
                 });
             }
             return sync;
@@ -865,21 +1015,20 @@ namespace Game
         {
             if (victoryAchieved) return;
             victoryAchieved = true;
+            GamePace.Reset();
             BroadcastGameState();
-            // Each machine rolls its own reward from the shared pool, so players never
-            // see each other's inventories. Unlocks persist across sessions.
-            EquipmentData reward = null;
+            // Each machine awards its own gold and rolls its own shop offers, so players
+            // never see each other's inventories. Gold and purchases persist across sessions.
             var inventory = PlayerInventoryProvider.GetLocal();
-            var pool = Equipment.RewardPool.Main;
-            if (pool != null)
-                reward = pool.RollUnlocked(inventory);
-            if (reward != null)
+            if (goldPerVictory > 0)
             {
-                inventory.Unlock(reward);
+                inventory.AddGold(goldPerVictory);
                 PlayerInventoryProvider.Save(PlayerInventoryProvider.LocalPlayerKey, inventory);
             }
 
-            ShowLoadoutScreen(reward);
+            // The shop is part of the loadout screen now: open it straight away with the
+            // Special pane filled, so the player buys, equips, and confirms in one place.
+            ShowLoadoutScreen(showShop: true);
         }
 
         /// <summary>
@@ -890,6 +1039,7 @@ namespace Game
         {
             if (defeatAchieved || victoryAchieved) return;
             defeatAchieved = true;
+            GamePace.Reset();
             BroadcastGameState();
             UI.GameOverScreen.Show();
         }
@@ -897,6 +1047,13 @@ namespace Game
         public ActionResolver ActionResolver => actionResolver;
         public TurnManager TurnManager => turnManager;
         public HexGridManager Grid => grid;
+
+        /// <summary>Registers a spawned structure (rock) so it is synced to clients.</summary>
+        public void RegisterStructure(Character structure)
+        {
+            if (structure == null) return;
+            if (!structures.Contains(structure)) structures.Add(structure);
+        }
 
         /// <summary>The character owned by this machine's local player, or null.</summary>
         public Characters.Character LocalCharacter
@@ -971,6 +1128,39 @@ namespace Game
 
                 turnManager.SetTurnOrder(new List<Character>(activeCharacters));
                 turnManager.SetTurn(state.currentTurnIndex);
+                UpdateGamePace();
+            }
+
+            // Board structures (rocks) are rebuilt wholesale from the sync, like characters.
+            if (state.structures != null && (state.structures.Count > 0 || structures.Count > 0))
+            {
+                foreach (Character s in structures)
+                {
+                    if (s == null) continue;
+                    if (s.CurrentCell != null) s.CurrentCell.ClearOccupant();
+                    Destroy(s.gameObject);
+                }
+                structures.Clear();
+
+                foreach (var ss in state.structures)
+                {
+                    var coords = new HexCoordinates(ss.q, ss.r);
+                    if (!grid.TryGetCell(coords, out HexCell cell)) continue;
+                    if (structurePrefab == null) continue;
+
+                    Character structure = Instantiate(structurePrefab);
+                    structure.Initialize(GameState.EnemyOwnerPlayerId, cell, 0);
+                    structure.MarkAsStructure();
+                    structure.SetTeamId(-1);
+                    if (structure.Stats != null)
+                    {
+                        structure.Stats.MaxHealth = ss.maxHp;
+                        structure.Stats.CurrentHealth = ss.currentHp;
+                        structure.Stats.Block = ss.block;
+                        structure.Stats.NotifyChanged();
+                    }
+                    structures.Add(structure);
+                }
             }
 
             if (state.victory)

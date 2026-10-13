@@ -57,28 +57,28 @@ namespace Tests.Cards
         }
 
         [Test]
-        public void SetRandomCostEffect_ChangesTheContextCardCost()
+        public void SetRandomCostModifier_ChangesTheContextCardCost()
         {
-            var effect = ScriptableObject.CreateInstance<SetRandomCostEffect>();
-            effect.MinCost = 0;
-            effect.MaxCost = 2;
+            var modifier = ScriptableObject.CreateInstance<SetRandomCostModifier>();
+            modifier.MinCost = 0;
+            modifier.MaxCost = 2;
 
             var card = new CardInstance(SelfCard("Roll", 9));
-            effect.Execute(new CardContext { Card = card });
+            modifier.Modify(card, new CardContext { Card = card });
 
             Assert.GreaterOrEqual(card.Cost, 0);
             Assert.LessOrEqual(card.Cost, 2);
         }
 
         [Test]
-        public void DrawCards_FiresOnDrawnEffectBeforeEnteringHand()
+        public void DrawCards_FiresOnDrawnModifiersBeforeEnteringHand()
         {
-            var random = ScriptableObject.CreateInstance<SetRandomCostEffect>();
+            var random = ScriptableObject.CreateInstance<SetRandomCostModifier>();
             random.MinCost = 1;
             random.MaxCost = 1;
 
             var data = SelfCard("Drawn", 3);
-            data.OnDrawnEffect = random;
+            data.OnDrawnModifiers.Add(random);
 
             Deck deck = GetDeck();
             deck.SetStartingCards(new List<CardData> { data });
@@ -87,7 +87,7 @@ namespace Tests.Cards
             List<CardInstance> drawn = source.DrawCards(1);
 
             Assert.AreEqual(1, drawn.Count);
-            Assert.AreEqual(1, drawn[0].Cost, "OnDrawnEffect should re-roll the drawn copy's cost.");
+            Assert.AreEqual(1, drawn[0].Cost, "OnDrawnModifiers should re-roll the drawn copy's cost.");
             Assert.IsTrue(source.Hand.Contains(drawn[0]));
         }
 
@@ -106,37 +106,43 @@ namespace Tests.Cards
         }
 
         [Test]
-        public void DrawThenSetCost_AppliesCostToDrawnCards()
+        public void DrawCardsEffect_WithSetCostOption_AppliesCostToDrawnCards()
         {
             var draw = ScriptableObject.CreateInstance<DrawCardsEffect>();
             draw.Amount = CardValue.MakeConstant(2);
-            var setCost = ScriptableObject.CreateInstance<SetDrawnCardsCostEffect>();
-            setCost.CostValue = 1;
+            var setCost = ScriptableObject.CreateInstance<SetCardCostModifier>();
+            setCost.Cost = 1;
 
             Deck deck = GetDeck();
             deck.SetStartingCards(new List<CardData> { SelfCard("A", 4), SelfCard("B", 4), SelfCard("C", 4) });
             deck.Shuffle();
 
-            var ctx = new CardContext { Source = source };
+            var ctx = new CardContext { Source = source, StepModifiers = new List<CardModifierSO> { setCost } };
             draw.Execute(ctx);
-            setCost.Execute(ctx);
 
             Assert.AreEqual(2, source.Hand.Cards.Count);
             foreach (CardInstance card in source.Hand.Cards)
-                Assert.AreEqual(1, card.Cost, "Cards drawn by the chain should cost 1.");
+                Assert.AreEqual(1, card.Cost, "Cards drawn by the effect should cost 1.");
+            Assert.AreEqual(4, source.Hand.Cards[0].Data.Cost,
+                "The option must change the instance cost, never the shared CardData.");
         }
 
         [Test]
-        public void DecreaseHandCostsEffect_LowersEveryHandCardAndClampsAtMin()
+        public void ApplyModifiersToHand_Decrease_LowersEveryHandCardAndClampsAtMin()
         {
-            var effect = ScriptableObject.CreateInstance<DecreaseHandCostsEffect>();
-            effect.Amount = 1;
-            effect.MinCost = 0;
+            var effect = ScriptableObject.CreateInstance<ApplyModifiersToHandEffect>();
+            var decrease = ScriptableObject.CreateInstance<DecreaseCardCostModifier>();
+            decrease.Amount = 1;
+            decrease.MinCost = 0;
 
             source.Hand.AddCard(new CardInstance(SelfCard("A", 2)));
             source.Hand.AddCard(new CardInstance(SelfCard("B", 0)));
 
-            effect.Execute(new CardContext { Source = source });
+            effect.Execute(new CardContext
+            {
+                Source = source,
+                StepModifiers = new List<CardModifierSO> { decrease }
+            });
 
             Assert.AreEqual(1, source.Hand.Cards[0].Cost);
             Assert.AreEqual(0, source.Hand.Cards[1].Cost);
@@ -200,10 +206,12 @@ namespace Tests.Cards
             {
                 var resolver = resolverGo.AddComponent<ActionResolver>();
 
-                var decrease = ScriptableObject.CreateInstance<DecreaseHandCostsEffect>();
+                var decrease = ScriptableObject.CreateInstance<DecreaseCardCostModifier>();
                 decrease.Amount = 1;
-                var discountData = TestHelper.MakeCard("Discount", 0,
-                    TestHelper.Step(decrease, TargetType.Self));
+                var apply = ScriptableObject.CreateInstance<ApplyModifiersToHandEffect>();
+                var step = TestHelper.Step(apply, TargetType.Self);
+                step.CardModifiers = new List<CardModifierSO> { decrease };
+                var discountData = TestHelper.MakeCard("Discount", 0, step);
                 var discount = new CardInstance(discountData);
                 var other = new CardInstance(SelfCard("Other", 3));
 

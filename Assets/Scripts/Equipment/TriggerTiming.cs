@@ -12,6 +12,7 @@ namespace Equipment
         OnDiscard,
         OnMovedToCell,
         OnGainBlock,
-        OnEnemyTurnEnded
+        OnEnemyTurnEnded,
+        OnLeftCell
     }
 }

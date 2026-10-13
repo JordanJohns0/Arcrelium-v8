@@ -25,7 +25,7 @@ namespace Equipment.Effects
                 if (cell.Occupant == context.Source) continue;
                 if (cell.Occupant.IsAllyOf(context.Source)) continue;
 
-                cell.Occupant.TakeDamage(Damage);
+                cell.Occupant.TakeDamage(Damage, context.Source);
             }
         }
     }

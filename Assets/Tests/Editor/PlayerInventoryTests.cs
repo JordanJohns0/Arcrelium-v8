@@ -150,5 +150,67 @@ namespace Tests.Equipment
             inventory.SetUnlocked(new List<EquipmentData>());
             Assert.IsTrue(fired);
         }
+
+        [Test]
+        public void Gold_StartsAtZero()
+        {
+            Assert.AreEqual(0, inventory.Gold);
+        }
+
+        [Test]
+        public void AddGold_IncreasesBalance_AndFiresChanged()
+        {
+            bool fired = false;
+            inventory.OnInventoryChanged += () => fired = true;
+
+            inventory.AddGold(25);
+
+            Assert.AreEqual(25, inventory.Gold);
+            Assert.IsTrue(fired);
+        }
+
+        [Test]
+        public void AddGold_NonPositive_IsIgnored()
+        {
+            inventory.AddGold(10);
+            inventory.AddGold(0);
+            inventory.AddGold(-5);
+            Assert.AreEqual(10, inventory.Gold);
+        }
+
+        [Test]
+        public void TrySpendGold_DeductsWhenAffordable()
+        {
+            inventory.AddGold(30);
+            Assert.IsTrue(inventory.TrySpendGold(12));
+            Assert.AreEqual(18, inventory.Gold);
+        }
+
+        [Test]
+        public void TrySpendGold_TooExpensive_FailsAndKeepsBalance()
+        {
+            inventory.AddGold(5);
+            bool fired = false;
+            inventory.OnInventoryChanged += () => fired = true;
+
+            Assert.IsFalse(inventory.TrySpendGold(6));
+            Assert.AreEqual(5, inventory.Gold);
+            Assert.IsFalse(fired);
+        }
+
+        [Test]
+        public void SetGold_ClampsNegativeToZero()
+        {
+            inventory.SetGold(-3);
+            Assert.AreEqual(0, inventory.Gold);
+        }
+
+        [Test]
+        public void Clear_ResetsGold()
+        {
+            inventory.AddGold(40);
+            inventory.Clear();
+            Assert.AreEqual(0, inventory.Gold);
+        }
     }
 }
