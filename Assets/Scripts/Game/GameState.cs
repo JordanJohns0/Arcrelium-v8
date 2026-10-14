@@ -12,6 +12,9 @@ namespace Game
     /// </summary>
     public enum MatchMode { PvE, PvP }
 
+    /// <summary>What the end-of-level "Special" pane offers this level.</summary>
+    public enum SpecialArea { Shop, Enchant }
+
     public static class GameState
     {
         /// <summary>OwnerPlayerId threshold at or above which a character is AI-controlled.</summary>
@@ -52,6 +55,23 @@ namespace Game
         public static MatchMode CurrentMatchMode { get; set; } = MatchMode.PvE;
 
         public static bool IsPvP => CurrentMatchMode == MatchMode.PvP;
+
+        /// <summary>
+        /// What the end-of-level Special pane shows this level. Decided by the host (or a
+        /// single-player run) at victory and shared via <c>GameStateSync</c> so every player
+        /// is at the shop or at the enchantment station together.
+        /// </summary>
+        public static SpecialArea CurrentSpecialArea { get; set; } = SpecialArea.Shop;
+
+        /// <summary>Percent chance a level's Special pane is the enchantment station.</summary>
+        internal const int EnchantAreaChancePercent = 35;
+
+        /// <summary>Rolls shop-vs-enchant for a victory.</summary>
+        internal static SpecialArea RollSpecialArea(System.Random rng)
+        {
+            int roll = rng != null ? rng.Next(100) : Random.Range(0, 100);
+            return roll < EnchantAreaChancePercent ? SpecialArea.Enchant : SpecialArea.Shop;
+        }
 
         /// <summary>
         /// When true, the game starts on the loadout screen instead of the board: players

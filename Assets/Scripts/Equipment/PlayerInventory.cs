@@ -27,6 +27,23 @@ namespace Equipment
 
         public event Action OnInventoryChanged;
 
+        /// <summary>
+        /// Enchantments applied to the given equipment this run. Backed by the loadout's
+        /// enchantment map so it travels with the loadout to the host and into each match.
+        /// </summary>
+        public IReadOnlyList<EquipmentEnchantmentSO> GetEnchantments(EquipmentData data)
+        {
+            return loadout.GetEnchantments(data);
+        }
+
+        /// <summary>Applies an enchantment to a piece of equipment (equipped or in the bag).</summary>
+        public void AddEnchantment(EquipmentData data, EquipmentEnchantmentSO enchantment)
+        {
+            if (data == null || enchantment == null) return;
+            loadout.AddEnchantment(data, enchantment);
+            OnInventoryChanged?.Invoke();
+        }
+
         public void Unlock(EquipmentData data)
         {
             if (data == null || unlockedEquipment.Contains(data)) return;

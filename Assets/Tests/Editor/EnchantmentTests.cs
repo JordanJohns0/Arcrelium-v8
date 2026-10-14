@@ -424,6 +424,72 @@ namespace Tests.Equipment
             Assert.Contains(granted, allCards,
                 "Deck building must include cards granted by enchantments, not just Data.Cards.");
         }
+
+        [Test]
+        public void Equip_RunTimeEnchantments_AreWornAndRetrievable()
+        {
+            var item = MakeEquip(EquipmentSlotType.Trinket, "Blessed Charm");
+            var enchantment = MakeHealthEnchantment(3);
+            trackedAssets.Add(item);
+            trackedAssets.Add(enchantment);
+
+            int maxBefore = character.Stats.MaxHealth;
+            manager.Equip(item, EquipmentSlotType.Trinket, 0, new[] { enchantment });
+
+            Assert.AreEqual(maxBefore + 3, character.Stats.MaxHealth,
+                "A run-time enchantment passed to Equip must fire its OnEquipped hook.");
+        }
+
+        [Test]
+        public void GetLoadout_CopiesRunTimeEnchantments()
+        {
+            var item = MakeEquip(EquipmentSlotType.Trinket, "Blessed Charm");
+            var enchantment = MakeHealthEnchantment(3);
+            trackedAssets.Add(item);
+            trackedAssets.Add(enchantment);
+            manager.Equip(item, EquipmentSlotType.Trinket, 0, new[] { enchantment });
+
+            EquipmentLoadout loadout = manager.GetLoadout();
+
+            Assert.AreSame(item, loadout.Trinket1);
+            CollectionAssert.Contains(
+                new List<EquipmentEnchantmentSO>(loadout.GetEnchantments(item)), enchantment,
+                "Snapshotted loadouts must carry the enchantments applied at run time.");
+        }
+
+        [Test]
+        public void ApplyLoadout_AppliesEnchantmentsFromTheLoadout()
+        {
+            var item = MakeEquip(EquipmentSlotType.Trinket, "Blessed Charm");
+            var enchantment = MakeHealthEnchantment(3);
+            trackedAssets.Add(item);
+            trackedAssets.Add(enchantment);
+
+            var loadout = new EquipmentLoadout { Trinket1 = item };
+            loadout.AddEnchantment(item, enchantment);
+            int baseMax = character.Stats.MaxHealth;
+
+            manager.ApplyLoadout(loadout);
+
+            Assert.AreEqual(baseMax + 3, character.Stats.MaxHealth,
+                "Match setup must reapply enchantments stored on the loadout.");
+        }
+
+        [Test]
+        public void GetAllCards_IncludesRunTimeExtraEnchantment()
+        {
+            var granted = ScriptableObject.CreateInstance<Cards.CardData>();
+            granted.CardName = "Station Strike";
+            var grant = ScriptableObject.CreateInstance<GrantCardEnchantmentSO>();
+            grant.GrantedCard = granted;
+            var item = MakeEquip(EquipmentSlotType.Trinket, "Forge Amulet");
+            trackedAssets.AddRange(new Object[] { granted, grant, item });
+
+            manager.Equip(item, EquipmentSlotType.Trinket, 0, new[] { grant });
+
+            Assert.Contains(granted, manager.GetAllCards(),
+                "Deck building must include cards granted by run-time enchantments.");
+        }
     }
 
     [TestFixture]

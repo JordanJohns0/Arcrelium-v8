@@ -82,7 +82,8 @@ namespace Equipment
             if (trinket3 != null) Equip(trinket3);
         }
 
-        public bool Equip(EquipmentData data, EquipmentSlotType? forcedSlot = null, int? forcedIndex = null)
+        public bool Equip(EquipmentData data, EquipmentSlotType? forcedSlot = null, int? forcedIndex = null,
+            IEnumerable<EquipmentEnchantmentSO> enchantments = null)
         {
             if (data == null) return false;
 
@@ -115,6 +116,7 @@ namespace Equipment
             if (!CanEquip(data, slot, index)) return false;
 
             var instance = new EquipmentInstance(data);
+            instance.AddEnchantments(enchantments);
 
             switch (slot)
             {
@@ -307,7 +309,23 @@ namespace Equipment
             loadout.Trinket1 = trinketSlots.Count > 0 && trinketSlots[0] != null ? trinketSlots[0].Data : null;
             loadout.Trinket2 = trinketSlots.Count > 1 && trinketSlots[1] != null ? trinketSlots[1].Data : null;
             loadout.Trinket3 = trinketSlots.Count > 2 && trinketSlots[2] != null ? trinketSlots[2].Data : null;
+
+            CopyEnchantments(headSlot, loadout);
+            CopyEnchantments(chestSlot, loadout);
+            CopyEnchantments(feetSlot, loadout);
+            CopyEnchantments(leftHandSlot, loadout);
+            CopyEnchantments(rightHandSlot, loadout);
+            foreach (var slot in trinketSlots)
+                CopyEnchantments(slot, loadout);
+
             return loadout;
+        }
+
+        private static void CopyEnchantments(EquipmentInstance instance, EquipmentLoadout loadout)
+        {
+            if (instance == null) return;
+            foreach (var enchantment in instance.ExtraEnchantments)
+                loadout.AddEnchantment(instance.Data, enchantment);
         }
 
         /// <summary>
@@ -320,14 +338,14 @@ namespace Equipment
             ClearAllSlots();
             if (loadout == null) return;
 
-            Equip(loadout.Head, EquipmentSlotType.Head, 0);
-            Equip(loadout.Chest, EquipmentSlotType.Chest, 0);
-            Equip(loadout.Feet, EquipmentSlotType.Feet, 0);
-            Equip(loadout.LeftHand, EquipmentSlotType.Hand, 0);
-            Equip(loadout.RightHand, EquipmentSlotType.Hand, 1);
-            Equip(loadout.Trinket1, EquipmentSlotType.Trinket, 0);
-            Equip(loadout.Trinket2, EquipmentSlotType.Trinket, 1);
-            Equip(loadout.Trinket3, EquipmentSlotType.Trinket, 2);
+            Equip(loadout.Head, EquipmentSlotType.Head, 0, loadout.GetEnchantments(loadout.Head));
+            Equip(loadout.Chest, EquipmentSlotType.Chest, 0, loadout.GetEnchantments(loadout.Chest));
+            Equip(loadout.Feet, EquipmentSlotType.Feet, 0, loadout.GetEnchantments(loadout.Feet));
+            Equip(loadout.LeftHand, EquipmentSlotType.Hand, 0, loadout.GetEnchantments(loadout.LeftHand));
+            Equip(loadout.RightHand, EquipmentSlotType.Hand, 1, loadout.GetEnchantments(loadout.RightHand));
+            Equip(loadout.Trinket1, EquipmentSlotType.Trinket, 0, loadout.GetEnchantments(loadout.Trinket1));
+            Equip(loadout.Trinket2, EquipmentSlotType.Trinket, 1, loadout.GetEnchantments(loadout.Trinket2));
+            Equip(loadout.Trinket3, EquipmentSlotType.Trinket, 2, loadout.GetEnchantments(loadout.Trinket3));
         }
 
         private void ClearAllSlots()
@@ -355,9 +373,9 @@ namespace Equipment
         /// </summary>
         private void FireEnchantmentLifecycle(EquipmentInstance instance, bool equipping)
         {
-            if (instance?.Data?.Enchantments == null || character == null) return;
+            if (instance == null || character == null) return;
 
-            foreach (var enchantment in instance.Data.Enchantments)
+            foreach (var enchantment in instance.AllEnchantments)
             {
                 if (enchantment == null) continue;
                 if (equipping) enchantment.OnEquipped(instance, character);
@@ -387,9 +405,9 @@ namespace Equipment
 
         private static void CollectEnchantmentDamageBonus(EquipmentInstance slot, CardData playedCard, ref int total)
         {
-            if (slot?.Data?.Enchantments == null) return;
+            if (slot == null) return;
 
-            foreach (var enchantment in slot.Data.Enchantments)
+            foreach (var enchantment in slot.AllEnchantments)
             {
                 if (enchantment != null)
                     total += enchantment.GetDamageBonus(slot, playedCard);
@@ -570,8 +588,7 @@ namespace Equipment
             if (slot.Data.Cards != null)
                 cards.AddRange(slot.Data.Cards);
 
-            if (slot.Data.Enchantments == null) return;
-            foreach (var enchantment in slot.Data.Enchantments)
+            foreach (var enchantment in slot.AllEnchantments)
                 enchantment?.CollectGrantedCards(cards);
         }
 

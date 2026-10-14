@@ -306,7 +306,9 @@ namespace Game
             if (playerId < 0) return;
 
             var library = GameDataLibrary.Instance;
-            AddReceivedLoadout(playerId, EquipmentLoadout.FromNames(sync?.loadoutNames, library));
+            var loadout = EquipmentLoadout.FromNames(sync?.loadoutNames, library);
+            loadout.ApplyEnchantmentAssignments(sync?.enchantments, library);
+            AddReceivedLoadout(playerId, loadout);
             Debug.Log($"[GameManager] Received loadout for player {playerId} ({receivedLoadouts.Count}/{ExpectedLoadoutCount})");
 
             TryStartAfterLoadouts();
@@ -770,7 +772,8 @@ namespace Game
             {
                 currentTurnIndex = turnManager.CurrentTurnIndex,
                 victory = victoryAchieved,
-                gameOver = defeatAchieved
+                gameOver = defeatAchieved,
+                enchantArea = GameState.CurrentSpecialArea == SpecialArea.Enchant
             };
 
             foreach (var c in activeCharacters)
@@ -1016,6 +1019,12 @@ namespace Game
             if (victoryAchieved) return;
             victoryAchieved = true;
             GamePace.Reset();
+
+            // Decide shop-vs-enchant here on the deciding machine; clients read the result
+            // from the victory GameStateSync so everyone is at the same Special pane.
+            if (GameState.ActiveMode != GameMode.Client)
+                GameState.CurrentSpecialArea = GameState.RollSpecialArea(null);
+
             BroadcastGameState();
             // Each machine awards its own gold and rolls its own shop offers, so players
             // never see each other's inventories. Gold and purchases persist across sessions.
@@ -1164,7 +1173,10 @@ namespace Game
             }
 
             if (state.victory)
+            {
+                GameState.CurrentSpecialArea = state.enchantArea ? SpecialArea.Enchant : SpecialArea.Shop;
                 ShowVictory();
+            }
             if (state.gameOver)
                 UI.GameOverScreen.Show();
         }

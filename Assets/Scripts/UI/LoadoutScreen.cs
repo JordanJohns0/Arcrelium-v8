@@ -168,23 +168,30 @@ namespace UI
                     equipmentPanelComponent.SetEditLoadout(localInventory.Loadout);
                     equipmentPanelComponent.Refresh();
 
-                    ShopScreen shop = withShop
-                        ? ShopScreen.Attach(
-                            equipmentPanelComponent.ShopPanel,
-                            equipmentPanelComponent.InventorySlotPrefab != null
-                                ? equipmentPanelComponent.InventorySlotPrefab.gameObject
-                                : null,
-                            equipmentPanelComponent.GoldLabel)
-                        : equipmentPanelComponent.ShopPanel != null
-                            ? equipmentPanelComponent.ShopPanel.GetComponent<ShopScreen>()
-                            : null;
-                    if (shop != null)
+                    Transform specialPanel = equipmentPanelComponent.ShopPanel;
+                    GameObject slotPrefab = equipmentPanelComponent.InventorySlotPrefab != null
+                        ? equipmentPanelComponent.InventorySlotPrefab.gameObject
+                        : null;
+
+                    // The Special pane hosts either the shop or the enchantment station; hide
+                    // whichever was left over from a previous level before showing this one.
+                    var shop = specialPanel != null ? specialPanel.GetComponent<ShopScreen>() : null;
+                    var enchant = specialPanel != null ? specialPanel.GetComponent<EnchantScreen>() : null;
+                    if (shop != null) shop.Hide();
+                    if (enchant != null) enchant.Hide();
+
+                    if (withShop && GameState.CurrentSpecialArea == SpecialArea.Enchant && HasEnchantments())
                     {
-                        if (withShop) shop.Show();
-                        else shop.Hide();
+                        EnchantScreen screen = EnchantScreen.Attach(specialPanel, slotPrefab);
+                        if (screen != null) screen.Show();
+                    }
+                    else if (withShop)
+                    {
+                        ShopScreen screen = ShopScreen.Attach(specialPanel, slotPrefab, equipmentPanelComponent.GoldLabel);
+                        if (screen != null) screen.Show();
                     }
 
-                    // Open on the shop page after a victory; otherwise start on the inventory.
+                    // Open on the special page after a victory; otherwise start on the inventory.
                     equipmentPanelComponent.SelectPage(withShop ? "Special" : "Inventory Slots");
                 }
             }
@@ -202,6 +209,14 @@ namespace UI
 
             if (unlockedReward != null)
                 ShowRewardPopup(unlockedReward);
+        }
+
+        /// <summary>True when the library offers at least one enchantment to hand out.</summary>
+        private static bool HasEnchantments()
+        {
+            var library = GameDataLibrary.Instance;
+            var pool = library != null ? library.GetAllEnchantments() : null;
+            return pool != null && pool.Count > 0;
         }
 
         /// <summary>Closes the overlay, restores the game UI, and destroys the screen.</summary>
@@ -237,7 +252,8 @@ namespace UI
                     Networking.NetworkManager.Instance.SendLoadoutSync(new LoadoutSync
                     {
                         playerIndex = GameState.LocalPlayerId,
-                        loadoutNames = localInventory.Loadout.ToNames()
+                        loadoutNames = localInventory.Loadout.ToNames(),
+                        enchantments = localInventory.Loadout.ToEnchantmentAssignments()
                     });
                     Networking.ReadyTracker.Instance.SetLocalReady(true);
                 }

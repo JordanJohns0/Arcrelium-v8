@@ -26,6 +26,8 @@ namespace Networking
         public int activeCharacterId;
         public bool victory;
         public bool gameOver;
+        /// <summary>Host-decided: the end-of-level Special pane is the enchantment station (not the shop).</summary>
+        public bool enchantArea;
     }
 
     /// <summary>
@@ -124,6 +126,8 @@ namespace Networking
     {
         public int playerIndex = -1;
         public string[] loadoutNames = new string[Equipment.EquipmentLoadout.SlotCount];
+        /// <summary>Enchantments this player applied this run, so the host can simulate them.</summary>
+        public List<Equipment.EnchantmentAssignment> enchantments = new List<Equipment.EnchantmentAssignment>();
     }
 
     /// <summary>

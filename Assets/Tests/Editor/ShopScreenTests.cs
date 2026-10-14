@@ -116,6 +116,11 @@ namespace Tests.UI
         private static Button BuyButton(RectTransform panel)
             => panel.GetChild(0).GetComponentInChildren<Button>();
 
+        private static TMP_Text PriceLabel(RectTransform panel, int index)
+            => panel.GetChild(index).Find("Price") != null
+                ? panel.GetChild(index).Find("Price").GetComponent<TMP_Text>()
+                : null;
+
         [Test]
         public void Attach_Show_PopulatesOffersAndGoldInPanel()
         {
@@ -137,7 +142,7 @@ namespace Tests.UI
         }
 
         [Test]
-        public void BuyTile_Affordable_UnlocksDeductsAndRefreshes()
+        public void BuyTile_Affordable_UnlocksDeductsAndMarksOwned()
         {
             inventory.AddGold(50);
             var sword = MakeEquipment("Sword");
@@ -154,7 +159,37 @@ namespace Tests.UI
             Assert.AreEqual(40, inventory.Gold, "Buying must deduct the item's price.");
             Assert.AreEqual(1, savedCount, "Buying must persist the inventory.");
             Assert.AreEqual("40", gold.text, "Gold display must update after a purchase.");
-            Assert.AreEqual(0, panel.childCount, "An owned offer must disappear from the shop.");
+            Assert.AreEqual(1, panel.childCount,
+                "The bought tile stays in the shop rather than vanishing.");
+            Assert.AreEqual("Owned", PriceLabel(panel, 0).text,
+                "A bought offer must show that it is now owned.");
+            Assert.IsFalse(panel.GetChild(0).GetComponent<Button>().interactable,
+                "A bought offer's buy button must be disabled.");
+        }
+
+        [Test]
+        public void BuyTile_DoesNotReshuffleRemainingOffers()
+        {
+            inventory.AddGold(100);
+            MakePool(
+                Entry(MakeEquipment("A"), 10),
+                Entry(MakeEquipment("B"), 10),
+                Entry(MakeEquipment("C"), 10));
+            var panel = MakeOffersPanel();
+            var gold = MakeGoldLabel();
+            var prefab = MakeTilePrefab();
+
+            ShopScreen screen = Bind(panel, gold, prefab);
+            screen.Show();
+            var before = TileItemNames(panel);
+            Assert.AreEqual(3, before.Count, "The shop shows every available offer.");
+
+            BuyButton(panel).onClick.Invoke();
+
+            CollectionAssert.AreEqual(before, TileItemNames(panel),
+                "Buying a tile must not reshuffle or replace the other offers.");
+            Assert.AreEqual(3, panel.childCount,
+                "No replacement offer may slide in after a purchase.");
         }
 
         [Test]

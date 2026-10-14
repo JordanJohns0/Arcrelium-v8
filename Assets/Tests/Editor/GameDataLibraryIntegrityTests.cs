@@ -102,6 +102,43 @@ namespace Tests.Equipment
                 "Duplicate or empty equipment names break loadout/inventory resolution: " + string.Join("; ", problems));
         }
 
+        [Test]
+        public void EveryEnchantmentAsset_IsRegisteredInTheLibrary()
+        {
+            var library = LoadLibrary();
+            var unregistered = AllEnchantmentAssets()
+                .Where(enchantment => enchantment != null && !library.allEnchantments.Contains(enchantment))
+                .Select(enchantment => enchantment.name)
+                .ToList();
+
+            CollectionAssert.IsEmpty(unregistered,
+                "Enchantment assets missing from GameDataLibrary (the enchantment station pool): "
+                + string.Join(", ", unregistered));
+        }
+
+        [Test]
+        public void EnchantmentNames_AreUniqueAndNonEmpty()
+        {
+            var seen = new Dictionary<string, string>();
+            var problems = new List<string>();
+            foreach (EquipmentEnchantmentSO enchantment in AllEnchantmentAssets())
+            {
+                if (enchantment == null) continue;
+                if (string.IsNullOrWhiteSpace(enchantment.EnchantmentName))
+                {
+                    problems.Add($"'{enchantment.name}' has an empty EnchantmentName");
+                    continue;
+                }
+                if (seen.TryGetValue(enchantment.EnchantmentName, out string other))
+                    problems.Add($"'{enchantment.EnchantmentName}' is used by both '{other}' and '{enchantment.name}'");
+                else
+                    seen[enchantment.EnchantmentName] = enchantment.name;
+            }
+
+            CollectionAssert.IsEmpty(problems,
+                "Duplicate or empty enchantment names break name-based resolution: " + string.Join("; ", problems));
+        }
+
         private static IEnumerable<T> AllAssets<T>() where T : Object
         {
             foreach (string guid in AssetDatabase.FindAssets($"t:{typeof(T).Name}"))
@@ -109,6 +146,25 @@ namespace Tests.Equipment
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 if (string.IsNullOrEmpty(path)) continue;
                 yield return AssetDatabase.LoadAssetAtPath<T>(path);
+            }
+        }
+
+        /// <summary>
+        /// Every concrete enchantment asset. The <c>t:</c> search filter does not match a base
+        /// type, so each concrete subtype is queried separately.
+        /// </summary>
+        private static IEnumerable<EquipmentEnchantmentSO> AllEnchantmentAssets()
+        {
+            foreach (System.Type type in TypeCache.GetTypesDerivedFrom<EquipmentEnchantmentSO>())
+            {
+                if (type.IsAbstract) continue;
+                foreach (string guid in AssetDatabase.FindAssets($"t:{type.Name}"))
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (string.IsNullOrEmpty(path)) continue;
+                    if (AssetDatabase.LoadAssetAtPath(path, type) is EquipmentEnchantmentSO enchantment)
+                        yield return enchantment;
+                }
             }
         }
     }

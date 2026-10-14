@@ -15,7 +15,9 @@ namespace UI
     /// display beside the pane updates as the player spends.
     ///
     /// Offers are drawn from <see cref="ShopPool"/> (falling back to <see cref="RewardPool"/>)
-    /// and filtered to items the player does not already own. Every purchase spends gold,
+    /// and filtered to items the player does not already own. Offers are locked in the first
+    /// time the shop opens for a run+level, so buying a tile never reshuffles the rest: the
+    /// purchased tile stays put and switches to an "Owned" state. Every purchase spends gold,
     /// unlocks the item, and persists locally — the host never sees another player's gold.
     ///
     /// Attach one to the Special pane's transform via <see cref="Attach"/> and call
@@ -31,6 +33,7 @@ namespace UI
         [Header("Tile Widgets")]
         [SerializeField] private Color priceColor = new Color(1f, 0.85f, 0.3f, 1f);
         [SerializeField] private Color needGoldColor = new Color(0.9f, 0.3f, 0.3f, 1f);
+        [SerializeField] private Color ownedColor = new Color(0.6f, 0.6f, 0.6f, 1f);
         [SerializeField] private int priceFontSize = 16;
 
         /// <summary>Test seam: resolves the local player's inventory.</summary>
@@ -44,7 +47,24 @@ namespace UI
         private GameObject tilePrefab;
         private TMP_Text goldLabel;
         private PlayerInventory currentInventory;
-        private readonly List<GameObject> spawnedTiles = new List<GameObject>();
+
+        private readonly List<ShopOffer> offers = new List<ShopOffer>();
+        private readonly List<TileEntry> tiles = new List<TileEntry>();
+
+        // The run+level the cached offers were rolled for, so we only re-roll when that changes.
+        private bool offersBuilt;
+        private int offersSeed;
+        private PlayerInventory offersInventory;
+
+        /// <summary>A spawned shop tile plus the widgets we need to keep its state in sync.</summary>
+        private class TileEntry
+        {
+            public GameObject Root;
+            public ShopOffer Offer;
+            public TMP_Text Price;
+            public Button Buy;
+            public bool NeedsGold;
+        }
 
         /// <summary>
         /// Binds a shop to an existing offers panel (e.g. the Equipment UI "Special" pane).
@@ -101,7 +121,14 @@ namespace UI
         private void Refresh()
         {
             RefreshGold();
-            Populate();
+
+            // Only rebuild the tiles when the offers themselves change (new run/level) or the
+            // panel is empty. Ordinary inventory changes — a purchase, a spend, equipping gear —
+            // just restate the existing tiles, so buying never reshuffles the shop.
+            if (EnsureOffers() || tiles.Count == 0)
+                Populate();
+            else
+                UpdateTileStates();
         }
 
         private void RefreshGold()
@@ -110,37 +137,58 @@ namespace UI
                 goldLabel.text = currentInventory != null ? currentInventory.Gold.ToString() : "";
         }
 
+        /// <summary>
+        /// Rolls the offers once per run+level (seeded so they're stable within that window and
+        /// only change for a new run/level). Returns true when the offers were (re)built.
+        /// </summary>
+        private bool EnsureOffers()
+        {
+            int seed = unchecked(GameState.ShopSeed + GameState.CurrentLevel);
+            if (offersBuilt && offersSeed == seed && offersInventory == currentInventory)
+                return false;
+
+            offers.Clear();
+            if (currentInventory != null)
+                offers.AddRange(ShopPool.Offers(currentInventory, offerCount, new System.Random(seed)));
+
+            offersSeed = seed;
+            offersInventory = currentInventory;
+            offersBuilt = true;
+            return true;
+        }
+
         private void Populate()
         {
             ClearTiles();
 
-            if (currentInventory == null || offersPanel == null) return;
+            if (currentInventory == null || offersPanel == null || tilePrefab == null) return;
 
-            // Seed from the run's random base plus the level: offers are stable within a
-            // run+level (buying shouldn't reshuffle the shop) but change every new run.
-            var offers = ShopPool.Offers(currentInventory, offerCount,
-                new System.Random(unchecked(GameState.ShopSeed + GameState.CurrentLevel)));
-            foreach (var offer in offers)
+            foreach (ShopOffer offer in offers)
                 CreateShopTile(offer);
+
+            UpdateTileStates();
         }
 
         private void CreateShopTile(ShopOffer offer)
         {
-            if (tilePrefab == null) return;
+            GameObject root = Object.Instantiate(tilePrefab, offersPanel);
+            root.name = $"Shop {offer.Item.EquipmentName}";
 
-            GameObject tile = Object.Instantiate(tilePrefab, offersPanel);
-            tile.name = $"Shop {offer.Item.EquipmentName}";
-            spawnedTiles.Add(tile);
-
-            var slot = tile.GetComponent<InventorySlotUI>();
+            var slot = root.GetComponent<InventorySlotUI>();
             if (slot != null)
             {
                 slot.Interactable = false;
                 slot.Setup(offer.Item, null);
             }
 
-            TMP_Text price = CreatePriceLabel(tile.transform, offer.Price);
-            AddBuyOverlay(tile.transform, offer, price);
+            var entry = new TileEntry
+            {
+                Root = root,
+                Offer = offer,
+                Price = CreatePriceLabel(root.transform, offer.Price),
+            };
+            entry.Buy = AddBuyOverlay(root.transform, entry);
+            tiles.Add(entry);
         }
 
         private TMP_Text CreatePriceLabel(Transform tile, int price)
@@ -161,7 +209,7 @@ namespace UI
             return tmp;
         }
 
-        private void AddBuyOverlay(Transform tile, ShopOffer offer, TMP_Text price)
+        private Button AddBuyOverlay(Transform tile, TileEntry entry)
         {
             // The overlay is a translucent tint over the tile; the buy Button lives on the
             // tile itself (next to InventorySlotUI) so a right-click still reaches the slot's
@@ -175,31 +223,63 @@ namespace UI
             var rt = overlay.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
-            rt.sizeDelta = Vector2.zero;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
 
             var button = tile.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
 
-            EquipmentData item = offer.Item;
-            int priceValue = offer.Price;
-            button.onClick.AddListener(() => Buy(item, priceValue, price));
+            button.onClick.AddListener(() => Buy(entry));
+            return button;
         }
 
-        private void Buy(EquipmentData item, int price, TMP_Text priceLabel)
+        private void Buy(TileEntry tile)
         {
-            var inventory = currentInventory;
-            if (inventory == null) return;
-            if (Owns(inventory, item)) { Refresh(); return; }
+            if (currentInventory == null || tile == null) return;
+            if (Owns(currentInventory, tile.Offer.Item)) { UpdateTileStates(); return; }
 
-            if (!inventory.TrySpendGold(price))
+            if (!currentInventory.TrySpendGold(tile.Offer.Price))
             {
-                priceLabel.text = $"Need {price}";
-                priceLabel.color = needGoldColor;
+                tile.NeedsGold = true;
+                UpdateTileStates();
                 return;
             }
 
-            inventory.Unlock(item);
-            PersistInventory(inventory);
+            currentInventory.Unlock(tile.Offer.Item);
+            PersistInventory(currentInventory);
+            // Unlock raises OnInventoryChanged → Refresh → UpdateTileStates, so the tile flips
+            // to "Owned" and its button is disabled without the shop being rebuilt.
+        }
+
+        /// <summary>Restates every tile from the current inventory — no rebuild, no reshuffle.</summary>
+        private void UpdateTileStates()
+        {
+            foreach (TileEntry tile in tiles)
+            {
+                if (tile == null || tile.Root == null) continue;
+
+                bool owned = Owns(currentInventory, tile.Offer.Item);
+                if (tile.Buy != null)
+                    tile.Buy.interactable = !owned;
+
+                if (tile.Price == null) continue;
+
+                if (owned)
+                {
+                    tile.Price.text = "Owned";
+                    tile.Price.color = ownedColor;
+                }
+                else if (tile.NeedsGold)
+                {
+                    tile.Price.text = $"Need {tile.Offer.Price}";
+                    tile.Price.color = needGoldColor;
+                }
+                else
+                {
+                    tile.Price.text = tile.Offer.Price.ToString();
+                    tile.Price.color = priceColor;
+                }
+            }
         }
 
         private static bool Owns(PlayerInventory inventory, EquipmentData item)
@@ -210,11 +290,11 @@ namespace UI
 
         private void ClearTiles()
         {
-            foreach (GameObject tile in spawnedTiles)
+            foreach (TileEntry tile in tiles)
             {
-                if (tile != null) DestroyObject(tile);
+                if (tile != null && tile.Root != null) DestroyObject(tile.Root);
             }
-            spawnedTiles.Clear();
+            tiles.Clear();
         }
 
         private static void DestroyObject(Object obj)

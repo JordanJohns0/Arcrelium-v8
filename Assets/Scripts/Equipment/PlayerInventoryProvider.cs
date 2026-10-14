@@ -95,6 +95,9 @@ namespace Equipment
             data.loadoutNames = inventory.Loadout != null
                 ? inventory.Loadout.ToNames()
                 : new string[EquipmentLoadout.SlotCount];
+            data.enchantments = inventory.Loadout != null
+                ? inventory.Loadout.ToEnchantmentAssignments()
+                : new List<EnchantmentAssignment>();
             data.gold = inventory.Gold;
 
             string path = GetPath(steamId);
@@ -136,7 +139,10 @@ namespace Equipment
                     }
                     inventory.SetUnlocked(unlocked);
                     if (inventory.Loadout != null)
+                    {
                         inventory.Loadout.Apply(EquipmentLoadout.FromNames(data.loadoutNames, lib));
+                        inventory.Loadout.ApplyEnchantmentAssignments(data.enchantments, lib);
+                    }
                     inventory.SetGold(data.gold);
                 }
                 return true;
@@ -180,6 +186,7 @@ namespace Equipment
     {
         public List<string> unlockedNames = new List<string>();
         public string[] loadoutNames = new string[EquipmentLoadout.SlotCount];
+        public List<EnchantmentAssignment> enchantments = new List<EnchantmentAssignment>();
         public int gold;
     }
 }

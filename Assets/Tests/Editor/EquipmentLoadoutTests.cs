@@ -61,6 +61,14 @@ namespace Tests.Equipment
             return library;
         }
 
+        private EquipmentEnchantmentSO MakeEnchantment(string name)
+        {
+            var so = ScriptableObject.CreateInstance<GrantCardEnchantmentSO>();
+            so.EnchantmentName = name;
+            tracked.Add(so);
+            return so;
+        }
+
         private EquipmentLoadout FullLoadout()
         {
             return new EquipmentLoadout
@@ -346,6 +354,193 @@ namespace Tests.Equipment
         private static string TempRoot()
         {
             return Path.Combine(Path.GetTempPath(), "ArcreliumLoadoutTests");
+        }
+
+        [Test]
+        public void AddEnchantment_ThenGetEnchantments_ReturnsIt()
+        {
+            var loadout = new EquipmentLoadout();
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+            var enchantment = MakeEnchantment("Sharpened");
+
+            loadout.AddEnchantment(sword, enchantment);
+
+            CollectionAssert.Contains(new List<EquipmentEnchantmentSO>(loadout.GetEnchantments(sword)), enchantment);
+            Assert.IsTrue(loadout.HasEnchantment(sword, enchantment));
+        }
+
+        [Test]
+        public void GetEnchantments_UnknownItem_ReturnsEmpty()
+        {
+            var loadout = new EquipmentLoadout();
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+            var other = MakeEquipment(EquipmentSlotType.Hand, "Axe");
+            loadout.AddEnchantment(sword, MakeEnchantment("Sharpened"));
+
+            Assert.AreEqual(0, loadout.GetEnchantments(other).Count);
+            CollectionAssert.IsEmpty(loadout.GetEnchantments(null));
+        }
+
+        [Test]
+        public void AddEnchantment_StacksMultipleOnSameItem()
+        {
+            var loadout = new EquipmentLoadout();
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+            var first = MakeEnchantment("Sharpened");
+            var second = MakeEnchantment("Blessed");
+
+            loadout.AddEnchantment(sword, first);
+            loadout.AddEnchantment(sword, second);
+
+            Assert.AreEqual(2, loadout.GetEnchantments(sword).Count, "Enchantments must stack on one piece.");
+        }
+
+        [Test]
+        public void AddEnchantment_IgnoresNullArguments()
+        {
+            var loadout = new EquipmentLoadout();
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+
+            loadout.AddEnchantment(sword, null);
+            loadout.AddEnchantment(null, MakeEnchantment("Sharpened"));
+
+            Assert.AreEqual(0, loadout.enchantments.Count);
+        }
+
+        [Test]
+        public void ToEnchantmentAssignments_RoundTripsThroughLibrary()
+        {
+            var loadout = new EquipmentLoadout();
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+            var first = MakeEnchantment("Sharpened");
+            var second = MakeEnchantment("Blessed");
+            loadout.AddEnchantment(sword, first);
+            loadout.AddEnchantment(sword, second);
+
+            var library = MakeLibrary(sword);
+            library.allEnchantments.AddRange(new[] { first, second });
+
+            var assignments = loadout.ToEnchantmentAssignments();
+            Assert.AreEqual(1, assignments.Count);
+            Assert.AreEqual("Sword", assignments[0].equipmentName);
+            CollectionAssert.AreEquivalent(new[] { "Sharpened", "Blessed" }, assignments[0].enchantmentNames);
+
+            var restored = new EquipmentLoadout();
+            restored.ApplyEnchantmentAssignments(assignments, library);
+
+            var resolved = new List<EquipmentEnchantmentSO>(restored.GetEnchantments(sword));
+            Assert.AreEqual(2, resolved.Count);
+            CollectionAssert.Contains(resolved, first);
+            CollectionAssert.Contains(resolved, second);
+        }
+
+        [Test]
+        public void ApplyEnchantmentAssignments_UnknownNames_AreDropped()
+        {
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+            var enchantment = MakeEnchantment("Sharpened");
+            var library = MakeLibrary(sword);
+            library.allEnchantments.Add(enchantment);
+
+            var loadout = new EquipmentLoadout();
+            loadout.ApplyEnchantmentAssignments(new List<EnchantmentAssignment>
+            {
+                new EnchantmentAssignment
+                {
+                    equipmentName = "Sword",
+                    enchantmentNames = new List<string> { "Sharpened", "Missing" }
+                },
+                new EnchantmentAssignment
+                {
+                    equipmentName = "Missing Equipment",
+                    enchantmentNames = new List<string> { "Sharpened" }
+                }
+            }, library);
+
+            Assert.AreEqual(1, loadout.enchantments.Count);
+            Assert.AreEqual(1, loadout.GetEnchantments(sword).Count);
+        }
+
+        [Test]
+        public void Apply_CopiesEnchantmentsWithoutAliasing()
+        {
+            var source = new EquipmentLoadout();
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+            var enchantment = MakeEnchantment("Sharpened");
+            source.AddEnchantment(sword, enchantment);
+
+            var copy = new EquipmentLoadout();
+            copy.Apply(source);
+
+            Assert.AreEqual(1, copy.GetEnchantments(sword).Count);
+            // Mutating the source's innermost list must not reach into the copy.
+            source.enchantments[0].enchantments.Add(MakeEnchantment("Blessed"));
+            Assert.AreEqual(1, copy.GetEnchantments(sword).Count, "Apply must deep-copy the enchantment lists.");
+        }
+
+        [Test]
+        public void Clear_RemovesEnchantments()
+        {
+            var loadout = new EquipmentLoadout();
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+            loadout.Set(EquipmentSlotType.Hand, 0, sword);
+            loadout.AddEnchantment(sword, MakeEnchantment("Sharpened"));
+
+            loadout.Clear();
+
+            Assert.AreEqual(0, loadout.enchantments.Count);
+            Assert.IsTrue(loadout.IsEmpty);
+        }
+
+        [Test]
+        public void GetAllCards_IncludesEnchantmentGrantedCards()
+        {
+            var loadout = new EquipmentLoadout();
+            var sword = MakeEquipment(EquipmentSlotType.Hand, "Sword");
+            loadout.Set(EquipmentSlotType.Hand, 0, sword);
+            var granted = MakeCard("Granted Strike");
+            var enchantment = ScriptableObject.CreateInstance<GrantCardEnchantmentSO>();
+            enchantment.EnchantmentName = "Granting";
+            enchantment.GrantedCard = granted;
+            tracked.Add(enchantment);
+            loadout.AddEnchantment(sword, enchantment);
+
+            var cards = loadout.GetAllCards();
+
+            CollectionAssert.Contains(cards, granted,
+                "Loadout deck building must include cards granted by its enchantments.");
+        }
+
+        [Test]
+        public void Provider_SaveThenLoad_RoundTripsEnchantments()
+        {
+            PlayerInventoryProvider.RootOverride = TempRoot();
+            Directory.CreateDirectory(TempRoot());
+
+            var library = MakeLibrary();
+            var helm = MakeEquipment(EquipmentSlotType.Head, "Helm");
+            var enchantment = MakeEnchantment("Blessed");
+            library.allEquipment.Add(helm);
+            library.allEnchantments.Add(enchantment);
+            GameDataLibrary.SetInstance(library);
+
+            const ulong steamId = 6161;
+            var inventory = ScriptableObject.CreateInstance<PlayerInventory>();
+            tracked.Add(inventory);
+            inventory.Unlock(helm);
+            inventory.Loadout.Set(EquipmentSlotType.Head, 0, helm);
+            inventory.AddEnchantment(helm, enchantment);
+            PlayerInventoryProvider.Save(steamId, inventory);
+
+            PlayerInventoryProvider.ResetForTests();
+            var loaded = PlayerInventoryProvider.GetFor(steamId);
+
+            var resolved = new List<EquipmentEnchantmentSO>(loaded.Loadout.GetEnchantments(loaded.Loadout.Head));
+            Assert.AreEqual(1, resolved.Count, "Enchantments must round-trip through the save file.");
+            Assert.AreEqual("Blessed", resolved[0].EnchantmentName);
+
+            string path = PlayerInventoryProvider.GetPath(steamId);
+            if (File.Exists(path)) File.Delete(path);
         }
 
         [Test]
