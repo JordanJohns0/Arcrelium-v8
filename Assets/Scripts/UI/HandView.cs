@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Characters;
@@ -24,8 +25,20 @@ namespace UI
         [Tooltip("Seconds for the full slide between the normal and stowed spot.")]
         [SerializeField] private float slideDuration = 0.3f;
 
+        [Header("Draw Animation")]
+        [Tooltip("Optional. Newly drawn cards fly in from this object (e.g. the deck pile). Leave empty to rise from below the hand.")]
+        [SerializeField] private RectTransform drawSource;
+        [Tooltip("How far below its spot (pixels) a card starts when there is no draw source.")]
+        [SerializeField] private float drawFromDistance = 260f;
+        [Tooltip("Seconds each drawn card takes to fly into place.")]
+        [SerializeField] private float drawDuration = 0.35f;
+        [Tooltip("Delay between consecutive cards in the same draw, so a multi-card draw fans out.")]
+        [SerializeField] private float drawStagger = 0.08f;
+
         private Character boundCharacter;
         private readonly List<CardView> spawnedViews = new List<CardView>();
+        private readonly HashSet<CardInstance> displayedCards = new HashSet<CardInstance>();
+        private int drawAnimationsStarted;
         private bool handSubscribed;
         private float currentOffset;
         private float slideFrom;
@@ -85,19 +98,98 @@ namespace UI
         {
             foreach (CardView view in spawnedViews)
             {
-                if (view != null) Destroy(view.gameObject);
+                if (view != null) DestroyView(view.gameObject);
             }
             spawnedViews.Clear();
 
+            // Cards that were not in the previous hand were just drawn: animate them in.
+            var previous = new HashSet<CardInstance>(displayedCards);
+            displayedCards.Clear();
             if (boundCharacter == null) return;
 
+            int drawIndex = 0;
             foreach (CardInstance card in boundCharacter.Hand.Cards)
             {
+                bool drawn = !previous.Contains(card);
                 CardView view = Instantiate(cardViewPrefab, cardContainer);
                 view.Setup(card);
                 view.OnClicked += HandleCardViewClicked;
                 spawnedViews.Add(view);
+                displayedCards.Add(card);
+
+                if (drawn && isActiveAndEnabled)
+                {
+                    // Hide it now so it never renders fully opaque before the fade starts.
+                    var group = view.GetComponent<CanvasGroup>();
+                    if (group == null) group = view.gameObject.AddComponent<CanvasGroup>();
+                    group.alpha = 0f;
+
+                    drawAnimationsStarted++;
+                    StartCoroutine(DrawIn(view, drawIndex++));
+                }
             }
+        }
+
+        /// <summary>Number of draw animations started (one per newly drawn card). Public for tests.</summary>
+        internal int DrawAnimationsStarted => drawAnimationsStarted;
+
+        /// <summary>
+        /// Flies one newly drawn card from its start point into its laid-out place while
+        /// fading it in. The layout group places the card first, so the target is read after
+        /// the next frame. Stops early if the card is hovered (hover then owns its position)
+        /// or the card is rebuilt away.
+        /// </summary>
+        private IEnumerator DrawIn(CardView view, int index)
+        {
+            // Wait a frame so the layout group has placed the card before reading its rest spot.
+            yield return null;
+            if (view == null) yield break;
+
+            var rt = view.GetComponent<RectTransform>();
+            var group = view.GetComponent<CanvasGroup>();
+            if (group == null) group = view.gameObject.AddComponent<CanvasGroup>();
+
+            Vector2 target = rt.anchoredPosition;
+            Vector2 offset = DrawOffset(rt);
+            group.alpha = 0f;
+
+            if (index > 0 && drawStagger > 0f)
+                yield return new WaitForSecondsRealtime(index * drawStagger);
+
+            // Real time, not accumulated frame deltas, so the fade always completes on schedule.
+            float startTime = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - startTime < drawDuration)
+            {
+                if (view == null) yield break;
+                if (view.Hovered)
+                {
+                    group.alpha = 1f;
+                    yield break;
+                }
+
+                float t = Mathf.Clamp01((Time.realtimeSinceStartup - startTime) / drawDuration);
+                t = t * t * (3f - 2f * t);
+                rt.anchoredPosition = Vector2.LerpUnclamped(target + offset, target, t);
+                group.alpha = t;
+                yield return null;
+            }
+
+            if (view == null) yield break;
+            rt.anchoredPosition = target;
+            group.alpha = 1f;
+        }
+
+        /// <summary>Where a drawn card starts, relative to its resting place in the hand.</summary>
+        private Vector2 DrawOffset(RectTransform card)
+        {
+            Transform parent = card.parent;
+            if (drawSource != null && parent != null)
+            {
+                Vector2 from = parent.InverseTransformPoint(drawSource.position);
+                Vector2 rest = parent.InverseTransformPoint(card.position);
+                return from - rest;
+            }
+            return new Vector2(0f, -drawFromDistance);
         }
 
         private void HandleCardViewClicked(CardView view)
@@ -202,6 +294,13 @@ namespace UI
         private void OnDestroy()
         {
             UnsubscribeFromHand();
+        }
+
+        private static void DestroyView(Object obj)
+        {
+            if (obj == null) return;
+            if (Application.isPlaying) Destroy(obj);
+            else DestroyImmediate(obj);
         }
     }
 }
