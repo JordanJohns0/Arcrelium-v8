@@ -30,6 +30,12 @@ namespace UI
         [Header("Offers")]
         [SerializeField] [Min(0)] private int offerCount = 4;
 
+        [Header("Info")]
+        [Tooltip("Heading shown above the offers (the Special page's title label).")]
+        [SerializeField] private string shopTitle = "Shop";
+        [Tooltip("Flavour text shown under the heading (the Special page's description label).")]
+        [SerializeField] private string shopDescription = "Spend gold on new equipment for your run.";
+
         [Header("Tile Widgets")]
         [SerializeField] private Color priceColor = new Color(1f, 0.85f, 0.3f, 1f);
         [SerializeField] private Color needGoldColor = new Color(0.9f, 0.3f, 0.3f, 1f);
@@ -46,6 +52,8 @@ namespace UI
         private Transform offersPanel;
         private GameObject tilePrefab;
         private TMP_Text goldLabel;
+        private TMP_Text titleLabel;
+        private TMP_Text descriptionLabel;
         private PlayerInventory currentInventory;
 
         private readonly List<ShopOffer> offers = new List<ShopOffer>();
@@ -71,21 +79,25 @@ namespace UI
         /// Returns null when the panel is missing. <paramref name="tilePrefab"/> is the shared
         /// Inventory Slot prefab; a price label and buy overlay are added around each tile.
         /// </summary>
-        public static ShopScreen Attach(Transform offersPanel, GameObject tilePrefab, TMP_Text goldLabel)
+        public static ShopScreen Attach(Transform offersPanel, GameObject tilePrefab, TMP_Text goldLabel,
+            TMP_Text titleLabel = null, TMP_Text descriptionLabel = null)
         {
             if (offersPanel == null) return null;
 
             ShopScreen screen = offersPanel.GetComponent<ShopScreen>();
             if (screen == null) screen = offersPanel.gameObject.AddComponent<ShopScreen>();
-            screen.Setup(offersPanel, tilePrefab, goldLabel);
+            screen.Setup(offersPanel, tilePrefab, goldLabel, titleLabel, descriptionLabel);
             return screen;
         }
 
-        private void Setup(Transform offersPanel, GameObject tilePrefab, TMP_Text goldLabel)
+        private void Setup(Transform offersPanel, GameObject tilePrefab, TMP_Text goldLabel,
+            TMP_Text titleLabel, TMP_Text descriptionLabel)
         {
             this.offersPanel = offersPanel;
             this.tilePrefab = tilePrefab;
             this.goldLabel = goldLabel;
+            this.titleLabel = titleLabel;
+            this.descriptionLabel = descriptionLabel;
         }
 
         private void OnDestroy()
@@ -120,6 +132,7 @@ namespace UI
 
         private void Refresh()
         {
+            RefreshInfo();
             RefreshGold();
 
             // Only rebuild the tiles when the offers themselves change (new run/level) or the
@@ -129,6 +142,12 @@ namespace UI
                 Populate();
             else
                 UpdateTileStates();
+        }
+
+        private void RefreshInfo()
+        {
+            if (titleLabel != null) titleLabel.text = shopTitle;
+            if (descriptionLabel != null) descriptionLabel.text = shopDescription;
         }
 
         private void RefreshGold()

@@ -92,6 +92,12 @@ namespace Tests.UI
             return go.GetComponent<TMP_Text>();
         }
 
+        private TMP_Text MakeLabel(string name)
+        {
+            var go = Track(new GameObject(name, typeof(TextMeshProUGUI))) as GameObject;
+            return go.GetComponent<TMP_Text>();
+        }
+
         /// <summary>A tile shaped like the shared Inventory Slot prefab (icon + script).</summary>
         private GameObject MakeTilePrefab()
         {
@@ -139,6 +145,25 @@ namespace Tests.UI
             Assert.IsNotNull(slot, "Tiles must reuse the Inventory Slot prefab.");
             Assert.IsFalse(slot.Interactable, "Shop tiles must not be draggable.");
             Assert.AreEqual("Sword", slot.EquipmentData.EquipmentName, "Tile must show the offered item.");
+        }
+
+        [Test]
+        public void Attach_Show_WritesTitleAndDescriptionIntoSuppliedLabels()
+        {
+            inventory.AddGold(10);
+            MakePool(Entry(MakeEquipment("Sword"), 5));
+            var panel = MakeOffersPanel();
+            var gold = MakeGoldLabel();
+            var title = MakeLabel("Special Title");
+            var description = MakeLabel("Special Description");
+
+            ShopScreen screen = ShopScreen.Attach(panel, MakeTilePrefab(), gold, title, description);
+            screen.Show();
+
+            Assert.AreEqual("Shop", title.text,
+                "The shop must write its heading into the Special page's title label.");
+            Assert.IsFalse(string.IsNullOrEmpty(description.text),
+                "The shop must write a description into the Special page's description label.");
         }
 
         [Test]

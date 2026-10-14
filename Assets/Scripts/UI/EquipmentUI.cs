@@ -46,6 +46,14 @@ namespace UI
         [Tooltip("Page shown when the UI opens. Must match a tab's page name.")]
         [SerializeField] private string defaultPage = "Inventory Slots";
 
+        [Header("Special Page Icons")]
+        [Tooltip("Icon shown on the Special tab while the Shop is the active special area. " +
+            "Leave unset to keep the tab's own icon.")]
+        [SerializeField] private Sprite specialShopIcon;
+        [Tooltip("Icon shown on the Special tab while the Enchantment station is the active " +
+            "special area. Leave unset to keep the tab's own icon.")]
+        [SerializeField] private Sprite specialEnchantIcon;
+
         private readonly List<InventorySlotUI> spawnedInventorySlots = new List<InventorySlotUI>();
         private const int InventorySlotCount = 20;
         private readonly List<TabButton> tabButtons = new List<TabButton>();
@@ -54,14 +62,51 @@ namespace UI
         private DeckListUI deckList;
         private TMP_Text cachedGoldLabel;
 
+        /// <summary>The page GameObject that hosts the end-of-level shop / enchantment station.</summary>
+        private const string SpecialPageName = "Special Page";
+
         /// <summary>The mutually-exclusive pages switched by the bookmark tabs.</summary>
-        private static readonly string[] PageNames = { "Inventory Slots", "Decklist", "Special" };
+        private static readonly string[] PageNames = { "Inventory Slots", "Decklist", SpecialPageName };
 
         /// <summary>The shared Inventory Slot prefab (also used by the shop's offer tiles).</summary>
         public InventorySlotUI InventorySlotPrefab => inventorySlotPrefab;
 
         /// <summary>The Special column the end-of-level shop fills (empty when absent).</summary>
-        public Transform ShopPanel => transform.Find("Special");
+        public Transform ShopPanel
+        {
+            get
+            {
+                // The Special grid now lives inside the "Special Page" page (so its title and
+                // description can sit above it); fall back to a direct child for old scenes.
+                Transform page = transform.Find(SpecialPageName);
+                if (page != null)
+                {
+                    Transform special = page.Find("Special");
+                    if (special != null) return special;
+                }
+                return transform.Find("Special");
+            }
+        }
+
+        /// <summary>The TMP title under the Special page (empty when absent).</summary>
+        public TMP_Text SpecialTitleLabel
+        {
+            get
+            {
+                Transform title = transform.Find(SpecialPageName + "/Special Title");
+                return title != null ? title.GetComponent<TMP_Text>() : null;
+            }
+        }
+
+        /// <summary>The TMP description under the Special page (empty when absent).</summary>
+        public TMP_Text SpecialDescriptionLabel
+        {
+            get
+            {
+                Transform description = transform.Find(SpecialPageName + "/Special Description");
+                return description != null ? description.GetComponent<TMP_Text>() : null;
+            }
+        }
 
         /// <summary>The "Gold Number Display" TMP under "Gold Display", found lazily.</summary>
         public TMP_Text GoldLabel
@@ -303,7 +348,22 @@ namespace UI
         {
             const string suffix = " Tab";
             string key = tabName.EndsWith(suffix) ? tabName.Substring(0, tabName.Length - suffix.Length) : tabName;
-            return key == "Inventory" ? "Inventory Slots" : key;
+            return ResolvePageName(key);
+        }
+
+        /// <summary>
+        /// Maps a tab's serialized page name onto the page it shows. The Special tab was
+        /// authored as "Special" but its page is "Special Page"; accept both spellings.
+        /// </summary>
+        private static string ResolvePageName(string name)
+        {
+            return name == "Special" ? SpecialPageName : name;
+        }
+
+        /// <summary>True when a tab's page name (or its alias) matches the shown page.</summary>
+        private static bool PageMatches(string tabPageName, string shownPage)
+        {
+            return string.Equals(ResolvePageName(tabPageName), shownPage, System.StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -315,7 +375,7 @@ namespace UI
             if (tabButtons.Count == 0 && transform.Find("Bookmarks") != null)
                 InitializeTabs();
 
-            string requested = string.IsNullOrEmpty(pageName) ? defaultPage : pageName;
+            string requested = ResolvePageName(string.IsNullOrEmpty(pageName) ? defaultPage : pageName);
 
             foreach (string page in PageNames)
             {
@@ -325,7 +385,23 @@ namespace UI
             }
 
             foreach (TabButton tab in tabButtons)
-                tab.SetSelected(string.Equals(tab.PageName, requested, System.StringComparison.OrdinalIgnoreCase));
+                tab.SetSelected(PageMatches(tab.PageName, requested));
+        }
+
+        /// <summary>
+        /// Swaps the Special tab's bookmark icon to match the special area the level rolled
+        /// (shop or enchantment station). Uses the sprites assigned in the Inspector; leaves
+        /// the tab's own icon in place for any sprite that is unset.
+        /// </summary>
+        public void ApplySpecialArea(Game.SpecialArea area)
+        {
+            Sprite icon = area == Game.SpecialArea.Enchant ? specialEnchantIcon : specialShopIcon;
+            if (icon == null) return;
+
+            Transform tab = transform.Find("Bookmarks/Special Tab");
+            Transform iconTransform = tab != null ? tab.Find("Image") : null;
+            Image iconImage = iconTransform != null ? iconTransform.GetComponent<Image>() : null;
+            if (iconImage != null) iconImage.sprite = icon;
         }
 
         private void RefreshGoldLabel()

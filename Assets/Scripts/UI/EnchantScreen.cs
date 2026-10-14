@@ -24,6 +24,11 @@ namespace UI
         [SerializeField] [Min(0)] private int optionCount = 3;
 
         [Header("Info Panel")]
+        [Tooltip("Title shown when no enchantment is offered (empty pool), and as the fallback " +
+            "when an external title label is supplied but no enchantment exists.")]
+        [SerializeField] private string defaultTitle = "No enchantments available";
+        [Tooltip("Description shown when no enchantment is offered.")]
+        [SerializeField] private string defaultDescription = "";
         [SerializeField] private float infoHeight = 96f;
         [SerializeField] private int titleFontSize = 22;
         [SerializeField] private int descriptionFontSize = 15;
@@ -48,6 +53,8 @@ namespace UI
         private GameObject infoRoot;
         private TMP_Text titleLabel;
         private TMP_Text descriptionLabel;
+        private TMP_Text externalTitleLabel;
+        private TMP_Text externalDescriptionLabel;
 
         private readonly List<EquipmentData> options = new List<EquipmentData>();
         private readonly List<TileEntry> tiles = new List<TileEntry>();
@@ -84,20 +91,24 @@ namespace UI
         /// Binds an enchantment station to an existing panel (the Equipment UI "Special"
         /// pane). Returns null when the panel is missing.
         /// </summary>
-        public static EnchantScreen Attach(Transform offersPanel, GameObject tilePrefab)
+        public static EnchantScreen Attach(Transform offersPanel, GameObject tilePrefab,
+            TMP_Text titleLabel = null, TMP_Text descriptionLabel = null)
         {
             if (offersPanel == null) return null;
 
             EnchantScreen screen = offersPanel.GetComponent<EnchantScreen>();
             if (screen == null) screen = offersPanel.gameObject.AddComponent<EnchantScreen>();
-            screen.Setup(offersPanel, tilePrefab);
+            screen.Setup(offersPanel, tilePrefab, titleLabel, descriptionLabel);
             return screen;
         }
 
-        private void Setup(Transform offersPanel, GameObject tilePrefab)
+        private void Setup(Transform offersPanel, GameObject tilePrefab,
+            TMP_Text titleLabel, TMP_Text descriptionLabel)
         {
             this.offersPanel = offersPanel;
             this.tilePrefab = tilePrefab;
+            externalTitleLabel = titleLabel;
+            externalDescriptionLabel = descriptionLabel;
         }
 
         private void OnDestroy()
@@ -130,6 +141,8 @@ namespace UI
             }
             ClearTiles();
             if (infoRoot != null) { DestroyObject(infoRoot); infoRoot = null; }
+            titleLabel = null;
+            descriptionLabel = null;
             RestoreGridPadding();
         }
 
@@ -199,6 +212,17 @@ namespace UI
 
         private void EnsureInfo()
         {
+            if (titleLabel != null || descriptionLabel != null) return;
+
+            // Prefer the scene's own Special page title/description when one was supplied;
+            // only build a generated header as a fallback (e.g. unit tests, legacy scenes).
+            if (externalTitleLabel != null || externalDescriptionLabel != null)
+            {
+                titleLabel = externalTitleLabel;
+                descriptionLabel = externalDescriptionLabel;
+                return;
+            }
+
             if (infoRoot != null) return;
 
             ApplyGridPadding();
@@ -334,9 +358,9 @@ namespace UI
         private void UpdateTileStates()
         {
             if (titleLabel != null)
-                titleLabel.text = enchantment != null ? enchantment.EnchantmentName : "No enchantments available";
+                titleLabel.text = enchantment != null ? enchantment.EnchantmentName : defaultTitle;
             if (descriptionLabel != null)
-                descriptionLabel.text = enchantment != null ? enchantment.Description : "";
+                descriptionLabel.text = enchantment != null ? enchantment.Description : defaultDescription;
 
             foreach (TileEntry tile in tiles)
             {

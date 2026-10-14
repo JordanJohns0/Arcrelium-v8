@@ -180,19 +180,28 @@ namespace UI
                     if (shop != null) shop.Hide();
                     if (enchant != null) enchant.Hide();
 
+                    // The Special page's own title/description labels head whichever area is
+                    // shown (shop or enchantment station).
+                    TMP_Text specialTitle = equipmentPanelComponent.SpecialTitleLabel;
+                    TMP_Text specialDescription = equipmentPanelComponent.SpecialDescriptionLabel;
+
                     if (withShop && GameState.CurrentSpecialArea == SpecialArea.Enchant && HasEnchantments())
                     {
-                        EnchantScreen screen = EnchantScreen.Attach(specialPanel, slotPrefab);
+                        EnchantScreen screen = EnchantScreen.Attach(specialPanel, slotPrefab, specialTitle, specialDescription);
                         if (screen != null) screen.Show();
                     }
                     else if (withShop)
                     {
-                        ShopScreen screen = ShopScreen.Attach(specialPanel, slotPrefab, equipmentPanelComponent.GoldLabel);
+                        ShopScreen screen = ShopScreen.Attach(specialPanel, slotPrefab, equipmentPanelComponent.GoldLabel,
+                            specialTitle, specialDescription);
                         if (screen != null) screen.Show();
                     }
 
+                    // Swap the Special tab's bookmark icon to match the area this level rolled.
+                    equipmentPanelComponent.ApplySpecialArea(GameState.CurrentSpecialArea);
+
                     // Open on the special page after a victory; otherwise start on the inventory.
-                    equipmentPanelComponent.SelectPage(withShop ? "Special" : "Inventory Slots");
+                    equipmentPanelComponent.SelectPage(withShop ? "Special Page" : "Inventory Slots");
                 }
             }
 

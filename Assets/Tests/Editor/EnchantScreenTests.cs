@@ -156,6 +156,30 @@ namespace Tests.UI
         }
 
         [Test]
+        public void Attach_Show_WithExternalLabels_WritesThemAndSkipsGeneratedHeader()
+        {
+            var sword = MakeEquipment("Sword");
+            Own(sword);
+            MakeEnchantment("Sharpened", "Adds damage.");
+            var panel = MakeOffersPanel();
+            var prefab = MakeTilePrefab();
+
+            var title = Track(new GameObject("Special Title", typeof(TextMeshProUGUI))) as GameObject;
+            var description = Track(new GameObject("Special Description", typeof(TextMeshProUGUI))) as GameObject;
+
+            EnchantScreen screen = EnchantScreen.Attach(panel, prefab,
+                title.GetComponent<TMP_Text>(), description.GetComponent<TMP_Text>());
+            screen.Show();
+
+            Assert.AreEqual("Sharpened", title.GetComponent<TMP_Text>().text,
+                "The station must write the enchantment name into the scene's Special Title.");
+            Assert.AreEqual("Adds damage.", description.GetComponent<TMP_Text>().text,
+                "The station must write the enchantment description into the scene's Special Description.");
+            Assert.IsNull(panel.Find("EnchantInfo"),
+                "With scene labels supplied the station must not build its own info header.");
+        }
+
+        [Test]
         public void ChooseTile_AppliesEnchantmentPersistsAndLocksIn()
         {
             var sword = MakeEquipment("Sword");
