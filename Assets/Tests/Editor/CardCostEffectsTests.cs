@@ -57,6 +57,58 @@ namespace Tests.Cards
         }
 
         [Test]
+        public void CardInstance_ResetCost_RestoresBaseCost()
+        {
+            var data = SelfCard("Priced", 3);
+            var instance = new CardInstance(data);
+
+            instance.Cost = 0;
+            Assert.IsTrue(instance.IsCostModified);
+
+            instance.ResetCost();
+
+            Assert.AreEqual(3, instance.Cost);
+            Assert.IsFalse(instance.IsCostModified);
+        }
+
+        [Test]
+        public void DiscardFromHand_ResetsModifiedCost()
+        {
+            var card = new CardInstance(SelfCard("Echo", 3));
+            source.Hand.AddCard(card);
+            card.Cost = 1;
+
+            source.DiscardFromHand(card);
+
+            Assert.AreEqual(3, card.Cost, "Discarding a card drops its in-hand cost change.");
+            CollectionAssert.Contains(GetDeck().DiscardPile, card);
+        }
+
+        [Test]
+        public void PlayCard_ResetsPlayedCardsModifiedCost()
+        {
+            var resolverGo = new GameObject("Resolver");
+            try
+            {
+                var resolver = resolverGo.AddComponent<ActionResolver>();
+
+                var card = new CardInstance(SelfCard("Priced", 2));
+                card.Cost = 0; // discounted in hand
+                source.Hand.AddCard(card);
+
+                bool played = resolver.PlayCard(source, card);
+
+                Assert.IsTrue(played);
+                Assert.AreEqual(2, card.Cost, "A played card drops its in-hand cost change.");
+                CollectionAssert.Contains(GetDeck().DiscardPile, card);
+            }
+            finally
+            {
+                Object.DestroyImmediate(resolverGo);
+            }
+        }
+
+        [Test]
         public void SetRandomCostModifier_ChangesTheContextCardCost()
         {
             var modifier = ScriptableObject.CreateInstance<SetRandomCostModifier>();

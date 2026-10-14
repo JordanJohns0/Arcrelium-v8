@@ -24,6 +24,10 @@ namespace UI
         [Tooltip("Shows the target range of the card's primary targeting step. Hidden for untargeted cards (Range 0).")]
         [SerializeField] private GameObject rangeBadge;
         [SerializeField] private TMP_Text rangeText;
+        [Tooltip("Colour of the cost number when it sits above the card's base cost.")]
+        [SerializeField] private Color costIncreaseColor = new Color(0.9f, 0.2f, 0.2f, 1f);
+        [Tooltip("Colour of the cost number when it sits below the card's base cost.")]
+        [SerializeField] private Color costDecreaseColor = new Color(0.2f, 0.85f, 0.2f, 1f);
         [Tooltip("Enabled while this card is selected (as the card being played, or as a cost payment).")]
         [SerializeField] private GameObject selectionHighlight;
         [Tooltip("Shown while this card is selected for discard (cost payment). Optional — a red X is generated if left empty.")]
@@ -42,6 +46,8 @@ namespace UI
         private Coroutine scaleRoutine;
         private bool hovered;
         private Vector3 basePosition;
+        private Color baseCostColor;
+        private bool baseCostColorCaptured;
 
         public CardInstance Instance { get; private set; }
         public CardData Card => Instance?.Data;
@@ -67,7 +73,18 @@ namespace UI
             if (descriptionText != null) descriptionText.text = data.Description;
             // Cost of 0 still displays "0" — free cards are common, this isn't hidden.
             // Uses the instance's cost so in-hand cost modifications show immediately.
-            if (costText != null) costText.text = instance.Cost.ToString();
+            if (costText != null)
+            {
+                costText.text = instance.Cost.ToString();
+                if (!baseCostColorCaptured)
+                {
+                    baseCostColor = costText.color;
+                    baseCostColorCaptured = true;
+                }
+                costText.color = instance.Cost > instance.BaseCost ? costIncreaseColor
+                    : instance.Cost < instance.BaseCost ? costDecreaseColor
+                    : baseCostColor;
+            }
 
             // Range badge: show only for non-movement cards that actually need a target pick.
             // Movement cards don't show a range value — distance is implied by the move step.

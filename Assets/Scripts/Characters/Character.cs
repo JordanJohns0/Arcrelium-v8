@@ -500,6 +500,9 @@ namespace Characters
         {
             if (Hand == null || deck == null) return;
             if (!Hand.RemoveCard(card)) return;
+            // Leaving the hand (played, paid as a cost, or discarded at end of turn) drops any
+            // in-hand cost modification, so a card that later returns to a hand starts clean.
+            card.ResetCost();
             deck.Discard(card);
             OnCardDiscarded?.Invoke(this, card);
         }
