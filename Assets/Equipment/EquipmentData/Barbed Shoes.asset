@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Barbed Shoes
   Description: Why are the barbs inside the shoes?
-  Icon: {fileID: 21300000, guid: 91a5ad2284d4d9447896f5d4cf919866, type: 3}
+  Icon: {fileID: 21300000, guid: 7f5d999e05e16c1498cf5b9301afbb95, type: 3}
   SlotType: 2
   Cards:
   - {fileID: 11400000, guid: 5444f583aef7bef4eb934e56eea2d646, type: 2}

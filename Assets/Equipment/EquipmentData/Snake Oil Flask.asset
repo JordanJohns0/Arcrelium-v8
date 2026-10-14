@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Snake Oil Flask
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Snake Oil Flask
-  Description: When you deal damage to an enemy, shuffle a Snake Oil card into their deck.
-  Icon: {fileID: 0}
+  Description: When you deal damage to an enemy, shuffle a Snake Oil card into their
+    deck.
+  Icon: {fileID: 21300000, guid: 9e734e82bf3b6ed4aa0070fda730f6d2, type: 3}
   SlotType: 4
   Cards: []
   Triggers:
