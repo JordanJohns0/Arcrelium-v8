@@ -121,7 +121,13 @@ namespace Characters
                 modelAnimator.speed = GamePace.Speed;
         }
 
-        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1, EquipmentLoadout loadout = null)
+        /// <summary>
+        /// Builds the character's deck and binds it to a cell. No opening hand is drawn by
+        /// default (<paramref name="startingHandSize"/> is 0): the first turn's
+        /// <see cref="DrawCardsForTurn"/> supplies the hand, so the player starts every turn —
+        /// including the first — with the same fixed draw.
+        /// </summary>
+        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 0, int teamId = -1, EquipmentLoadout loadout = null)
         {
             OwnerPlayerId = ownerPlayerId;
             TeamId = teamId >= 0 ? teamId : (ownerPlayerId == 0 ? 0 : 1);
