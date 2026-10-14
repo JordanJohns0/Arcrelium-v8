@@ -3,6 +3,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using Equipment;
 using Game;
@@ -43,6 +44,7 @@ namespace Tests.UI
                 if (screen != null) Object.DestroyImmediate(screen);
             }
             EnchantScreen.LocalInventory = PlayerInventoryProvider.GetLocal;
+            InventorySlotUI.LocalInventory = PlayerInventoryProvider.GetLocal;
             EnchantScreen.PersistInventory = inv =>
                 PlayerInventoryProvider.Save(PlayerInventoryProvider.LocalPlayerKey, inv);
             GameDataLibrary.SetInstance(null);
@@ -147,8 +149,8 @@ namespace Tests.UI
 
             Assert.AreEqual(2, screen.Options.Count, "Both owned pieces are offered.");
             Assert.IsNotNull(TitleOf(panel), "Showing the station must build the info header.");
-            Assert.AreEqual("Sharpened", TitleOf(panel).text);
-            Assert.AreEqual("Adds damage.", DescriptionOf(panel).text);
+            Assert.AreEqual("Enchant", TitleOf(panel).text, "The title must say to enchant.");
+            Assert.AreEqual("Sharpened: Adds damage.", DescriptionOf(panel).text, "The description must show the enchantment as Name: Desc.");
             Assert.AreEqual(2, TileCount(panel), "One tile per equipment option.");
             var slot = TileAt(panel, 0).GetComponent<InventorySlotUI>();
             Assert.IsNotNull(slot, "Option tiles reuse the Inventory Slot prefab.");
@@ -171,10 +173,10 @@ namespace Tests.UI
                 title.GetComponent<TMP_Text>(), description.GetComponent<TMP_Text>());
             screen.Show();
 
-            Assert.AreEqual("Sharpened", title.GetComponent<TMP_Text>().text,
-                "The station must write the enchantment name into the scene's Special Title.");
-            Assert.AreEqual("Adds damage.", description.GetComponent<TMP_Text>().text,
-                "The station must write the enchantment description into the scene's Special Description.");
+            Assert.AreEqual("Enchant", title.GetComponent<TMP_Text>().text,
+                "The station must write the enchant heading into the scene's Special Title.");
+            Assert.AreEqual("Sharpened: Adds damage.", description.GetComponent<TMP_Text>().text,
+                "The station must write the enchantment name into the scene's Special Description.");
             Assert.IsNull(panel.Find("EnchantInfo"),
                 "With scene labels supplied the station must not build its own info header.");
         }
@@ -204,22 +206,69 @@ namespace Tests.UI
         }
 
         [Test]
-        public void ChooseTile_StacksOnTopOfExistingEnchantments()
+        public void ChooseTile_FadesTheOtherOptions_AndKeepsChosenOpaque()
         {
             var sword = MakeEquipment("Sword");
-            Own(sword);
-            var enchantment = MakeEnchantment("Sharpened", "Adds damage.");
-            inventory.AddEnchantment(sword, enchantment);
+            var shield = MakeEquipment("Shield");
+            Own(sword, shield);
+            MakeEnchantment("Sharpened", "Adds damage.");
             var panel = MakeOffersPanel();
-            var prefab = MakeTilePrefab();
 
-            EnchantScreen screen = EnchantScreen.Attach(panel, prefab);
+            EnchantScreen screen = EnchantScreen.Attach(panel, MakeTilePrefab());
             screen.Show();
+            Assert.AreEqual(1f, TileAt(panel, 0).GetComponent<CanvasGroup>()?.alpha ?? 1f,
+                "Before any choice every option is fully opaque.");
 
             TileAt(panel, 0).GetComponent<Button>().onClick.Invoke();
 
-            Assert.AreEqual(2, inventory.GetEnchantments(sword).Count,
-                "Enchantments stack, so an already-enchanted piece can be enchanted again.");
+            Assert.AreEqual(1f, TileAt(panel, 0).GetComponent<CanvasGroup>().alpha,
+                "The enchanted option stays opaque.");
+            Assert.AreEqual(0.35f, TileAt(panel, 1).GetComponent<CanvasGroup>().alpha, 0.001f,
+                "The other option must lose opacity once one has been enchanted.");
+            Assert.AreEqual("Enchanted", StatusOf(TileAt(panel, 0)).text);
+        }
+
+        [Test]
+        public void Options_ExcludeAlreadyEnchantedEquipment()
+        {
+            var sword = MakeEquipment("Sword");
+            var shield = MakeEquipment("Shield");
+            Own(sword, shield);
+            inventory.AddEnchantment(sword, MakeEnchantment("Sharpened", "Adds damage."));
+            MakeEnchantment("Warded", "Blocks more.");
+            var panel = MakeOffersPanel();
+
+            EnchantScreen screen = EnchantScreen.Attach(panel, MakeTilePrefab());
+            screen.Show();
+
+            CollectionAssert.DoesNotContain(new List<EquipmentData>(screen.Options), sword,
+                "An equipment piece can only be enchanted once, so an enchanted one is not offered.");
+            Assert.AreEqual(1, TileCount(panel));
+        }
+
+        [Test]
+        public void ChooseTile_CannotEnchantAPieceTwice_EvenWhenShownBeforeEnchanted()
+        {
+            var sword = MakeEquipment("Sword");
+            var shield = MakeEquipment("Shield");
+            Own(sword, shield);
+            MakeEnchantment("Sharpened", "Adds damage.");
+            var panel = MakeOffersPanel();
+
+            EnchantScreen screen = EnchantScreen.Attach(panel, MakeTilePrefab());
+            screen.Show();
+            int swordIndex = -1;
+            for (int i = 0; i < screen.Options.Count; i++)
+                if (screen.Options[i] == sword) swordIndex = i;
+            Assert.AreNotEqual(-1, swordIndex, "Precondition: the sword is on screen.");
+
+            // Enchanted elsewhere (e.g. another path) while the tile is still on screen.
+            inventory.AddEnchantment(sword, screen.Enchantment);
+            TileAt(panel, swordIndex).GetComponent<Button>().onClick.Invoke();
+
+            Assert.AreEqual(1, inventory.GetEnchantments(sword).Count,
+                "A piece that already carries an enchantment must refuse another one.");
+            Assert.AreEqual(0, savedCount, "Refused enchantments must not persist.");
         }
 
         [Test]
@@ -290,7 +339,7 @@ namespace Tests.UI
 
             Assert.AreEqual(0, screen.Options.Count);
             Assert.AreEqual(0, TileCount(panel), "No equipment means no option tiles.");
-            Assert.AreEqual("Sharpened", TitleOf(panel).text, "The enchantment is still shown.");
+            Assert.AreEqual("Enchant", TitleOf(panel).text, "The enchant heading is still shown.");
         }
 
         [Test]
@@ -343,6 +392,38 @@ namespace Tests.UI
 
             CollectionAssert.AreEqual(first, new List<EquipmentData>(screen.Options),
                 "Reopening the station within the same run+level must not reshuffle the offer.");
+        }
+
+        [Test]
+        public void RightClick_Tooltip_ShowsEnchantmentAsNameColonDescription()
+        {
+            var sword = MakeEquipment("Sword");
+            Own(sword);
+            inventory.AddEnchantment(sword, MakeEnchantment("Sharpened", "Adds damage."));
+            InventorySlotUI.LocalInventory = () => inventory;
+
+            var slotGo = Track(new GameObject("Slot", typeof(RectTransform), typeof(Image), typeof(InventorySlotUI))) as GameObject;
+            var slot = slotGo.GetComponent<InventorySlotUI>();
+            slot.Setup(sword, null);
+
+            var tooltipGo = Track(new GameObject("Tooltip", typeof(Tooltip))) as GameObject;
+            var tooltip = tooltipGo.GetComponent<Tooltip>();
+            typeof(Tooltip).GetField("instance", BindingFlags.NonPublic | BindingFlags.Static)
+                .SetValue(null, tooltip);
+            typeof(Tooltip).GetMethod("CreateUI", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(tooltip, null);
+
+            slot.OnPointerClick(new PointerEventData(EventSystem.current)
+            {
+                button = PointerEventData.InputButton.Right
+            });
+
+            bool shown = false;
+            foreach (var tmp in tooltipGo.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (tmp.text == "Sharpened: Adds damage.") shown = true;
+            }
+            Assert.IsTrue(shown, "Right-clicking an enchanted piece must list its enchantment as Name: Desc.");
         }
 
         [Test]

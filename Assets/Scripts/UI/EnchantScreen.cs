@@ -24,6 +24,8 @@ namespace UI
         [SerializeField] [Min(0)] private int optionCount = 3;
 
         [Header("Info Panel")]
+        [Tooltip("Title shown while an enchantment is on offer.")]
+        [SerializeField] private string enchantTitle = "Enchant";
         [Tooltip("Title shown when no enchantment is offered (empty pool), and as the fallback " +
             "when an external title label is supplied but no enchantment exists.")]
         [SerializeField] private string defaultTitle = "No enchantments available";
@@ -37,7 +39,9 @@ namespace UI
 
         [Header("Tiles")]
         [SerializeField] private int statusFontSize = 16;
-        [SerializeField] private Color appliedColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+        [SerializeField] private Color enchantedColor = new Color(1f, 0.85f, 0.3f, 1f);
+        [Tooltip("Opacity of the options that were not enchanted once one has been chosen.")]
+        [SerializeField] [Range(0f, 1f)] private float dimmedAlpha = 0.35f;
 
         /// <summary>Test seam: resolves the local player's inventory.</summary>
         internal static System.Func<PlayerInventory> LocalInventory = PlayerInventoryProvider.GetLocal;
@@ -312,7 +316,7 @@ namespace UI
             var tmp = statusObj.GetComponent<TextMeshProUGUI>();
             tmp.fontSize = statusFontSize;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = appliedColor;
+            tmp.color = enchantedColor;
             var rt = tmp.rectTransform;
             rt.anchorMin = new Vector2(0, 1);
             rt.anchorMax = new Vector2(1, 1);
@@ -345,6 +349,8 @@ namespace UI
         {
             if (currentInventory == null || tile == null || tile.Equipment == null) return;
             if (enchantment == null || appliedEquipment != null) { UpdateTileStates(); return; }
+            // Each piece can only be enchanted once, even across levels.
+            if (currentInventory.GetEnchantments(tile.Equipment).Count > 0) { UpdateTileStates(); return; }
 
             // Mark applied before AddEnchantment, which raises OnInventoryChanged → Refresh →
             // UpdateTileStates, so the tile flips to "Enchanted" without the offer rebuilding.
@@ -358,9 +364,9 @@ namespace UI
         private void UpdateTileStates()
         {
             if (titleLabel != null)
-                titleLabel.text = enchantment != null ? enchantment.EnchantmentName : defaultTitle;
+                titleLabel.text = enchantment != null ? enchantTitle : defaultTitle;
             if (descriptionLabel != null)
-                descriptionLabel.text = enchantment != null ? enchantment.Description : defaultDescription;
+                descriptionLabel.text = enchantment != null ? enchantment.DisplayLine : defaultDescription;
 
             foreach (TileEntry tile in tiles)
             {
@@ -371,10 +377,23 @@ namespace UI
                     tile.Choose.interactable = appliedEquipment == null;
                 if (tile.Status != null)
                     tile.Status.text = chosen ? "Enchanted" : "";
+
+                // Once one option is enchanted, the others fade out.
+                SetTileAlpha(tile.Root, appliedEquipment == null || chosen ? 1f : dimmedAlpha);
             }
         }
 
-        /// <summary>Union of the player's equipped items and bag, deduped by reference.</summary>
+        private static void SetTileAlpha(GameObject root, float alpha)
+        {
+            var group = root.GetComponent<CanvasGroup>();
+            if (group == null) group = root.AddComponent<CanvasGroup>();
+            group.alpha = alpha;
+        }
+
+        /// <summary>
+        /// Union of the player's equipped items and bag, deduped by reference. Pieces that
+        /// already carry an enchantment are left out: each piece can only be enchanted once.
+        /// </summary>
         private static List<EquipmentData> CollectEquipment(PlayerInventory inventory)
         {
             var result = new List<EquipmentData>();
@@ -383,16 +402,23 @@ namespace UI
             if (inventory.Loadout != null)
             {
                 foreach (EquipmentData item in inventory.Loadout.GetAllItems())
-                    AddDistinct(result, item);
+                    AddEnchantable(inventory, result, item);
             }
 
             if (inventory.UnlockedEquipment != null)
             {
                 foreach (EquipmentData item in inventory.UnlockedEquipment)
-                    AddDistinct(result, item);
+                    AddEnchantable(inventory, result, item);
             }
 
             return result;
+        }
+
+        private static void AddEnchantable(PlayerInventory inventory, List<EquipmentData> list, EquipmentData item)
+        {
+            if (item == null) return;
+            if (inventory.GetEnchantments(item).Count > 0) return;
+            AddDistinct(list, item);
         }
 
         private static void AddDistinct(List<EquipmentData> list, EquipmentData item)

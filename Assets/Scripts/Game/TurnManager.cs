@@ -39,6 +39,9 @@ namespace Game
         private readonly HashSet<Character> discardSubscribed = new HashSet<Character>();
         private readonly HashSet<CardInstance> discardPlaying = new HashSet<CardInstance>();
 
+        /// <summary>The card a hand play is discarding right now (see HandleCardDiscarded).</summary>
+        private CardInstance cardBeingPlayedFromHand;
+
         // Plays submitted by a player while an earlier card is still resolving. They resolve
         // strictly in order (see PumpPendingPlays), one per idle frame, so effects and their
         // animations/popups happen in the order they were played rather than all at once.
@@ -186,6 +189,8 @@ namespace Game
             if (actor == null || card == null) return;
 
             resolvingPlay = true;
+            CardInstance previousPlayed = cardBeingPlayedFromHand;
+            cardBeingPlayedFromHand = card;
             try
             {
                 if (costCards != null)
@@ -197,6 +202,7 @@ namespace Game
             }
             finally
             {
+                cardBeingPlayedFromHand = previousPlayed;
                 resolvingPlay = false;
             }
         }
@@ -248,6 +254,8 @@ namespace Game
             // A discard-triggered play ("when discarded, play it") may fire while this play's
             // cost cards are discarded; allow it through the Busy gate for the duration.
             resolvingPlay = true;
+            CardInstance previousPlayed = cardBeingPlayedFromHand;
+            cardBeingPlayedFromHand = play.Card;
             bool played;
             try
             {
@@ -257,6 +265,7 @@ namespace Game
             }
             finally
             {
+                cardBeingPlayedFromHand = previousPlayed;
                 resolvingPlay = false;
             }
 
@@ -346,6 +355,9 @@ namespace Game
         {
             if (character == null || card == null || card.Data == null) return;
             if (!card.Data.PlaysOnDiscard) return;
+            // The card being played from hand is discarded only as part of its own play (the
+            // cost of playing it). It resolves once, here, so it must not be replayed on discard.
+            if (card == cardBeingPlayedFromHand) return;
             if (GameState.ActiveMode == GameMode.Client) return;
             if (CurrentPhase != TurnPhase.Act) return;
             // A play being resolved right now is allowed to spawn its own discard-triggered play;

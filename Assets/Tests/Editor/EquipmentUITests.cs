@@ -58,18 +58,6 @@ namespace Tests.UI
             return inventory;
         }
 
-        /// <summary>Mirrors the scene structure: Equipment UI > Gold Display > Gold Number Display.</summary>
-        private TMP_Text AddGoldDisplay(GameObject equipmentUiGo)
-        {
-            var goldGo = new GameObject("Gold Display", typeof(RectTransform));
-            goldGo.transform.SetParent(equipmentUiGo.transform);
-            owned.Add(goldGo);
-            var numberGo = new GameObject("Gold Number Display", typeof(RectTransform), typeof(TextMeshProUGUI));
-            numberGo.transform.SetParent(goldGo.transform);
-            owned.Add(numberGo);
-            return numberGo.GetComponent<TMP_Text>();
-        }
-
         [Test]
         public void EquipmentUI_Awake_DeactivatesGameObject()
         {
@@ -110,7 +98,7 @@ namespace Tests.UI
         }
 
         [Test]
-        public void EquipmentUI_ResolvesSpecialPanelAndGoldNumberDisplay()
+        public void EquipmentUI_ResolvesSpecialPanel()
         {
             var go = CreateEquipmentUIGo();
             var page = new GameObject("Special Page", typeof(RectTransform));
@@ -119,15 +107,10 @@ namespace Tests.UI
             var special = new GameObject("Special", typeof(RectTransform));
             special.transform.SetParent(page.transform, false);
             owned.Add(special);
-            var label = AddGoldDisplay(go);
             var ui = go.GetComponent<EquipmentUI>();
 
-            Assert.IsNotNull(label,
-                "Gold Number Display must carry a concrete TMP component.");
             Assert.AreSame(special.transform, ui.ShopPanel,
                 "ShopPanel must resolve the nested 'Special' column the shop fills.");
-            Assert.AreSame(label, ui.GoldLabel,
-                "GoldLabel must resolve the Gold Display's number TMP.");
         }
 
         [Test]
@@ -184,22 +167,6 @@ namespace Tests.UI
             ui.ApplySpecialArea(SpecialArea.Shop);
             Assert.AreSame(shop, icon.sprite,
                 "The Shop area must swap the Special tab icon to the shop sprite.");
-        }
-
-        [Test]
-        public void EquipmentUI_InventoryGoldChange_UpdatesGoldNumberDisplay()
-        {
-            var go = CreateEquipmentUIGo();
-            var label = AddGoldDisplay(go);
-            var ui = go.GetComponent<EquipmentUI>();
-            var inventory = CreateInventory();
-            inventory.AddGold(40);
-
-            ui.SetInventory(inventory);
-            inventory.AddGold(10);
-
-            Assert.AreEqual("50", label.text,
-                "An inventory change must refresh the gold display to the current balance.");
         }
 
         [Test]

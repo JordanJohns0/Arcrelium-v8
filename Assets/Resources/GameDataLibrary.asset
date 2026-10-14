@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: GameDataLibrary
   m_EditorClassIdentifier: Assembly-CSharp::Equipment.GameDataLibrary
   allCards:
-  - {fileID: 11400000, guid: b322c697e5f21bb4c945a4f2d8fec6cb, type: 2}
   - {fileID: 11400000, guid: a20710a5778400249a96ec84b9416f8f, type: 2}
   - {fileID: 11400000, guid: aca7a0d77e665904bac7985894f0114c, type: 2}
   - {fileID: 11400000, guid: 60f63f2b03b17cc4584c94cb0f190db1, type: 2}

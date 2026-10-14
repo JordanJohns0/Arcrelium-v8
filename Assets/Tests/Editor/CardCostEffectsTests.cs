@@ -334,6 +334,42 @@ namespace Tests.Cards
         }
 
         [Test]
+        public void TurnManager_PlayingDiscardPlayCardFromHand_ResolvesOnce()
+        {
+            var tmGo = new GameObject("TurnManager");
+            var arGo = new GameObject("ActionResolver");
+            try
+            {
+                TurnManager turnManager = tmGo.AddComponent<TurnManager>();
+                ActionResolver resolver = arGo.AddComponent<ActionResolver>();
+                typeof(TurnManager).GetField("actionResolver", BindingFlags.NonPublic | BindingFlags.Instance)
+                    .SetValue(turnManager, resolver);
+
+                turnManager.SetTurnOrder(new List<Character> { source });
+                turnManager.StartMatch();
+
+                var block = ScriptableObject.CreateInstance<GainBlockEffect>();
+                block.Amount = CardValue.MakeConstant(3);
+                var data = TestHelper.MakeCard("Echo", 0, TestHelper.Step(block, TargetType.Self));
+                data.PlaysOnDiscard = true;
+                var card = new CardInstance(data);
+                source.Hand.AddCard(card);
+
+                int blockBefore = source.Stats.Block;
+                turnManager.PlayCard(card);
+
+                Assert.AreEqual(blockBefore + 3, source.Stats.Block,
+                    "A discard-play card played from hand must resolve once, not again as a discard trigger.");
+                Assert.IsFalse(source.Hand.Contains(card));
+            }
+            finally
+            {
+                Object.DestroyImmediate(arGo);
+                Object.DestroyImmediate(tmGo);
+            }
+        }
+
+        [Test]
         public void TurnManager_DiscardDoesNotPlayTargetedCard()
         {
             var tmGo = new GameObject("TurnManager");

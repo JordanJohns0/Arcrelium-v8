@@ -147,11 +147,17 @@ namespace UI
                 iconImage.enabled = equipmentData != null && equipmentData.Icon != null;
         }
 
+        /// <summary>Test seam: resolves the local player's inventory (for enchantments on the tooltip).</summary>
+        internal static System.Func<Equipment.PlayerInventory> LocalInventory = Equipment.PlayerInventoryProvider.GetLocal;
+
         public void OnPointerClick(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Right) return;
             if (equipmentData == null) return;
-            Tooltip.Show(equipmentData, eventData.position);
+
+            Equipment.PlayerInventory inventory = LocalInventory();
+            var enchantments = inventory != null ? inventory.GetEnchantments(equipmentData) : null;
+            Tooltip.Show(equipmentData, eventData.position, enchantments);
         }
     }
 }

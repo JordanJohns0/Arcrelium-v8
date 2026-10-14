@@ -130,8 +130,8 @@ namespace UI
         /// Opens the loadout screen. <paramref name="unlockedReward"/> is the item earned
         /// at victory (null at the start of a run). <paramref name="onConfirmCallback"/>
         /// fires once when this player confirms; the host uses it to collect loadouts.
-        /// When <paramref name="withShop"/> is set the Special column is filled with shop
-        /// offers and the gold display tracks the balance (end-of-level loadout).
+        /// When <paramref name="withShop"/> is set the Special column is filled with the
+        /// three reward offers the player can pick from (end-of-level loadout).
         /// </summary>
         public void Show(EquipmentData unlockedReward, System.Action onConfirmCallback, bool withShop = false)
         {
@@ -192,8 +192,7 @@ namespace UI
                     }
                     else if (withShop)
                     {
-                        ShopScreen screen = ShopScreen.Attach(specialPanel, slotPrefab, equipmentPanelComponent.GoldLabel,
-                            specialTitle, specialDescription);
+                        ShopScreen screen = ShopScreen.Attach(specialPanel, slotPrefab, specialTitle, specialDescription);
                         if (screen != null) screen.Show();
                     }
 

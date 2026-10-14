@@ -562,7 +562,6 @@ namespace Tests.Equipment
             inventory.Unlock(plate);
             inventory.Loadout.Set(EquipmentSlotType.Head, 0, helm);
             inventory.Loadout.Set(EquipmentSlotType.Chest, 0, plate);
-            inventory.AddGold(37);
 
             PlayerInventoryProvider.Save(steamId, inventory);
 
@@ -573,7 +572,6 @@ namespace Tests.Equipment
             Assert.AreEqual(2, loaded.UnlockedEquipment.Count);
             Assert.AreEqual("Helm", loaded.Loadout.Head?.EquipmentName);
             Assert.AreEqual("Plate", loaded.Loadout.Chest?.EquipmentName);
-            Assert.AreEqual(37, loaded.Gold, "Gold must round-trip through the save file.");
 
             string path = PlayerInventoryProvider.GetPath(steamId);
             Assert.IsTrue(File.Exists(path));

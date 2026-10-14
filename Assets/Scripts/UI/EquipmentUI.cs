@@ -60,7 +60,6 @@ namespace UI
         private EquipmentManager cachedEquipmentManager;
         private EquipmentSlotType? currentFilter;
         private DeckListUI deckList;
-        private TMP_Text cachedGoldLabel;
 
         /// <summary>The page GameObject that hosts the end-of-level shop / enchantment station.</summary>
         private const string SpecialPageName = "Special Page";
@@ -105,20 +104,6 @@ namespace UI
             {
                 Transform description = transform.Find(SpecialPageName + "/Special Description");
                 return description != null ? description.GetComponent<TMP_Text>() : null;
-            }
-        }
-
-        /// <summary>The "Gold Number Display" TMP under "Gold Display", found lazily.</summary>
-        public TMP_Text GoldLabel
-        {
-            get
-            {
-                if (cachedGoldLabel == null)
-                {
-                    Transform gold = transform.Find("Gold Display/Gold Number Display");
-                    if (gold != null) cachedGoldLabel = gold.GetComponent<TMP_Text>();
-                }
-                return cachedGoldLabel;
             }
         }
 
@@ -404,12 +389,6 @@ namespace UI
             if (iconImage != null) iconImage.sprite = icon;
         }
 
-        private void RefreshGoldLabel()
-        {
-            if (GoldLabel != null && inventory != null)
-                GoldLabel.text = inventory.Gold.ToString();
-        }
-
         private void RefreshDeckList()
         {
             if (deckList == null) EnsureDeckList();
@@ -493,7 +472,6 @@ namespace UI
         private void RefreshInventory()
         {
             RefreshDeckList();
-            RefreshGoldLabel();
 
             foreach (InventorySlotUI slot in spawnedInventorySlots)
             {

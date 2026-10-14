@@ -50,10 +50,6 @@ namespace Game
         [SerializeField] private int allySpawnQ = 0;
         [SerializeField] private int allySpawnR = -2;
 
-        [Header("Shop")]
-        [Tooltip("Gold awarded to each player after every victory, spent in the end-of-level shop.")]
-        [SerializeField] [Min(0)] private int goldPerVictory = 25;
-
         [System.Serializable]
         public class CharacterSpawn
         {
@@ -1026,17 +1022,9 @@ namespace Game
                 GameState.CurrentSpecialArea = GameState.RollSpecialArea(null);
 
             BroadcastGameState();
-            // Each machine awards its own gold and rolls its own shop offers, so players
-            // never see each other's inventories. Gold and purchases persist across sessions.
-            var inventory = PlayerInventoryProvider.GetLocal();
-            if (goldPerVictory > 0)
-            {
-                inventory.AddGold(goldPerVictory);
-                PlayerInventoryProvider.Save(PlayerInventoryProvider.LocalPlayerKey, inventory);
-            }
 
-            // The shop is part of the loadout screen now: open it straight away with the
-            // Special pane filled, so the player buys, equips, and confirms in one place.
+            // The shop is part of the loadout screen: open it straight away with the Special
+            // pane filled, so the player picks, equips, and confirms in one place.
             ShowLoadoutScreen(showShop: true);
         }
 
