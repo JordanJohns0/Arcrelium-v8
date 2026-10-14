@@ -15,6 +15,35 @@ namespace Tests.PlayMode
     public class HandViewDrawAnimationPlayModeTests
     {
         private readonly List<Object> owned = new List<Object>();
+        private Character character;
+        private HandView hand;
+        private RectTransform container;
+
+        [SetUp]
+        public void SetUp()
+        {
+            character = TestHelper.CreateCharacter(0, 0, 0, 0);
+            owned.Add(character.gameObject);
+            owned.Add(character.CurrentCell.gameObject);
+
+            var prefabGo = new GameObject("CardPrefab", typeof(RectTransform), typeof(Button), typeof(CardView));
+            prefabGo.SetActive(false); // template only; never shown
+            owned.Add(prefabGo);
+
+            var handGo = new GameObject("HandView", typeof(RectTransform), typeof(HandView));
+            owned.Add(handGo);
+            hand = handGo.GetComponent<HandView>();
+
+            var containerGo = new GameObject("CardContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            owned.Add(containerGo);
+            container = containerGo.GetComponent<RectTransform>();
+
+            typeof(HandView).GetField("cardViewPrefab", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(hand, prefabGo.GetComponent<CardView>());
+            typeof(HandView).GetField("cardContainer", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(hand, containerGo.transform);
+            hand.SetCharacter(character);
+        }
 
         [TearDown]
         public void TearDown()
@@ -26,41 +55,30 @@ namespace Tests.PlayMode
             owned.Clear();
         }
 
+        private CardInstance MakeCard(string name)
+        {
+            var data = ScriptableObject.CreateInstance<CardData>();
+            data.CardName = name;
+            owned.Add(data);
+            return new CardInstance(data);
+        }
+
+        private List<CardView> SpawnedViews()
+        {
+            return (List<CardView>)typeof(HandView)
+                .GetField("spawnedViews", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(hand);
+        }
+
         [UnityTest]
         public IEnumerator DrawnCard_FadesInAndSettlesFullyOpaque()
         {
-            var character = TestHelper.CreateCharacter(0, 0, 0, 0);
-            owned.Add(character.gameObject);
-            owned.Add(character.CurrentCell.gameObject);
-
-            var prefabGo = new GameObject("CardPrefab", typeof(RectTransform), typeof(Button), typeof(CardView));
-            prefabGo.SetActive(false);
-            owned.Add(prefabGo);
-
-            var handGo = new GameObject("HandView", typeof(RectTransform), typeof(HandView));
-            owned.Add(handGo);
-            var hand = handGo.GetComponent<HandView>();
-
-            var containerGo = new GameObject("CardContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-            owned.Add(containerGo);
-
-            typeof(HandView).GetField("cardViewPrefab", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(hand, prefabGo.GetComponent<CardView>());
-            typeof(HandView).GetField("cardContainer", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(hand, containerGo.transform);
-            hand.SetCharacter(character);
-
-            var data = ScriptableObject.CreateInstance<CardData>();
-            data.CardName = "Drawn";
-            owned.Add(data);
-            character.Hand.AddCard(new CardInstance(data));
+            character.Hand.AddCard(MakeCard("Drawn"));
 
             // Let the animation begin (it waits for the layout to place the card first).
             yield return null;
 
-            var views = (List<CardView>)typeof(HandView)
-                .GetField("spawnedViews", BindingFlags.NonPublic | BindingFlags.Instance)
-                .GetValue(hand);
+            var views = SpawnedViews();
             Assert.AreEqual(1, views.Count, "The drawn card must be shown in the hand.");
 
             var group = views[0].GetComponent<CanvasGroup>();
@@ -70,6 +88,48 @@ namespace Tests.PlayMode
             yield return new WaitForSeconds(1f);
 
             Assert.AreEqual(1f, group.alpha, 0.001f, "The drawn card must finish fully opaque.");
+        }
+
+        [UnityTest]
+        public IEnumerator RebuildingTheHandMidDraw_KeepsTheDrawAnimationGoing()
+        {
+            character.Hand.AddCard(MakeCard("Drawn"));
+            yield return null;
+
+            // Turn start rebinds the hand, which rebuilds every card view mid-draw.
+            hand.SetCharacter(character);
+            yield return null;
+
+            var views = SpawnedViews();
+            Assert.AreEqual(1, views.Count);
+            Assert.Less(views[0].GetComponent<CanvasGroup>().alpha, 1f,
+                "A rebuild during a draw must not cancel the animation: the card is still fading in.");
+        }
+
+        [UnityTest]
+        public IEnumerator DiscardedCard_FliesOutAndIsRemoved()
+        {
+            var card = MakeCard("Discarded");
+            character.Hand.AddCard(card);
+            yield return new WaitForSeconds(1f); // draw finished
+
+            character.Hand.RemoveCard(card);
+            yield return null;
+
+            CardView flying = null;
+            foreach (CardView view in Object.FindObjectsByType<CardView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (view.Instance == card) flying = view;
+            }
+            Assert.IsNotNull(flying, "A card that leaves the hand must stay on screen while it flies to the discard pile.");
+            Assert.AreNotEqual(container, flying.transform.parent,
+                "The flying card must leave the hand's layout so the remaining cards close the gap.");
+            Assert.Less(flying.GetComponent<CanvasGroup>().alpha, 1f, "The flying card fades out.");
+            owned.Add(flying.gameObject);
+
+            yield return new WaitForSeconds(1f);
+
+            Assert.IsTrue(flying == null, "The card is removed once it reaches the discard pile.");
         }
     }
 }

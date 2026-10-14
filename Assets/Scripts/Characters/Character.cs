@@ -589,22 +589,38 @@ namespace Characters
         /// </summary>
         public void RebuildHand(string[] cardNames)
         {
-            foreach (CardInstance card in new List<CardInstance>(Hand.Cards))
-                Hand.RemoveCard(card);
+            // Reuse the instances already in hand where the names match, so a card that is still
+            // there keeps its identity (no spurious draw/discard animation on the client).
+            var existing = new List<CardInstance>(Hand.Cards);
+            var rebuilt = new List<CardInstance>();
 
-            if (cardNames == null) return;
-            foreach (string name in cardNames)
+            if (cardNames != null)
             {
-                if (string.IsNullOrEmpty(name)) continue;
-                CardData data = deck != null ? deck.GetCardDataByName(name) : null;
-                if (data == null)
+                foreach (string name in cardNames)
                 {
-                    var library = GameDataLibrary.Instance;
-                    if (library != null) data = library.GetCardByName(name);
+                    if (string.IsNullOrEmpty(name)) continue;
+
+                    CardInstance reuse = existing.Find(c => c.Data != null && c.Data.CardName == name);
+                    if (reuse != null)
+                    {
+                        existing.Remove(reuse);
+                        reuse.ResetCost();
+                        rebuilt.Add(reuse);
+                        continue;
+                    }
+
+                    CardData data = deck != null ? deck.GetCardDataByName(name) : null;
+                    if (data == null)
+                    {
+                        var library = GameDataLibrary.Instance;
+                        if (library != null) data = library.GetCardByName(name);
+                    }
+                    if (data != null)
+                        rebuilt.Add(new CardInstance(data));
                 }
-                if (data != null)
-                    Hand.AddCard(new CardInstance(data));
             }
+
+            Hand.SetCards(rebuilt);
         }
 
         public void SetPlayerColor(Color color)
