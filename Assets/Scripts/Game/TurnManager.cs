@@ -42,6 +42,9 @@ namespace Game
         /// <summary>The card a hand play is discarding right now (see HandleCardDiscarded).</summary>
         private CardInstance cardBeingPlayedFromHand;
 
+        /// <summary>Set by <see cref="EndMatch"/>: the match is decided and the turn flow is stopped.</summary>
+        private bool matchOver;
+
         // Plays submitted by a player while an earlier card is still resolving. They resolve
         // strictly in order (see PumpPendingPlays), one per idle frame, so effects and their
         // animations/popups happen in the order they were played rather than all at once.
@@ -112,6 +115,7 @@ namespace Game
 
         private void BeginTurn()
         {
+            if (matchOver) return;
             CurrentPhase = TurnPhase.Act;
             pendingPlays.Clear();
             passQueued = false;
@@ -129,7 +133,7 @@ namespace Game
             bool ignoreCost = false,
             bool ignoreHandMembership = false)
         {
-            if (CurrentPhase != TurnPhase.Act) return false;
+            if (CurrentPhase != TurnPhase.Act || matchOver) return false;
 
             // Once the player has queued End Turn the turn is already committed to ending,
             // so no further plays are accepted.
@@ -286,8 +290,20 @@ namespace Game
             PumpPendingPlays();
         }
 
+        /// <summary>
+        /// Stops the turn flow for the rest of the match (called on victory): no more plays,
+        /// passes, or turn starts, queued plays are dropped, and discarding does not replay cards.
+        /// </summary>
+        public void EndMatch()
+        {
+            matchOver = true;
+            pendingPlays.Clear();
+            passQueued = false;
+        }
+
         public void Pass()
         {
+            if (matchOver) return;
             if (CurrentPhase != TurnPhase.Act) return;
             if (turnCoroutine != null) return;
 
@@ -354,6 +370,7 @@ namespace Game
         private void HandleCardDiscarded(Character character, CardInstance card)
         {
             if (character == null || card == null || card.Data == null) return;
+            if (matchOver) return;
             if (!card.Data.PlaysOnDiscard) return;
             // The card being played from hand is discarded only as part of its own play (the
             // cost of playing it). It resolves once, here, so it must not be replayed on discard.

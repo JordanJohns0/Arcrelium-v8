@@ -1019,13 +1019,39 @@ namespace Game
             // Decide shop-vs-enchant here on the deciding machine; clients read the result
             // from the victory GameStateSync so everyone is at the same Special pane.
             if (GameState.ActiveMode != GameMode.Client)
+            {
                 GameState.CurrentSpecialArea = GameState.RollSpecialArea(null);
+
+                // The fight is over: stop the turn flow and clear every player's hand. Clients
+                // pick up the empty hands from the broadcast below.
+                turnManager.EndMatch();
+                DiscardPlayerHands();
+            }
+
+            // Nothing on the board can be moved around while the loadout is up.
+            var cameraController = FindFirstObjectByType<CameraController>();
+            if (cameraController != null) cameraController.SetInputLocked(true);
 
             BroadcastGameState();
 
             // The shop is part of the loadout screen: open it straight away with the Special
             // pane filled, so the player picks, equips, and confirms in one place.
             ShowLoadoutScreen(showShop: true);
+        }
+
+        /// <summary>Discards every player's hand into their discard pile.</summary>
+        private void DiscardPlayerHands()
+        {
+            var players = new List<Character>();
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null || c.IsStructure) continue;
+                if (c.OwnerPlayerId >= GameState.EnemyOwnerPlayerId) continue;
+                players.Add(c);
+            }
+
+            foreach (Character player in players)
+                player.DiscardHand();
         }
 
         /// <summary>

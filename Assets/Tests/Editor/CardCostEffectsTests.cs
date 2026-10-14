@@ -370,6 +370,46 @@ namespace Tests.Cards
         }
 
         [Test]
+        public void TurnManager_AfterEndMatch_DiscardsDoNotReplayAndPlaysAreRefused()
+        {
+            var tmGo = new GameObject("TurnManager");
+            var arGo = new GameObject("ActionResolver");
+            try
+            {
+                TurnManager turnManager = tmGo.AddComponent<TurnManager>();
+                ActionResolver resolver = arGo.AddComponent<ActionResolver>();
+                typeof(TurnManager).GetField("actionResolver", BindingFlags.NonPublic | BindingFlags.Instance)
+                    .SetValue(turnManager, resolver);
+
+                turnManager.SetTurnOrder(new List<Character> { source });
+                turnManager.StartMatch();
+
+                var block = ScriptableObject.CreateInstance<GainBlockEffect>();
+                block.Amount = CardValue.MakeConstant(3);
+                var data = TestHelper.MakeCard("Echo", 0, TestHelper.Step(block, TargetType.Self));
+                data.PlaysOnDiscard = true;
+
+                turnManager.EndMatch();
+
+                var discarded = new CardInstance(data);
+                source.Hand.AddCard(discarded);
+                int blockBefore = source.Stats.Block;
+                source.DiscardFromHand(discarded);
+                Assert.AreEqual(blockBefore, source.Stats.Block,
+                    "Once the match is decided, discarding (e.g. clearing the hand) must not replay cards.");
+
+                var played = new CardInstance(data);
+                source.Hand.AddCard(played);
+                Assert.IsFalse(turnManager.PlayCard(played), "No card can be played once the match is decided.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(arGo);
+                Object.DestroyImmediate(tmGo);
+            }
+        }
+
+        [Test]
         public void TurnManager_DiscardDoesNotPlayTargetedCard()
         {
             var tmGo = new GameObject("TurnManager");

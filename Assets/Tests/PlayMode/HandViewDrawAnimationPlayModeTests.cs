@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Cards;
@@ -130,6 +131,56 @@ namespace Tests.PlayMode
             yield return new WaitForSeconds(1f);
 
             Assert.IsTrue(flying == null, "The card is removed once it reaches the discard pile.");
+        }
+
+        [UnityTest]
+        public IEnumerator HidingTheHand_RemovesCardsStillFlyingOut()
+        {
+            var card = MakeCard("Played");
+            character.Hand.AddCard(card);
+            yield return new WaitForSeconds(1f); // draw finished
+
+            character.Hand.RemoveCard(card);
+            yield return null;
+            Assert.IsNotNull(FindFlyingView(card), "Precondition: the card is still flying out.");
+
+            // Victory hides the hand while the card is in flight.
+            hand.gameObject.SetActive(false);
+            yield return null;
+
+            Assert.IsNull(FindFlyingView(card),
+                "A hidden hand must not leave a flying card stranded on screen over the UI.");
+        }
+
+        private static CardView FindFlyingView(CardInstance card)
+        {
+            foreach (CardView view in Object.FindObjectsByType<CardView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (view.Instance == card) return view;
+            }
+            return null;
+        }
+
+        [UnityTest]
+        public IEnumerator HoveringDuringTheDraw_HoldsTheHoverUntilTheCardLands()
+        {
+            character.Hand.AddCard(MakeCard("Drawn"));
+            yield return null;
+
+            var view = SpawnedViews()[0];
+            view.gameObject.SetActive(true); // spawned cards are active in the game; the template is not
+            view.OnPointerEnter(new PointerEventData(EventSystem.current));
+            yield return new WaitForSeconds(0.1f);
+
+            Assert.IsTrue(view.IsEntering, "The card is still flying in.");
+            Assert.AreEqual(1f, view.transform.localScale.x, 0.001f,
+                "Hovering a card mid-flight must not start the hover animation.");
+
+            yield return new WaitForSeconds(1f);
+
+            Assert.IsFalse(view.IsEntering, "The card has landed.");
+            Assert.Greater(view.transform.localScale.x, 1f,
+                "Once the card lands, the hover the pointer is holding plays.");
         }
     }
 }

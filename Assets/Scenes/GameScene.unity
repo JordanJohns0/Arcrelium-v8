@@ -2393,7 +2393,7 @@ MonoBehaviour:
   drawFromDistance: 260
   drawDuration: 0.35
   drawStagger: 0.08
-  discardTarget: {fileID: 0}
+  discardTarget: {fileID: 1029128955}
   discardDuration: 0.3
   discardScale: 0.6
 --- !u!224 &511087454

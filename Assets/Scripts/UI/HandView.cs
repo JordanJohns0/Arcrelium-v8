@@ -81,6 +81,9 @@ namespace UI
         {
             Character.OnCharacterCreated -= HandleCharacterCreated;
             UnsubscribeFromHand();
+            // A hidden hand stops its animations, so any card still flying out must not be left
+            // behind on screen.
+            ClearFlyingCards();
         }
 
         private void HandleCharacterCreated(Character character)
@@ -159,6 +162,7 @@ namespace UI
                     var group = view.GetComponent<CanvasGroup>();
                     if (group == null) group = view.gameObject.AddComponent<CanvasGroup>();
                     group.alpha = 0f; // hidden right away, before the fade starts
+                    view.SetEntering(true); // hover waits until the card has landed
 
                     if (newlyDrawn) drawAnimationsStarted++;
                     StartCoroutine(DrawIn(view, start));
@@ -273,8 +277,8 @@ namespace UI
         /// <summary>
         /// Flies one newly drawn card from its start point into its laid-out place while fading
         /// it in. <paramref name="startTime"/> is the real time the draw began (it may be a few
-        /// frames in the past when the hand was rebuilt mid-draw). Stops early if the card is
-        /// hovered (hover then owns its position) or the card is rebuilt away.
+        /// frames in the past when the hand was rebuilt mid-draw). The card's hover is held for
+        /// the whole flight, so nothing else moves it until it has landed.
         /// </summary>
         private IEnumerator DrawIn(CardView view, float startTime)
         {
@@ -292,11 +296,6 @@ namespace UI
             while (true)
             {
                 if (view == null) yield break;
-                if (view.Hovered)
-                {
-                    group.alpha = 1f;
-                    yield break;
-                }
 
                 float elapsed = Time.realtimeSinceStartup - startTime;
                 if (elapsed >= drawDuration) break;
@@ -310,6 +309,7 @@ namespace UI
             if (view == null) yield break;
             rt.anchoredPosition = target;
             group.alpha = 1f;
+            view.SetEntering(false); // landed: hover may now act on the card
         }
 
         /// <summary>Where a drawn card starts, relative to its resting place in the hand.</summary>
@@ -379,6 +379,11 @@ namespace UI
         private void OnDestroy()
         {
             UnsubscribeFromHand();
+            ClearFlyingCards();
+        }
+
+        private void ClearFlyingCards()
+        {
             foreach (CardView view in flyingCards)
             {
                 if (view != null) DestroyView(view.gameObject);

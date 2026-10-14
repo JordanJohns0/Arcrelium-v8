@@ -45,6 +45,7 @@ namespace UI
         private Button button;
         private Coroutine scaleRoutine;
         private bool hovered;
+        private bool entering;
         private Vector3 basePosition;
         private Color baseCostColor;
         private bool baseCostColorCaptured;
@@ -162,18 +163,38 @@ namespace UI
             if (button != null) button.interactable = interactable;
         }
 
+        /// <summary>True while the card is still flying into the hand (see <see cref="SetEntering"/>).</summary>
+        public bool IsEntering => entering;
+
+        /// <summary>
+        /// Held by the hand while a drawn card flies in: the hover animation would fight the
+        /// flight over the card's position, so it waits. Landing re-reads the card's rest spot and
+        /// plays the hover the pointer is already asking for.
+        /// </summary>
+        public void SetEntering(bool value)
+        {
+            if (entering == value) return;
+            entering = value;
+
+            if (!value)
+            {
+                basePosition = transform.localPosition;
+                if (hovered) AnimateHover(hoverScale, hoverLift);
+            }
+        }
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (button == null) button = GetComponent<Button>();
             if (button != null && !button.interactable) return;
             hovered = true;
-            AnimateHover(hoverScale, hoverLift);
+            if (!entering) AnimateHover(hoverScale, hoverLift);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             hovered = false;
-            AnimateHover(1f, 0f);
+            if (!entering) AnimateHover(1f, 0f);
         }
 
         private void AnimateHover(float targetScale, float targetLift)

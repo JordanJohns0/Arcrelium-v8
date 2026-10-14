@@ -25,6 +25,7 @@ public class CameraController : MonoBehaviour
     private InputAction verticalAction;
     private InputAction zoomAction;
     private readonly HashSet<Character> trackedCharacters = new HashSet<Character>();
+    private bool inputLocked;
 
     private void Awake()
     {
@@ -71,9 +72,18 @@ public class CameraController : MonoBehaviour
         Character.OnCharacterDestroyed -= HandleCharacterDestroyed;
     }
 
+    /// <summary>
+    /// Locks or unlocks player camera control (orbit, tilt, zoom). Used when the match is
+    /// decided so the board stays put behind the loadout screen.
+    /// </summary>
+    public void SetInputLocked(bool locked)
+    {
+        inputLocked = locked;
+    }
+
     private void Update()
     {
-        if (orbitalFollow == null) return;
+        if (orbitalFollow == null || inputLocked) return;
 
         float horizontal = horizontalAction?.ReadValue<float>() ?? 0;
         float vertical = verticalAction?.ReadValue<float>() ?? 0;

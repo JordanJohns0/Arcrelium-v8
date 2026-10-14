@@ -69,7 +69,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 65c0d88113aec9d4199d1272f83d07d5, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b81910db85bb5ee4da664b0c827a301c, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -329,7 +329,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 178, y: 250}
+  m_SizeDelta: {x: 208, y: 290}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1009194938014099525
 CanvasRenderer:
@@ -359,7 +359,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: d5777d9438ee79b479a79f04514cb09d, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b81910db85bb5ee4da664b0c827a301c, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -797,8 +797,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Card Description
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: e8e865a805b73144691d15194e091d8a, type: 2}
-  m_sharedMaterial: {fileID: -285944716606442636, guid: e8e865a805b73144691d15194e091d8a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -934,8 +934,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Card Name
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: e8e865a805b73144691d15194e091d8a, type: 2}
-  m_sharedMaterial: {fileID: -285944716606442636, guid: e8e865a805b73144691d15194e091d8a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1251,7 +1251,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -62.25}
-  m_SizeDelta: {x: 0, y: 124.5}
+  m_SizeDelta: {x: 0, y: 142.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3869461173545174167
 CanvasRenderer:
@@ -2045,7 +2045,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 35.5, y: -53.2}
+  m_AnchoredPosition: {x: 15.2, y: -16.1}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &880450377399180095
