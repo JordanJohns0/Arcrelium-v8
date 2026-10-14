@@ -21,13 +21,15 @@ namespace Characters
         [SerializeField] private CharacterStats stats = new CharacterStats();
         [SerializeField] private Deck deck = new Deck();
         [SerializeField] private EquipmentManager equipmentManager;
-        [SerializeField] private int maxHandSize = 5;
+        [SerializeField] private int maxHandSize = 10;
+        [SerializeField] private int cardsDrawnPerTurn = 5;
         [SerializeField] private Animator modelAnimator;
         [SerializeField] private bool isStructure;
 
         public CharacterStats Stats => stats;
         public Deck Deck => deck;
         public int MaxHandSize => maxHandSize;
+        public int CardsDrawnPerTurn => cardsDrawnPerTurn;
         public EquipmentManager Equipment => equipmentManager;
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
@@ -412,11 +414,12 @@ namespace Characters
             }
         }
 
-        /// <summary>Draws cards until the hand reaches the character's max hand size, adjusted
-        /// by any active draw-modifying statuses.</summary>
-        public void DrawToHandLimit()
+        /// <summary>Draws the character's per-turn draw amount (a fixed number of cards, not up
+        /// to the hand limit), adjusted by any active draw-modifying statuses. The hand may hold
+        /// more than this between turns, up to <see cref="MaxHandSize"/>.</summary>
+        public void DrawCardsForTurn()
         {
-            DrawCards(GetModifiedDrawCount(maxHandSize));
+            DrawCards(GetModifiedDrawCount(cardsDrawnPerTurn));
         }
 
         // ------------------------------------------------------------ statuses

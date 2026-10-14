@@ -86,7 +86,7 @@ namespace Tests.Cards
                     }
                 }
                 Assert.GreaterOrEqual(card.Cost, 0, $"Card '{card.CardName}' has negative cost.");
-                Assert.LessOrEqual(card.Cost, 4, $"Card '{card.CardName}' costs {card.Cost} — cost plus the card itself must fit a 5-card hand.");
+                Assert.LessOrEqual(card.Cost, 9, $"Card '{card.CardName}' costs {card.Cost} — cost plus the card itself must fit a 10-card hand.");
                 Assert.GreaterOrEqual(card.Range, 0, $"Card '{card.CardName}' has negative range.");
                 Assert.IsTrue(Enum.IsDefined(typeof(TargetType), card.TargetType), $"Card '{card.CardName}' has invalid TargetType.");
             }

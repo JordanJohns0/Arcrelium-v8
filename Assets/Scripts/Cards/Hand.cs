@@ -11,7 +11,7 @@ namespace Cards
         private readonly List<CardInstance> cards = new List<CardInstance>();
 
         public IReadOnlyList<CardInstance> Cards => cards;
-        public int MaxCapacity { get; set; } = 5;
+        public int MaxCapacity { get; set; } = 10;
         public bool IsFull => cards.Count >= MaxCapacity;
 
         public event Action OnHandChanged;

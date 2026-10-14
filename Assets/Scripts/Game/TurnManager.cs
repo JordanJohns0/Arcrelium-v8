@@ -113,7 +113,7 @@ namespace Game
             pendingPlays.Clear();
             passQueued = false;
             ActiveCharacter?.TickStatusesAtTurnStart();
-            ActiveCharacter?.DrawToHandLimit();
+            ActiveCharacter?.DrawCardsForTurn();
             OnTurnStarted?.Invoke(ActiveCharacter);
         }
 
