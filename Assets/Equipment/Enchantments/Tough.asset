@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.GrantCardEnchantmentSO
   EnchantmentName: Tough
   Description: 1x Brace
-  AllowedSlots: -1
+  AllowedSlots: 7
   MinCards: 0
   MaxCards: -1
   Triggers: 0

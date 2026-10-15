@@ -13,5 +13,13 @@ MonoBehaviour:
   m_Name: Healthy
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.BonusHealthEnchantmentSO
   EnchantmentName: Healthy
-  Description: You gain +2 max health
+  Description: +2 Max Health
+  AllowedSlots: -1
+  MinCards: 0
+  MaxCards: -1
+  Triggers: 0
+  BuiltInEnchantments: 0
+  Placement: 0
+  OnlyItems: []
+  NeverItems: []
   BonusMaxHealth: 2

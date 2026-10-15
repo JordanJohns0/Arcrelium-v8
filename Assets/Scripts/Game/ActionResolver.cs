@@ -90,6 +90,16 @@ namespace Game
                     context.BonusDamage = bonusDamage;
             }
 
+            // Enchantments on worn equipment may multiply damage; applies to every step.
+            float damageMultiplier = source.Equipment != null
+                ? source.Equipment.GetTotalCardDamageMultiplier(card.Data)
+                : 1f;
+            if (damageMultiplier != 1f)
+            {
+                foreach (var (_, context) in executions)
+                    context.DamageMultiplier = damageMultiplier;
+            }
+
             // Pay cost: discard the other cards, then the played card itself. Must happen
             // before effects execute so draw effects see the freed hand slots. A card played
             // from outside the hand (free "when discarded, play it") was already discarded,

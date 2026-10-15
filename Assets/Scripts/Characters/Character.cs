@@ -151,6 +151,7 @@ namespace Characters
                     ? equipmentManager.GetAllCards()
                     : new List<CardData>();
 
+                deck.CostAdjuster = data => equipmentManager != null ? equipmentManager.GetCardCostDelta(data) : 0;
                 deck.SetStartingCards(equipmentCards);
                 deck.Shuffle();
                 DrawCards(startingHandSize);
@@ -616,7 +617,7 @@ namespace Characters
                         if (library != null) data = library.GetCardByName(name);
                     }
                     if (data != null)
-                        rebuilt.Add(new CardInstance(data));
+                        rebuilt.Add(MakeCardInstance(data));
                 }
             }
 
@@ -638,6 +639,17 @@ namespace Characters
         {
             NameColor = color;
             stats.NotifyChanged();
+        }
+
+        private CardInstance MakeCardInstance(CardData data)
+        {
+            var instance = new CardInstance(data);
+            if (equipmentManager != null && data != null)
+            {
+                int delta = equipmentManager.GetCardCostDelta(data);
+                if (delta != 0) instance.SetCostOffset(delta);
+            }
+            return instance;
         }
 
         private void ApplyColor(Color color)

@@ -141,6 +141,22 @@ namespace Equipment
         /// <summary>Called when the enchanted equipment is taken off. Must undo whatever OnEquipped did.</summary>
         public virtual void OnUnequipped(EquipmentInstance equipment, Character wearer) { }
 
+        /// <summary>Adds triggers this enchantment contributes while its equipment is worn.</summary>
+        public virtual void CollectTriggers(List<EquipmentTrigger> triggers) { }
+
+        /// <summary>
+        /// Transforms this slot's final card list (the equipment's own cards plus every
+        /// enchantment-granted card) before it is added to the deck. Used by enchantments
+        /// like "double the cards this equipment grants".
+        /// </summary>
+        public virtual void ModifyGrantedCards(EquipmentInstance equipment, List<CardData> slotCards) { }
+
+        /// <summary>Returns a damage multiplier for cards played with this enchantment; 1.0 = unchanged.</summary>
+        public virtual float GetDamageMultiplier(EquipmentInstance equipment, CardData playedCard) => 1f;
+
+        /// <summary>Returns a cost delta (e.g. -1) for cards belonging to the enchanted equipment.</summary>
+        public virtual int GetCardCostDelta(EquipmentInstance equipment, CardData card) => 0;
+
         /// <summary>
         /// Extra damage added to damage dealt by <paramref name="playedCard"/> while the
         /// enchanted equipment is worn. Consulted by ActionResolver before card steps execute.

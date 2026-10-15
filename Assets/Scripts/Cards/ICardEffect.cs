@@ -30,6 +30,9 @@ namespace Cards
         public int BonusRange;
         public int BonusDamage;
 
+        /// <summary>The multiplier applied to base damage for this card play.</summary>
+        public float DamageMultiplier = 1f;
+
         /// <summary>
         /// The exact cells to walk when this is a movement play (starts adjacent to Source's
         /// current cell, ends on TargetCell). When set, the move step walks this route rather

@@ -375,7 +375,8 @@ namespace Tests.Equipment
             TriggerTiming.OnDealDamage,
             TriggerTiming.OnGainBlock,
             TriggerTiming.OnEnemyTurnEnded,
-            TriggerTiming.OnLeftCell
+            TriggerTiming.OnLeftCell,
+            TriggerTiming.OnShuffle
         };
 
         private static IEnumerable<EquipmentData> AllEquipmentAssets()
