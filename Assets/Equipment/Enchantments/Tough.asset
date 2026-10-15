@@ -10,8 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a4962943e188717449647cf5e02356b2, type: 3}
-  m_Name: GrantCardEnchantment
+  m_Name: Tough
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.GrantCardEnchantmentSO
   EnchantmentName: Tough
-  Description: 
+  Description: 1x Brace
+  AllowedSlots: -1
+  MinCards: 0
+  MaxCards: -1
+  Triggers: 0
+  BuiltInEnchantments: 0
+  Placement: 0
+  OnlyItems: []
+  NeverItems: []
   GrantedCard: {fileID: 11400000, guid: a20710a5778400249a96ec84b9416f8f, type: 2}
