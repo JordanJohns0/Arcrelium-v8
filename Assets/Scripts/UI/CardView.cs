@@ -42,6 +42,7 @@ namespace UI
         [SerializeField] private float hoverLift = -40f;
         [SerializeField] private float hoverDuration = 0.12f;
 
+
         private Button button;
         private Coroutine scaleRoutine;
         private bool hovered;

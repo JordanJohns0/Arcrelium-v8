@@ -92,5 +92,31 @@ namespace Tests.UI
             Assert.AreEqual(before, hand.DrawAnimationsStarted,
                 "Removing a card rebuilds the hand but must not replay draw animations.");
         }
+
+        [Test]
+        public void ManyCards_OverlapToFitThePanelWidth_FewCardsKeepNormalSpacing()
+        {
+            var container = (RectTransform)typeof(HandView)
+                .GetField("cardContainer", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(hand);
+            var group = container.gameObject.AddComponent<HorizontalLayoutGroup>();
+            group.spacing = 10f;
+            container.sizeDelta = new Vector2(500f, 100f);
+
+            for (int i = 0; i < 8; i++)
+                character.Hand.AddCard(DrawCard("Card" + i));
+
+            Assert.Less(group.spacing, 0f, "Eight cards do not fit at normal spacing, so they must overlap.");
+            Assert.AreEqual(500f, 8 * 100f + 7 * group.spacing, 0.01f,
+                "The overlapping hand must fill exactly the panel width.");
+
+            var hand8 = new List<CardInstance>(character.Hand.Cards);
+            for (int i = 0; i < 5; i++)
+                character.Hand.RemoveCard(hand8[i]);
+
+            Assert.AreEqual(10f, group.spacing, 0.001f, "Three cards fit, so the normal spacing returns.");
+        }
+
+
     }
 }

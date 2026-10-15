@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Characters;
 using Cards;
 using Game;
@@ -55,6 +56,8 @@ namespace UI
         // hand carries on animating instead of restarting or dropping the animation.
         private readonly Dictionary<CardInstance, float> drawStartTimes = new Dictionary<CardInstance, float>();
         private int drawAnimationsStarted;
+        private float baseSpacing;
+        private bool baseSpacingCaptured;
 
         private bool handSubscribed;
         private float currentOffset;
@@ -141,6 +144,8 @@ namespace UI
 
             if (boundCharacter == null) return;
 
+            ApplyHandSpacing(boundCharacter.Hand.Cards.Count);
+
             float now = Time.realtimeSinceStartup;
             int drawIndex = 0;
             foreach (CardInstance card in boundCharacter.Hand.Cards)
@@ -168,6 +173,36 @@ namespace UI
                     StartCoroutine(DrawIn(view, start));
                 }
             }
+        }
+
+        /// <summary>
+        /// Keeps the hand within the panel's width. While the cards fit, the layout's normal
+        /// spacing is used. Once they would overflow, the spacing becomes negative so the cards
+        /// overlap and the hand fills exactly the panel's width instead of spilling out.
+        /// </summary>
+        private void ApplyHandSpacing(int count)
+        {
+            var group = cardContainer != null ? cardContainer.GetComponent<HorizontalLayoutGroup>() : null;
+            if (group == null) return;
+
+            if (!baseSpacingCaptured)
+            {
+                baseSpacing = group.spacing;
+                baseSpacingCaptured = true;
+            }
+
+            var containerRect = cardContainer as RectTransform;
+            var cardRect = cardViewPrefab != null ? cardViewPrefab.GetComponent<RectTransform>() : null;
+            if (containerRect == null || cardRect == null || count < 2) { group.spacing = baseSpacing; return; }
+
+            float cardWidth = cardRect.sizeDelta.x;
+            float available = containerRect.rect.width - group.padding.horizontal;
+            if (available <= 0f || cardWidth <= 0f) { group.spacing = baseSpacing; return; }
+
+            float natural = count * cardWidth + (count - 1) * baseSpacing;
+            group.spacing = natural <= available
+                ? baseSpacing
+                : (available - count * cardWidth) / (count - 1);
         }
 
         private bool IsInHand(CardInstance card)

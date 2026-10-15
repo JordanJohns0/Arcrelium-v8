@@ -162,6 +162,24 @@ namespace Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator HoveredCard_StaysFullyVisible()
+        {
+            character.Hand.AddCard(MakeCard("A"));
+            yield return new WaitForSeconds(1f); // draw finished
+
+            var view = SpawnedViews()[0];
+            view.gameObject.SetActive(true);
+            view.OnPointerEnter(new PointerEventData(EventSystem.current));
+            yield return new WaitForSeconds(0.5f);
+
+            Assert.AreEqual(1f, view.GetComponent<CanvasGroup>().alpha, 0.001f,
+                "Hovering a card must not make it invisible.");
+            Assert.Greater(view.transform.localScale.x, 1f, "Hovering still enlarges the card.");
+
+            view.OnPointerExit(new PointerEventData(EventSystem.current));
+        }
+
+        [UnityTest]
         public IEnumerator HoveringDuringTheDraw_HoldsTheHoverUntilTheCardLands()
         {
             character.Hand.AddCard(MakeCard("Drawn"));

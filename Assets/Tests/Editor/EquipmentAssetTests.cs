@@ -316,7 +316,7 @@ namespace Tests.Equipment
                 Name = "Tome of Knowledge",
                 Slot = EquipmentSlotType.Hand,
                 Cards = new[] { "Papercut" },
-                Triggers = Array.Empty<(TriggerTiming, Type)>()
+                Triggers = new[] { (TriggerTiming.StartOfTurn, typeof(DrawCardsEffect)) }
             },
             new Spec
             {

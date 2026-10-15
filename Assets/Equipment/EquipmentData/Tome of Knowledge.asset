@@ -18,5 +18,8 @@ MonoBehaviour:
   SlotType: 3
   Cards:
   - {fileID: 11400000, guid: 8f2c3888ea1c547499b09259a67b309a, type: 2}
-  Triggers: []
+  Triggers:
+  - Timing: 0
+    Effect: {fileID: 11400000, guid: 4610ac663fccb2444a4efc7e517395a2, type: 2}
+    OnlyOnWearersTurn: 0
   Enchantments: []
