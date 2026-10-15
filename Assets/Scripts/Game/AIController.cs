@@ -138,7 +138,14 @@ namespace Game
 
                     case TargetType.HexCell:
                     {
-                        foreach (HexCell cell in grid.GetCellsInRange(character.CurrentCell.Coordinates, card.Data.Range))
+                        // A move can only end on a cell the character can actually stop on (an oil tile it
+                        // slides off is skipped; the cell it slides onto is offered). Other cell targets
+                        // use plain range.
+                        IEnumerable<HexCell> destinations = card.Data.IsMove
+                            ? MovePlanner.Reachable(grid, character.CurrentCell, card.Data.Range).Keys
+                            : grid.GetCellsInRange(character.CurrentCell.Coordinates, card.Data.Range);
+
+                        foreach (HexCell cell in destinations)
                         {
                             if (cell == character.CurrentCell) continue;
                             if (card.Data.CellConstraint == CellConstraint.Empty && cell.Occupant != null) continue;

@@ -22,42 +22,44 @@ namespace Cards.Effects
 
             if (!context.TargetCell.IsWalkable) return false;
 
-            int distance = context.Source.CurrentCell.Coordinates.DistanceTo(context.TargetCell.Coordinates);
-            if (distance > context.EffectiveRange) return false;
-
             if (context.Grid != null)
             {
-                List<HexCell> path = context.Grid.FindPath(
-                    context.Source.CurrentCell.Coordinates,
-                    context.TargetCell.Coordinates,
-                    context.EffectiveRange);
-                return path != null;
+                // Planned with the same slide rules as the move itself: the target must be a cell the
+                // character can end on, which an oil tile it slides off of is not. Slides don't count
+                // as steps, so a target can be farther away than the range in straight-line distance.
+                return MovePlanner.FindRoute(context.Grid, context.Source.CurrentCell,
+                    context.TargetCell, context.EffectiveRange) != null;
             }
 
-            return true;
+            int distance = context.Source.CurrentCell.Coordinates.DistanceTo(context.TargetCell.Coordinates);
+            return distance <= context.EffectiveRange;
         }
 
         /// <summary>
-        /// Validates an explicitly supplied move path: starts adjacent to the source's current
-        /// cell, every hop is to a neighboring walkable cell, total length fits the effective
-        /// range, and the last cell is the requested target.
+        /// Validates an explicitly supplied move path as it will be walked (oil slides included):
+        /// every hop is to a walkable neighbour of where the character is at that point, the steps
+        /// fit the effective range, and the last cell is the requested target.
         /// </summary>
         private static bool IsValidPath(CardContext context)
         {
-            if (context.Source.CurrentCell == null) return false;
-            if (context.MovePath.Count > context.EffectiveRange) return false;
+            if (context.Source.CurrentCell == null || context.TargetCell == null) return false;
 
-            HexCoordinates previous = context.Source.CurrentCell.Coordinates;
-            for (int i = 0; i < context.MovePath.Count; i++)
+            if (context.Grid != null)
             {
-                HexCell cell = context.MovePath[i];
-                if (cell == null) return false;
-                if (previous.DistanceTo(cell.Coordinates) != 1) return false;
-                if (!cell.IsWalkable) return false;
-                previous = cell.Coordinates;
+                MoveRoute route = MovePlanner.Validate(context.Grid, context.Source.CurrentCell,
+                    context.MovePath, context.EffectiveRange);
+                return route != null && context.MovePath[context.MovePath.Count - 1] == context.TargetCell;
             }
 
-            return context.TargetCell != null && previous == context.TargetCell.Coordinates;
+            // Without a board there are no slides: plain adjacency and length.
+            if (context.MovePath.Count > context.EffectiveRange) return false;
+            HexCoordinates previous = context.Source.CurrentCell.Coordinates;
+            foreach (HexCell cell in context.MovePath)
+            {
+                if (cell == null || previous.DistanceTo(cell.Coordinates) != 1 || !cell.IsWalkable) return false;
+                previous = cell.Coordinates;
+            }
+            return previous == context.TargetCell.Coordinates;
         }
 
         public override void Execute(CardContext context)
@@ -65,16 +67,14 @@ namespace Cards.Effects
             HexCell target = context.TargetCell;
             if (target == null) return;
 
+            // Without an explicit route (AI, or a play that only names a target) plan one with the
+            // same slide rules the validation used, so the character ends on the target.
             List<HexCell> path = context.MovePath;
-            if (path == null || path.Count == 0)
+            if ((path == null || path.Count == 0) && context.Grid != null)
             {
-                if (context.Grid != null)
-                {
-                    path = context.Grid.FindPath(
-                        context.Source.CurrentCell.Coordinates,
-                        target.Coordinates,
-                        context.EffectiveRange);
-                }
+                MoveRoute route = MovePlanner.FindRoute(context.Grid, context.Source.CurrentCell, target,
+                    context.EffectiveRange);
+                path = route?.Cells;
             }
 
             // Step through each cell in the path so OnMovedToCell fires per step,
