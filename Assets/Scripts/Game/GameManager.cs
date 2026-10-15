@@ -133,17 +133,22 @@ namespace Game
 
             PauseMenu.GetOrCreate(inputActions);
 
-            if (GameState.ShowLoadoutScreen)
-            {
-                ShowLoadoutScreen();
-                return;
-            }
-
-            // The Equipment UI starts active in the scene. Hide it when the loadout
-            // screen is not shown (e.g. resuming after a scene reload for the next level).
+            // The Equipment UI starts active in the scene. Hide it: no loadout screen is shown
+            // before the first level, and after a victory the screen opens it itself.
             var gameCanvas = GameObject.Find("Canvas");
             var eqUI = gameCanvas != null ? gameCanvas.transform.Find("Equipment UI")?.gameObject : null;
             if (eqUI != null) eqUI.SetActive(false);
+
+            if (GameState.ShowLoadoutScreen)
+            {
+                // Start of a run: skip the confirm screen and commit the saved loadout straight
+                // away, exactly as confirming it would. Multiplayer still waits for every
+                // player's loadout to arrive before the first level begins.
+                GameState.ShowLoadoutScreen = false;
+                SetExpectedLoadoutCount();
+                OnLoadoutConfirmed();
+                return;
+            }
 
             BeginMatch();
         }
@@ -252,11 +257,16 @@ namespace Game
 
         private void ShowLoadoutScreen(bool showShop = false)
         {
-            var lobby = LobbyManager.Instance.CurrentLobby;
-            ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
+            SetExpectedLoadoutCount();
 
             loadoutScreen = LoadoutScreen.Create();
             loadoutScreen.Show(null, OnLoadoutConfirmed, showShop);
+        }
+
+        private void SetExpectedLoadoutCount()
+        {
+            var lobby = LobbyManager.Instance.CurrentLobby;
+            ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
         }
 
         private static int CountExpectedLoadouts(Lobby lobby)
