@@ -107,7 +107,7 @@ namespace Tests.PlayMode
         }
 
         [Test]
-        public void TurnStart_DrawsUpToMaxHandSize()
+        public void TurnStart_DrawsPerTurn_ClampedByHandCapacity()
         {
             SetMaxHandSize(player, 3);
             GiveDeckCards(player, 8);
@@ -116,6 +116,20 @@ namespace Tests.PlayMode
             turnManager.StartMatch();
 
             Assert.AreEqual(3, player.Hand.Cards.Count);
+        }
+
+        [Test]
+        public void TurnStart_DrawsFixedPerTurnAmount_NotToHandLimit()
+        {
+            GiveDeckCards(player, 20);
+
+            turnManager.SetTurnOrder(new List<Character> { player, enemy });
+            turnManager.StartMatch();
+
+            Assert.AreEqual(10, player.MaxHandSize, "Hand size should be 10.");
+            Assert.AreEqual(5, player.CardsDrawnPerTurn, "Each turn should draw a fixed 5 cards.");
+            Assert.AreEqual(5, player.Hand.Cards.Count,
+                "The start-of-turn draw is a fixed amount, not drawing up to the hand limit.");
         }
 
         [Test]
@@ -137,14 +151,15 @@ namespace Tests.PlayMode
 
             turnManager.SetTurnOrder(new List<Character> { player, enemy });
             turnManager.StartMatch();
-            Assert.AreEqual(player.Hand.MaxCapacity, player.Hand.Cards.Count);
+            int drawn = player.Hand.Cards.Count;
+            Assert.Greater(drawn, 0);
 
             turnManager.Pass();
             yield return TestHelper.WaitUntilOrTimeout(() => !turnManager.Busy);
             Assert.IsFalse(turnManager.Busy, "Turn transition did not finish in time");
 
             Assert.AreEqual(0, player.Hand.Cards.Count);
-            Assert.AreEqual(player.Hand.MaxCapacity, player.Deck.DiscardPile.Count);
+            Assert.AreEqual(drawn, player.Deck.DiscardPile.Count);
         }
 
         private static void SetMaxHandSize(Character character, int value)

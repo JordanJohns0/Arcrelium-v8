@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: GameDataLibrary
   m_EditorClassIdentifier: Assembly-CSharp::Equipment.GameDataLibrary
   allCards:
-  - {fileID: 11400000, guid: b322c697e5f21bb4c945a4f2d8fec6cb, type: 2}
   - {fileID: 11400000, guid: a20710a5778400249a96ec84b9416f8f, type: 2}
   - {fileID: 11400000, guid: aca7a0d77e665904bac7985894f0114c, type: 2}
   - {fileID: 11400000, guid: 60f63f2b03b17cc4584c94cb0f190db1, type: 2}
@@ -105,5 +104,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6d88976298e56b146a4660c4f19b9078, type: 2}
   - {fileID: 11400000, guid: 3b3e74d93d733f44db13774a79fe0e07, type: 2}
   - {fileID: 11400000, guid: b8cb6536830d7cf408663fd2fddb7743, type: 2}
+  allEnchantments:
+  - {fileID: 11400000, guid: 9b92e8dd52f49f14bad3e35d58e808a5, type: 2}
+  - {fileID: 11400000, guid: 90a13a476ba098e4c9eba9c9340a3a93, type: 2}
+  - {fileID: 11400000, guid: 775046614d4f3b04e9be2c48926cd56e, type: 2}
   fireEffectVisualPrefab: {fileID: 100000, guid: a1b2c3d4e5f60718293a4b5c6d7e8f10, type: 3}
   oilEffectVisualPrefab: {fileID: 100000, guid: b1c2d3e4f5061728394a5b6c7d8e9f20, type: 3}

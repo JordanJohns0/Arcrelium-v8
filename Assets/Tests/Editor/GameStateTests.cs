@@ -59,5 +59,44 @@ namespace Tests.Game
             GameState.MatchLoadouts.Clear();
             Assert.IsFalse(GameState.MatchLoadouts.ContainsKey(0));
         }
+
+        [Test]
+        public void RollSpecialArea_SeededIsDeterministic()
+        {
+            var first = GameState.RollSpecialArea(new System.Random(12345));
+            var second = GameState.RollSpecialArea(new System.Random(12345));
+            Assert.AreEqual(first, second, "The same seed must decide the same Special pane.");
+        }
+
+        [Test]
+        public void RollSpecialArea_ReturnsOnlyKnownAreas()
+        {
+            for (int seed = 0; seed < 200; seed++)
+            {
+                var area = GameState.RollSpecialArea(new System.Random(seed));
+                Assert.IsTrue(area == SpecialArea.Shop || area == SpecialArea.Enchant);
+            }
+        }
+
+        [Test]
+        public void RollSpecialArea_ProducesBothAreasAcrossSeeds()
+        {
+            bool sawShop = false;
+            bool sawEnchant = false;
+            for (int seed = 1; seed <= 400 && !(sawShop && sawEnchant); seed++)
+            {
+                var area = GameState.RollSpecialArea(new System.Random(seed));
+                sawShop |= area == SpecialArea.Shop;
+                sawEnchant |= area == SpecialArea.Enchant;
+            }
+            Assert.IsTrue(sawShop, "Some seeds must yield the shop.");
+            Assert.IsTrue(sawEnchant, "Some seeds must yield the enchantment station.");
+        }
+
+        [Test]
+        public void CurrentSpecialArea_DefaultsToShop()
+        {
+            Assert.AreEqual(SpecialArea.Shop, GameState.CurrentSpecialArea);
+        }
     }
 }

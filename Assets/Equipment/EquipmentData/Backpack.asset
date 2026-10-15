@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Backpack
   Description: 
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 7a23b3878e6508045bd5840dcf61c3e3, type: 3}
   SlotType: 4
   Cards:
   - {fileID: 11400000, guid: f350f8c420e937547bab7a27615a1992, type: 2}

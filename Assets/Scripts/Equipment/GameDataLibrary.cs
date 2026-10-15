@@ -17,6 +17,8 @@ namespace Equipment
     {
         public List<CardData> allCards = new List<CardData>();
         public List<EquipmentData> allEquipment = new List<EquipmentData>();
+        [Tooltip("Every equipment enchantment in the game, resolvable by name for saves and the enchantment station.")]
+        public List<EquipmentEnchantmentSO> allEnchantments = new List<EquipmentEnchantmentSO>();
         [Header("Ambient visuals")]
         [Tooltip("Prefab shown on tiles covered in fire.")]
         public GameObject fireEffectVisualPrefab;
@@ -92,6 +94,40 @@ namespace Equipment
             return null;
         }
 
+        public EquipmentEnchantmentSO GetEnchantmentByName(string enchantmentName)
+        {
+            if (string.IsNullOrEmpty(enchantmentName)) return null;
+
+            EquipmentEnchantmentSO direct = FindEnchantment(this, enchantmentName);
+            if (direct != null) return direct;
+
+            var lib = Instance;
+            if (!ReferenceEquals(lib, this))
+            {
+                if (lib == null)
+                {
+                    instanceSearched = false;
+                    lib = Instance;
+                }
+                EquipmentEnchantmentSO global = FindEnchantment(lib, enchantmentName);
+                if (global != null) return global;
+            }
+            return null;
+        }
+
+        /// <summary>Every enchantment known to the library (the enchantment station's pool).</summary>
+        public List<EquipmentEnchantmentSO> GetAllEnchantments()
+        {
+            if (allEnchantments != null && allEnchantments.Count > 0)
+                return allEnchantments;
+
+            var lib = Instance;
+            if (!ReferenceEquals(lib, this) && lib != null && lib.allEnchantments != null && lib.allEnchantments.Count > 0)
+                return lib.allEnchantments;
+
+            return allEnchantments ?? new List<EquipmentEnchantmentSO>();
+        }
+
         private static CardData FindCard(GameDataLibrary lib, string cardName)
         {
             if (lib == null || lib.allCards == null) return null;
@@ -108,6 +144,16 @@ namespace Equipment
             foreach (var e in lib.allEquipment)
             {
                 if (e != null && e.EquipmentName == equipmentName) return e;
+            }
+            return null;
+        }
+
+        private static EquipmentEnchantmentSO FindEnchantment(GameDataLibrary lib, string enchantmentName)
+        {
+            if (lib == null || lib.allEnchantments == null) return null;
+            foreach (var e in lib.allEnchantments)
+            {
+                if (e != null && e.EnchantmentName == enchantmentName) return e;
             }
             return null;
         }

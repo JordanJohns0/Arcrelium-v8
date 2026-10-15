@@ -5,6 +5,30 @@ using Cards;
 namespace Equipment
 {
     /// <summary>
+    /// Enchantments granted to a single piece of equipment during a run, keyed by the
+    /// equipment template. Held on the player's <see cref="EquipmentLoadout"/> so it travels
+    /// with the loadout over the network and through match setup without ever mutating the
+    /// shared <see cref="EquipmentData"/> asset.
+    /// </summary>
+    [System.Serializable]
+    public class AppliedEnchantment
+    {
+        public EquipmentData equipment;
+        public List<EquipmentEnchantmentSO> enchantments = new List<EquipmentEnchantmentSO>();
+    }
+
+    /// <summary>
+    /// Name-serialized form of an <see cref="AppliedEnchantment"/> for saves and network
+    /// transfer (Unity's JsonUtility cannot serialize the ScriptableObject references).
+    /// </summary>
+    [System.Serializable]
+    public class EnchantmentAssignment
+    {
+        public string equipmentName;
+        public List<string> enchantmentNames = new List<string>();
+    }
+
+    /// <summary>
     /// A fixed-slot snapshot of a player's equipped items. Applied to a character at match
     /// start to build its deck, and serialized as equipment names (fixed slot order) for
     /// JSON persistence and Steam transfer. Each player's loadout stays private — only the
@@ -23,6 +47,13 @@ namespace Equipment
         public EquipmentData Trinket1;
         public EquipmentData Trinket2;
         public EquipmentData Trinket3;
+
+        /// <summary>
+        /// Enchantments applied to this player's equipment for the current run, keyed by
+        /// equipment (both equipped items and ones still in the inventory). A piece may hold
+        /// several enchantments. Not slot-bound so it survives equipping/unequipping.
+        /// </summary>
+        public List<AppliedEnchantment> enchantments = new List<AppliedEnchantment>();
 
         public EquipmentData Get(EquipmentSlotType slot, int index = 0)
         {
@@ -92,10 +123,98 @@ namespace Equipment
             return cards;
         }
 
-        private static void AddCards(EquipmentData data, List<CardData> cards)
+        private void AddCards(EquipmentData data, List<CardData> cards)
         {
-            if (data == null || data.Cards == null) return;
-            cards.AddRange(data.Cards);
+            if (data == null) return;
+            if (data.Cards != null)
+                cards.AddRange(data.Cards);
+
+            foreach (var enchantment in GetEnchantments(data))
+                enchantment?.CollectGrantedCards(cards);
+        }
+
+        /// <summary>Enchantments applied to the given equipment this run (never null).</summary>
+        public IReadOnlyList<EquipmentEnchantmentSO> GetEnchantments(EquipmentData item)
+        {
+            if (item == null) return System.Array.Empty<EquipmentEnchantmentSO>();
+            foreach (var entry in enchantments)
+            {
+                if (entry != null && entry.equipment == item)
+                    return entry.enchantments;
+            }
+            return System.Array.Empty<EquipmentEnchantmentSO>();
+        }
+
+        /// <summary>True when the given equipment already carries this exact enchantment.</summary>
+        public bool HasEnchantment(EquipmentData item, EquipmentEnchantmentSO enchantment)
+        {
+            if (item == null || enchantment == null) return false;
+            foreach (var entry in enchantments)
+            {
+                if (entry != null && entry.equipment == item && entry.enchantments.Contains(enchantment))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>Applies an enchantment to a piece of equipment (stacking is allowed).</summary>
+        public void AddEnchantment(EquipmentData item, EquipmentEnchantmentSO enchantment)
+        {
+            if (item == null || enchantment == null) return;
+
+            AppliedEnchantment entry = null;
+            foreach (var candidate in enchantments)
+            {
+                if (candidate != null && candidate.equipment == item) { entry = candidate; break; }
+            }
+
+            if (entry == null)
+            {
+                entry = new AppliedEnchantment { equipment = item };
+                enchantments.Add(entry);
+            }
+            entry.enchantments.Add(enchantment);
+        }
+
+        /// <summary>Name-serialized enchantment map for saves and network transfer.</summary>
+        public List<EnchantmentAssignment> ToEnchantmentAssignments()
+        {
+            var result = new List<EnchantmentAssignment>();
+            foreach (var entry in enchantments)
+            {
+                if (entry == null || entry.equipment == null) continue;
+
+                var assignment = new EnchantmentAssignment { equipmentName = entry.equipment.EquipmentName };
+                foreach (var enchantment in entry.enchantments)
+                {
+                    if (enchantment != null)
+                        assignment.enchantmentNames.Add(enchantment.EnchantmentName);
+                }
+                if (assignment.enchantmentNames.Count > 0)
+                    result.Add(assignment);
+            }
+            return result;
+        }
+
+        /// <summary>Rehydrates the enchantment map from names (unknown names are dropped).</summary>
+        public void ApplyEnchantmentAssignments(List<EnchantmentAssignment> assignments, GameDataLibrary library)
+        {
+            enchantments.Clear();
+            if (assignments == null || library == null) return;
+
+            foreach (var assignment in assignments)
+            {
+                if (assignment == null) continue;
+                var equipment = library.GetEquipmentByName(assignment.equipmentName);
+                if (equipment == null || assignment.enchantmentNames == null) continue;
+
+                foreach (var name in assignment.enchantmentNames)
+                {
+                    var enchantment = library.GetEnchantmentByName(name);
+                    if (enchantment != null)
+                        AddEnchantment(equipment, enchantment);
+                }
+            }
         }
 
         /// <summary>
@@ -155,6 +274,17 @@ namespace Equipment
             Trinket1 = other.Trinket1;
             Trinket2 = other.Trinket2;
             Trinket3 = other.Trinket3;
+
+            enchantments.Clear();
+            foreach (var entry in other.enchantments)
+            {
+                if (entry == null) continue;
+                enchantments.Add(new AppliedEnchantment
+                {
+                    equipment = entry.equipment,
+                    enchantments = new List<EquipmentEnchantmentSO>(entry.enchantments)
+                });
+            }
         }
 
         public void Clear()
@@ -167,6 +297,7 @@ namespace Equipment
             Trinket1 = null;
             Trinket2 = null;
             Trinket3 = null;
+            enchantments.Clear();
         }
 
         public bool IsEmpty =>

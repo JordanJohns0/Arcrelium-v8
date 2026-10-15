@@ -130,8 +130,8 @@ namespace UI
         /// Opens the loadout screen. <paramref name="unlockedReward"/> is the item earned
         /// at victory (null at the start of a run). <paramref name="onConfirmCallback"/>
         /// fires once when this player confirms; the host uses it to collect loadouts.
-        /// When <paramref name="withShop"/> is set the Special column is filled with shop
-        /// offers and the gold display tracks the balance (end-of-level loadout).
+        /// When <paramref name="withShop"/> is set the Special column is filled with the
+        /// three reward offers the player can pick from (end-of-level loadout).
         /// </summary>
         public void Show(EquipmentData unlockedReward, System.Action onConfirmCallback, bool withShop = false)
         {
@@ -168,24 +168,39 @@ namespace UI
                     equipmentPanelComponent.SetEditLoadout(localInventory.Loadout);
                     equipmentPanelComponent.Refresh();
 
-                    ShopScreen shop = withShop
-                        ? ShopScreen.Attach(
-                            equipmentPanelComponent.ShopPanel,
-                            equipmentPanelComponent.InventorySlotPrefab != null
-                                ? equipmentPanelComponent.InventorySlotPrefab.gameObject
-                                : null,
-                            equipmentPanelComponent.GoldLabel)
-                        : equipmentPanelComponent.ShopPanel != null
-                            ? equipmentPanelComponent.ShopPanel.GetComponent<ShopScreen>()
-                            : null;
-                    if (shop != null)
+                    Transform specialPanel = equipmentPanelComponent.ShopPanel;
+                    GameObject slotPrefab = equipmentPanelComponent.InventorySlotPrefab != null
+                        ? equipmentPanelComponent.InventorySlotPrefab.gameObject
+                        : null;
+
+                    // The Special pane hosts either the shop or the enchantment station; hide
+                    // whichever was left over from a previous level before showing this one.
+                    var shop = specialPanel != null ? specialPanel.GetComponent<ShopScreen>() : null;
+                    var enchant = specialPanel != null ? specialPanel.GetComponent<EnchantScreen>() : null;
+                    if (shop != null) shop.Hide();
+                    if (enchant != null) enchant.Hide();
+
+                    // The Special page's own title/description labels head whichever area is
+                    // shown (shop or enchantment station).
+                    TMP_Text specialTitle = equipmentPanelComponent.SpecialTitleLabel;
+                    TMP_Text specialDescription = equipmentPanelComponent.SpecialDescriptionLabel;
+
+                    if (withShop && GameState.CurrentSpecialArea == SpecialArea.Enchant && HasEnchantments())
                     {
-                        if (withShop) shop.Show();
-                        else shop.Hide();
+                        EnchantScreen screen = EnchantScreen.Attach(specialPanel, slotPrefab, specialTitle, specialDescription);
+                        if (screen != null) screen.Show();
+                    }
+                    else if (withShop)
+                    {
+                        ShopScreen screen = ShopScreen.Attach(specialPanel, slotPrefab, specialTitle, specialDescription);
+                        if (screen != null) screen.Show();
                     }
 
-                    // Open on the shop page after a victory; otherwise start on the inventory.
-                    equipmentPanelComponent.SelectPage(withShop ? "Special" : "Inventory Slots");
+                    // Swap the Special tab's bookmark icon to match the area this level rolled.
+                    equipmentPanelComponent.ApplySpecialArea(GameState.CurrentSpecialArea);
+
+                    // Open on the special page after a victory; otherwise start on the inventory.
+                    equipmentPanelComponent.SelectPage(withShop ? "Special Page" : "Inventory Slots");
                 }
             }
 
@@ -202,6 +217,14 @@ namespace UI
 
             if (unlockedReward != null)
                 ShowRewardPopup(unlockedReward);
+        }
+
+        /// <summary>True when the library offers at least one enchantment to hand out.</summary>
+        private static bool HasEnchantments()
+        {
+            var library = GameDataLibrary.Instance;
+            var pool = library != null ? library.GetAllEnchantments() : null;
+            return pool != null && pool.Count > 0;
         }
 
         /// <summary>Closes the overlay, restores the game UI, and destroys the screen.</summary>
@@ -237,7 +260,8 @@ namespace UI
                     Networking.NetworkManager.Instance.SendLoadoutSync(new LoadoutSync
                     {
                         playerIndex = GameState.LocalPlayerId,
-                        loadoutNames = localInventory.Loadout.ToNames()
+                        loadoutNames = localInventory.Loadout.ToNames(),
+                        enchantments = localInventory.Loadout.ToEnchantmentAssignments()
                     });
                     Networking.ReadyTracker.Instance.SetLocalReady(true);
                 }

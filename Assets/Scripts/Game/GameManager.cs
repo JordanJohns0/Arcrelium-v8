@@ -50,10 +50,6 @@ namespace Game
         [SerializeField] private int allySpawnQ = 0;
         [SerializeField] private int allySpawnR = -2;
 
-        [Header("Shop")]
-        [Tooltip("Gold awarded to each player after every victory, spent in the end-of-level shop.")]
-        [SerializeField] [Min(0)] private int goldPerVictory = 25;
-
         [System.Serializable]
         public class CharacterSpawn
         {
@@ -87,6 +83,17 @@ namespace Game
         private LoadoutScreen loadoutScreen;
         private bool victoryAchieved;
         private bool defeatAchieved;
+
+        /// <summary>Rewards a stage vote can offer. Empty = the built-in Shop and Enchantment rewards.</summary>
+        [Header("Stage Vote")]
+        [Tooltip("Rewards a stage vote can offer. Leave empty to use the built-in Shop and Enchantment rewards.")]
+        [SerializeField] private List<StageReward> stageRewards = new List<StageReward>();
+
+        private static List<StageReward> builtInRewards;
+        private StageVote stageVote;
+        private StageOption[] stageOptions;
+        private StageVoteScreen stageVoteScreen;
+        private System.Action stageVoteDone;
         private bool matchStarted;
 
         /// <summary>
@@ -103,6 +110,7 @@ namespace Game
             victoryAchieved = false;
             defeatAchieved = false;
             matchStarted = false;
+            Networking.NetworkManager.OnStageVoteStateReceived += HandleStageVoteState;
             GameMode currentMode = GameState.ActiveMode;
 
             // Make sure this machine knows the lobby's match format even if it only just
@@ -137,17 +145,22 @@ namespace Game
 
             PauseMenu.GetOrCreate(inputActions);
 
-            if (GameState.ShowLoadoutScreen)
-            {
-                ShowLoadoutScreen();
-                return;
-            }
-
-            // The Equipment UI starts active in the scene. Hide it when the loadout
-            // screen is not shown (e.g. resuming after a scene reload for the next level).
+            // The Equipment UI starts active in the scene. Hide it: no loadout screen is shown
+            // before the first level, and after a victory the screen opens it itself.
             var gameCanvas = GameObject.Find("Canvas");
             var eqUI = gameCanvas != null ? gameCanvas.transform.Find("Equipment UI")?.gameObject : null;
             if (eqUI != null) eqUI.SetActive(false);
+
+            if (GameState.ShowLoadoutScreen)
+            {
+                // Start of a run: skip the confirm screen and commit the saved loadout straight
+                // away, exactly as confirming it would. Multiplayer still waits for every
+                // player's loadout to arrive before the first level begins.
+                GameState.ShowLoadoutScreen = false;
+                SetExpectedLoadoutCount();
+                OnLoadoutConfirmed();
+                return;
+            }
 
             BeginMatch();
         }
@@ -161,6 +174,8 @@ namespace Game
             Networking.NetworkManager.OnPassRequestReceived -= HandlePassRequest;
             Networking.NetworkManager.OnLoadoutSyncReceived -= HandleLoadoutSyncReceived;
             Networking.NetworkManager.OnCardPlayedDisplayReceived -= HandleCardPlayedDisplay;
+            Networking.NetworkManager.OnStageVoteStateReceived -= HandleStageVoteState;
+            Networking.NetworkManager.OnStageVoteRequestReceived -= HandleStageVoteRequest;
             LobbyManager.OnLobbyMemberLeft -= HandleLobbyMemberLeft;
             if (turnManager != null)
             {
@@ -185,6 +200,7 @@ namespace Game
             Networking.NetworkManager.OnPlayCardRequestReceived += HandlePlayCardRequest;
             Networking.NetworkManager.OnPassRequestReceived += HandlePassRequest;
             Networking.NetworkManager.OnLoadoutSyncReceived += HandleLoadoutSyncReceived;
+            Networking.NetworkManager.OnStageVoteRequestReceived += HandleStageVoteRequest;
             LobbyManager.OnLobbyMemberLeft += HandleLobbyMemberLeft;
             if (turnManager != null)
             {
@@ -256,11 +272,16 @@ namespace Game
 
         private void ShowLoadoutScreen(bool showShop = false)
         {
-            var lobby = LobbyManager.Instance.CurrentLobby;
-            ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
+            SetExpectedLoadoutCount();
 
             loadoutScreen = LoadoutScreen.Create();
             loadoutScreen.Show(null, OnLoadoutConfirmed, showShop);
+        }
+
+        private void SetExpectedLoadoutCount()
+        {
+            var lobby = LobbyManager.Instance.CurrentLobby;
+            ExpectedLoadoutCount = lobby.HasValue ? CountExpectedLoadouts(lobby.Value) : 1;
         }
 
         private static int CountExpectedLoadouts(Lobby lobby)
@@ -306,7 +327,9 @@ namespace Game
             if (playerId < 0) return;
 
             var library = GameDataLibrary.Instance;
-            AddReceivedLoadout(playerId, EquipmentLoadout.FromNames(sync?.loadoutNames, library));
+            var loadout = EquipmentLoadout.FromNames(sync?.loadoutNames, library);
+            loadout.ApplyEnchantmentAssignments(sync?.enchantments, library);
+            AddReceivedLoadout(playerId, loadout);
             Debug.Log($"[GameManager] Received loadout for player {playerId} ({receivedLoadouts.Count}/{ExpectedLoadoutCount})");
 
             TryStartAfterLoadouts();
@@ -347,18 +370,23 @@ namespace Game
         {
             GameState.ShowLoadoutScreen = false;
 
+            // Before every stage the players vote on the enemies and the reward. The vote's
+            // outcome is what the next level and its post-victory reward are built from.
             if (victoryAchieved)
             {
-                if (GameState.ActiveMode != GameMode.SinglePlayer && Networking.NetworkManager.Instance.IsHost)
+                RunStageVote(() =>
                 {
-                    Networking.NetworkManager.Instance.SendLoadNextLevel();
-                    Networking.ReadyTracker.Instance.Reset();
-                }
-                GameState.LoadNextLevel();
+                    if (GameState.ActiveMode != GameMode.SinglePlayer && Networking.NetworkManager.Instance.IsHost)
+                    {
+                        Networking.NetworkManager.Instance.SendLoadNextLevel();
+                        Networking.ReadyTracker.Instance.Reset();
+                    }
+                    GameState.LoadNextLevel();
+                });
                 return;
             }
 
-            BeginMatch();
+            RunStageVote(BeginMatch);
         }
 
         private void DestroyLoadoutScreen()
@@ -490,9 +518,16 @@ namespace Game
                 pool.Add(group);
             }
 
-            if (pool.Count == 0) return false;
+            // The enemies chosen by the stage vote; a random configured group only when the vote
+            // did not choose one (e.g. no groups were offered).
+            EnemyGroup selected = null;
+            int chosenGroup = GameState.StageEnemyGroupIndex;
+            if (chosenGroup >= 0 && chosenGroup < enemyGroups.Count && IsUsableEnemyGroup(enemyGroups[chosenGroup]))
+                selected = enemyGroups[chosenGroup];
+            else if (pool.Count > 0)
+                selected = pool[Random.Range(0, pool.Count)];
 
-            EnemyGroup selected = pool[Random.Range(0, pool.Count)];
+            if (selected == null) return false;
             int budget = EnemySpawnGenerator.BudgetForLevel(enemyBaseDifficulty, enemyDifficultyPerLevel, GameState.CurrentLevel);
             EncounterPlan plan = EnemySpawnGenerator.Generate(selected, budget, new System.Random());
 
@@ -770,7 +805,8 @@ namespace Game
             {
                 currentTurnIndex = turnManager.CurrentTurnIndex,
                 victory = victoryAchieved,
-                gameOver = defeatAchieved
+                gameOver = defeatAchieved,
+                enchantArea = GameState.CurrentSpecialArea == SpecialArea.Enchant
             };
 
             foreach (var c in activeCharacters)
@@ -1016,19 +1052,347 @@ namespace Game
             if (victoryAchieved) return;
             victoryAchieved = true;
             GamePace.Reset();
-            BroadcastGameState();
-            // Each machine awards its own gold and rolls its own shop offers, so players
-            // never see each other's inventories. Gold and purchases persist across sessions.
-            var inventory = PlayerInventoryProvider.GetLocal();
-            if (goldPerVictory > 0)
+
+            // Decide shop-vs-enchant here on the deciding machine; clients read the result
+            // from the victory GameStateSync so everyone is at the same Special pane.
+            if (GameState.ActiveMode != GameMode.Client)
             {
-                inventory.AddGold(goldPerVictory);
-                PlayerInventoryProvider.Save(PlayerInventoryProvider.LocalPlayerKey, inventory);
+                GameState.CurrentSpecialArea = StageRewardArea();
+
+                // The fight is over: stop the turn flow and clear every player's hand. Clients
+                // pick up the empty hands from the broadcast below.
+                turnManager.EndMatch();
+                DiscardPlayerHands();
             }
 
-            // The shop is part of the loadout screen now: open it straight away with the
-            // Special pane filled, so the player buys, equips, and confirms in one place.
+            // Nothing on the board can be moved around while the loadout is up.
+            var cameraController = FindFirstObjectByType<CameraController>();
+            if (cameraController != null) cameraController.SetInputLocked(true);
+
+            BroadcastGameState();
+
+            // The shop is part of the loadout screen: open it straight away with the Special
+            // pane filled, so the player picks, equips, and confirms in one place.
             ShowLoadoutScreen(showShop: true);
+        }
+
+        // ------------------------------------------------------------ stage vote
+
+        /// <summary>
+        /// Host (or single player) side: builds the two options and opens the vote. Clients only
+        /// display what the host broadcasts. <paramref name="onDone"/> runs after the result has
+        /// been shown.
+        /// </summary>
+        private void RunStageVote(System.Action onDone)
+        {
+            stageVoteDone = onDone;
+
+            var options = StageVote.GenerateOptions(ValidEnemyGroupIndices(), RewardIndices(), new System.Random());
+            stageOptions = new[] { options[0], options[1] };
+            stageVote = new StageVote(options, ExpectedVoterCount());
+
+            ShowStageVote();
+            BroadcastStageVote();
+        }
+
+        private int ExpectedVoterCount()
+        {
+            return GameState.ActiveMode == GameMode.SinglePlayer ? 1 : Mathf.Max(1, ExpectedLoadoutCount);
+        }
+
+        private void ShowStageVote()
+        {
+            if (stageVoteScreen == null)
+            {
+                stageVoteScreen = StageVoteScreen.Create();
+                stageVoteScreen.OptionChosen += OnLocalStageVoteChosen;
+            }
+
+            stageVoteScreen.SetOptions(BuildOptionLabels(stageOptions));
+            RefreshStageVoteScreen();
+        }
+
+        /// <summary>The local player pressed an option: lock it in, then send it (client) or count it (host).</summary>
+        private void OnLocalStageVoteChosen(int option)
+        {
+            if (stageVoteScreen != null) stageVoteScreen.LockLocalVote(option);
+
+            if (GameState.ActiveMode == GameMode.Client)
+                Networking.NetworkManager.Instance.SendStageVoteRequest(option);
+            else
+                ApplyStageVote(GameState.LocalPlayerId, option);
+        }
+
+        /// <summary>
+        /// Host (or single player): records one player's vote, resolves the vote once everyone has
+        /// voted, and keeps every machine's view in step. Repeat votes are refused by the vote.
+        /// </summary>
+        private void ApplyStageVote(int playerId, int option)
+        {
+            if (stageVote == null) return;
+            if (!stageVote.CastVote(playerId, option)) return;
+
+            bool resolved = stageVote.TryResolve(new System.Random());
+            if (resolved)
+                ApplyStageResult(stageVote.Chosen);
+
+            BroadcastStageVote();
+            RefreshStageVoteScreen();
+
+            if (resolved && stageVoteScreen != null)
+                stageVoteScreen.PlayResolution(stageVote.Chosen, FinishStageVote);
+        }
+
+        /// <summary>Host (or single player): a remote player's vote arrives. The sender is identified by Steam id.</summary>
+        private void HandleStageVoteRequest(ulong senderSteamId, Networking.StageVoteRequest request)
+        {
+            if (GameState.ActiveMode != GameMode.Host) return;
+
+            var lobby = LobbyManager.Instance.CurrentLobby;
+            if (!lobby.HasValue) return;
+
+            int playerId = GameState.GetPlayerIndex(lobby.Value, senderSteamId);
+            if (playerId < 0) return;
+
+            ApplyStageVote(playerId, request != null ? request.option : -1);
+        }
+
+        /// <summary>Client side: the host's vote state arrived. Opens the vote, updates it, or plays the result.</summary>
+        private void HandleStageVoteState(Networking.StageVoteState state)
+        {
+            if (GameState.ActiveMode != GameMode.Client || state == null) return;
+
+            var options = new[]
+            {
+                new StageOption(StateAt(state.enemyGroups, 0), StateAt(state.rewards, 0)),
+                new StageOption(StateAt(state.enemyGroups, 1), StateAt(state.rewards, 1))
+            };
+
+            // A resolved vote is final; ignore repeats of it.
+            if (stageVote != null && stageVote.Resolved && state.resolved) return;
+
+            bool isNewVote = stageVote == null || stageVote.Resolved;
+            stageOptions = options;
+            stageVote = StageVote.Restore(options, state.expectedVoters, state.votePlayerIds, state.voteOptions,
+                state.resolved, state.chosen);
+
+            if (isNewVote)
+            {
+                DismissStageVoteScreen();
+                ShowStageVote();
+            }
+            else
+            {
+                RefreshStageVoteScreen();
+            }
+
+            if (state.resolved)
+            {
+                ApplyStageResult(stageVote.Chosen);
+                if (stageVoteScreen != null)
+                    stageVoteScreen.PlayResolution(stageVote.Chosen, FinishStageVote);
+            }
+        }
+
+        private static int StateAt(int[] values, int index)
+        {
+            return values != null && index < values.Length ? values[index] : -1;
+        }
+
+        /// <summary>Host: sends the vote's state to every client. Single player has nobody to tell.</summary>
+        private void BroadcastStageVote()
+        {
+            if (GameState.ActiveMode != GameMode.Host || stageVote == null) return;
+
+            var ids = new List<int>();
+            var choices = new List<int>();
+            foreach (KeyValuePair<int, int> vote in stageVote.Votes)
+            {
+                ids.Add(vote.Key);
+                choices.Add(vote.Value);
+            }
+
+            var state = new Networking.StageVoteState
+            {
+                enemyGroups = new[] { stageOptions[0].EnemyGroupIndex, stageOptions[1].EnemyGroupIndex },
+                rewards = new[] { stageOptions[0].RewardIndex, stageOptions[1].RewardIndex },
+                expectedVoters = stageVote.ExpectedVoters,
+                votePlayerIds = ids.ToArray(),
+                voteOptions = choices.ToArray(),
+                resolved = stageVote.Resolved,
+                chosen = stageVote.Chosen
+            };
+            Networking.NetworkManager.Instance.BroadcastStageVote(state);
+        }
+
+        private void RefreshStageVoteScreen()
+        {
+            if (stageVoteScreen == null || stageVote == null) return;
+
+            var parts = new List<string>();
+            for (int playerId = 0; playerId < stageVote.ExpectedVoters; playerId++)
+            {
+                string name = StageVoterName(playerId);
+                if (playerId == GameState.LocalPlayerId) name += " (you)";
+                parts.Add($"{name}: {(stageVote.HasVoted(playerId) ? "voted" : "...")}");
+            }
+            stageVoteScreen.SetStatus(string.Join("     ", parts));
+
+            bool localCanVote = !stageVote.Resolved && !stageVote.HasVoted(GameState.LocalPlayerId);
+            stageVoteScreen.SetCanVote(localCanVote);
+        }
+
+        /// <summary>Applies the chosen option: the enemy group and the reward for the coming level.</summary>
+        private void ApplyStageResult(int chosen)
+        {
+            if (stageOptions == null || chosen < 0 || chosen >= stageOptions.Length) return;
+
+            GameState.StageEnemyGroupIndex = stageOptions[chosen].EnemyGroupIndex;
+            GameState.StageRewardIndex = stageOptions[chosen].RewardIndex;
+        }
+
+        /// <summary>Runs once the result has been shown: closes the vote and continues (host / single player).</summary>
+        private void FinishStageVote()
+        {
+            System.Action done = stageVoteDone;
+            stageVoteDone = null;
+            DismissStageVoteScreen();
+            done?.Invoke();
+        }
+
+        private void DismissStageVoteScreen()
+        {
+            if (stageVoteScreen == null) return;
+            stageVoteScreen.OptionChosen -= OnLocalStageVoteChosen;
+            stageVoteScreen.Close();
+            stageVoteScreen = null;
+        }
+
+        private StageVoteScreen.OptionLabels[] BuildOptionLabels(StageOption[] options)
+        {
+            var rewards = RewardList();
+            var labels = new StageVoteScreen.OptionLabels[2];
+            for (int i = 0; i < labels.Length; i++)
+            {
+                StageOption option = options != null && i < options.Length ? options[i] : new StageOption(-1, -1);
+                labels[i] = new StageVoteScreen.OptionLabels
+                {
+                    EnemyTitle = EnemyGroupTitle(option.EnemyGroupIndex),
+                    EnemyDetail = EnemyGroupMembers(option.EnemyGroupIndex),
+                    RewardTitle = option.RewardIndex >= 0 && option.RewardIndex < rewards.Count ? rewards[option.RewardIndex].RewardName : "Nothing",
+                    RewardDetail = option.RewardIndex >= 0 && option.RewardIndex < rewards.Count ? rewards[option.RewardIndex].Description : ""
+                };
+            }
+            return labels;
+        }
+
+        private string EnemyGroupTitle(int index)
+        {
+            if (index < 0 || index >= enemyGroups.Count || enemyGroups[index] == null) return "Default enemies";
+            return enemyGroups[index].GroupName;
+        }
+
+        private string EnemyGroupMembers(int index)
+        {
+            if (index < 0 || index >= enemyGroups.Count || enemyGroups[index] == null) return "";
+
+            var names = new List<string>();
+            foreach (EnemyType member in enemyGroups[index].MemberTypes)
+            {
+                if (member == null) continue;
+                names.Add(string.IsNullOrEmpty(member.EnemyName) ? member.name : member.EnemyName);
+            }
+            return string.Join(", ", names);
+        }
+
+        private string StageVoterName(int playerId)
+        {
+            var lobby = LobbyManager.Instance.CurrentLobby;
+            if (lobby.HasValue)
+            {
+                foreach (var member in lobby.Value.Members)
+                {
+                    if (GameState.GetPlayerIndex(lobby.Value, member.Id) == playerId)
+                        return member.Name;
+                }
+            }
+            return $"Player {playerId + 1}";
+        }
+
+        /// <summary>The reward the chosen stage offers, as the pane it opens after victory.</summary>
+        private SpecialArea StageRewardArea()
+        {
+            var rewards = RewardList();
+            int index = GameState.StageRewardIndex;
+            if (index >= 0 && index < rewards.Count) return rewards[index].Area;
+            return GameState.RollSpecialArea(null);
+        }
+
+        /// <summary>The configured rewards, or the built-in Shop and Enchantment rewards when none are set.</summary>
+        private List<StageReward> RewardList()
+        {
+            var list = new List<StageReward>();
+            foreach (StageReward reward in stageRewards)
+            {
+                if (reward != null) list.Add(reward);
+            }
+            if (list.Count > 0) return list;
+
+            if (builtInRewards == null)
+            {
+                builtInRewards = new List<StageReward>
+                {
+                    MakeBuiltInReward("Shop", "Pick one of three pieces of equipment to add to your collection.", SpecialArea.Shop),
+                    MakeBuiltInReward("Enchantment", "Enchant one piece of your equipment.", SpecialArea.Enchant)
+                };
+            }
+            return builtInRewards;
+        }
+
+        private static StageReward MakeBuiltInReward(string name, string description, SpecialArea area)
+        {
+            var reward = ScriptableObject.CreateInstance<StageReward>();
+            reward.RewardName = name;
+            reward.Description = description;
+            reward.Area = area;
+            return reward;
+        }
+
+        private List<int> RewardIndices()
+        {
+            var indices = new List<int>();
+            for (int i = 0; i < RewardList().Count; i++) indices.Add(i);
+            return indices;
+        }
+
+        private List<int> ValidEnemyGroupIndices()
+        {
+            var indices = new List<int>();
+            for (int i = 0; i < enemyGroups.Count; i++)
+            {
+                if (IsUsableEnemyGroup(enemyGroups[i])) indices.Add(i);
+            }
+            return indices;
+        }
+
+        private static bool IsUsableEnemyGroup(EnemyGroup group)
+        {
+            return group != null && group.MemberTypes != null && group.MemberTypes.Count > 0;
+        }
+
+        /// <summary>Discards every player's hand into their discard pile.</summary>
+        private void DiscardPlayerHands()
+        {
+            var players = new List<Character>();
+            foreach (Character c in activeCharacters)
+            {
+                if (c == null || c.IsStructure) continue;
+                if (c.OwnerPlayerId >= GameState.EnemyOwnerPlayerId) continue;
+                players.Add(c);
+            }
+
+            foreach (Character player in players)
+                player.DiscardHand();
         }
 
         /// <summary>
@@ -1164,7 +1528,10 @@ namespace Game
             }
 
             if (state.victory)
+            {
+                GameState.CurrentSpecialArea = state.enchantArea ? SpecialArea.Enchant : SpecialArea.Shop;
                 ShowVictory();
+            }
             if (state.gameOver)
                 UI.GameOverScreen.Show();
         }

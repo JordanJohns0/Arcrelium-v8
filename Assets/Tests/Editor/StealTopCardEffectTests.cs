@@ -122,14 +122,14 @@ namespace Tests.Cards
                 victim.Deck.SetStartingCards(victimCards);
                 victim.Deck.Shuffle();
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < source.Hand.MaxCapacity; i++)
                     source.Hand.AddCard(new CardInstance(TestHelper.MakeCard("Held " + i)));
 
                 var context = Context(source, victim);
                 Assert.IsFalse(LoadStealAsset().CanExecute(context),
                     "Steal must be unplayable when the thief's hand is full.");
                 LoadStealAsset().Execute(context);
-                Assert.AreEqual(5, source.Hand.Cards.Count, "A full hand must not receive the stolen card.");
+                Assert.AreEqual(source.Hand.MaxCapacity, source.Hand.Cards.Count, "A full hand must not receive the stolen card.");
                 Assert.AreEqual(1, victim.Deck.DrawPile.Count, "The victim's deck must be untouched.");
             }
             finally

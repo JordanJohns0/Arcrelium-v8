@@ -21,13 +21,15 @@ namespace Characters
         [SerializeField] private CharacterStats stats = new CharacterStats();
         [SerializeField] private Deck deck = new Deck();
         [SerializeField] private EquipmentManager equipmentManager;
-        [SerializeField] private int maxHandSize = 5;
+        [SerializeField] private int maxHandSize = 10;
+        [SerializeField] private int cardsDrawnPerTurn = 5;
         [SerializeField] private Animator modelAnimator;
         [SerializeField] private bool isStructure;
 
         public CharacterStats Stats => stats;
         public Deck Deck => deck;
         public int MaxHandSize => maxHandSize;
+        public int CardsDrawnPerTurn => cardsDrawnPerTurn;
         public EquipmentManager Equipment => equipmentManager;
         public Hand Hand { get; private set; }
         public HexCell CurrentCell { get; private set; }
@@ -119,7 +121,13 @@ namespace Characters
                 modelAnimator.speed = GamePace.Speed;
         }
 
-        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 1, int teamId = -1, EquipmentLoadout loadout = null)
+        /// <summary>
+        /// Builds the character's deck and binds it to a cell. No opening hand is drawn by
+        /// default (<paramref name="startingHandSize"/> is 0): the first turn's
+        /// <see cref="DrawCardsForTurn"/> supplies the hand, so the player starts every turn —
+        /// including the first — with the same fixed draw.
+        /// </summary>
+        public void Initialize(int ownerPlayerId, HexCell startingCell, int startingHandSize = 0, int teamId = -1, EquipmentLoadout loadout = null)
         {
             OwnerPlayerId = ownerPlayerId;
             TeamId = teamId >= 0 ? teamId : (ownerPlayerId == 0 ? 0 : 1);
@@ -412,11 +420,12 @@ namespace Characters
             }
         }
 
-        /// <summary>Draws cards until the hand reaches the character's max hand size, adjusted
-        /// by any active draw-modifying statuses.</summary>
-        public void DrawToHandLimit()
+        /// <summary>Draws the character's per-turn draw amount (a fixed number of cards, not up
+        /// to the hand limit), adjusted by any active draw-modifying statuses. The hand may hold
+        /// more than this between turns, up to <see cref="MaxHandSize"/>.</summary>
+        public void DrawCardsForTurn()
         {
-            DrawCards(GetModifiedDrawCount(maxHandSize));
+            DrawCards(GetModifiedDrawCount(cardsDrawnPerTurn));
         }
 
         // ------------------------------------------------------------ statuses
@@ -497,6 +506,9 @@ namespace Characters
         {
             if (Hand == null || deck == null) return;
             if (!Hand.RemoveCard(card)) return;
+            // Leaving the hand (played, paid as a cost, or discarded at end of turn) drops any
+            // in-hand cost modification, so a card that later returns to a hand starts clean.
+            card.ResetCost();
             deck.Discard(card);
             OnCardDiscarded?.Invoke(this, card);
         }
@@ -577,22 +589,38 @@ namespace Characters
         /// </summary>
         public void RebuildHand(string[] cardNames)
         {
-            foreach (CardInstance card in new List<CardInstance>(Hand.Cards))
-                Hand.RemoveCard(card);
+            // Reuse the instances already in hand where the names match, so a card that is still
+            // there keeps its identity (no spurious draw/discard animation on the client).
+            var existing = new List<CardInstance>(Hand.Cards);
+            var rebuilt = new List<CardInstance>();
 
-            if (cardNames == null) return;
-            foreach (string name in cardNames)
+            if (cardNames != null)
             {
-                if (string.IsNullOrEmpty(name)) continue;
-                CardData data = deck != null ? deck.GetCardDataByName(name) : null;
-                if (data == null)
+                foreach (string name in cardNames)
                 {
-                    var library = GameDataLibrary.Instance;
-                    if (library != null) data = library.GetCardByName(name);
+                    if (string.IsNullOrEmpty(name)) continue;
+
+                    CardInstance reuse = existing.Find(c => c.Data != null && c.Data.CardName == name);
+                    if (reuse != null)
+                    {
+                        existing.Remove(reuse);
+                        reuse.ResetCost();
+                        rebuilt.Add(reuse);
+                        continue;
+                    }
+
+                    CardData data = deck != null ? deck.GetCardDataByName(name) : null;
+                    if (data == null)
+                    {
+                        var library = GameDataLibrary.Instance;
+                        if (library != null) data = library.GetCardByName(name);
+                    }
+                    if (data != null)
+                        rebuilt.Add(new CardInstance(data));
                 }
-                if (data != null)
-                    Hand.AddCard(new CardInstance(data));
             }
+
+            Hand.SetCards(rebuilt);
         }
 
         public void SetPlayerColor(Color color)

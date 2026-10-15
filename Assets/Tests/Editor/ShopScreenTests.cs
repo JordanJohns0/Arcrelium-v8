@@ -69,15 +69,13 @@ namespace Tests.UI
             return data;
         }
 
-        private ShopPool MakePool(params ShopEntry[] entries)
+        private ShopPool MakePool(params EquipmentData[] stock)
         {
             var pool = Track(ScriptableObject.CreateInstance<ShopPool>()) as ShopPool;
-            pool.stock.AddRange(entries);
+            pool.stock.AddRange(stock);
             ShopPool.SetMain(pool);
             return pool;
         }
-
-        private static ShopEntry Entry(EquipmentData item, int price) => new ShopEntry { item = item, price = price };
 
         /// <summary>The pane the shop fills, mirroring the scene's "Special" column.</summary>
         private RectTransform MakeOffersPanel()
@@ -86,9 +84,9 @@ namespace Tests.UI
             return go.GetComponent<RectTransform>();
         }
 
-        private TMP_Text MakeGoldLabel()
+        private TMP_Text MakeLabel(string name)
         {
-            var go = Track(new GameObject("Gold Number Display", typeof(TextMeshProUGUI))) as GameObject;
+            var go = Track(new GameObject(name, typeof(TextMeshProUGUI))) as GameObject;
             return go.GetComponent<TMP_Text>();
         }
 
@@ -110,81 +108,122 @@ namespace Tests.UI
             return names;
         }
 
-        private static ShopScreen Bind(RectTransform panel, TMP_Text gold, GameObject prefab)
-            => ShopScreen.Attach(panel, prefab, gold);
+        private static ShopScreen Bind(RectTransform panel, GameObject prefab)
+            => ShopScreen.Attach(panel, prefab);
 
-        private static Button BuyButton(RectTransform panel)
-            => panel.GetChild(0).GetComponentInChildren<Button>();
+        private static Button PickButton(RectTransform panel, int index)
+            => panel.GetChild(index).GetComponentInChildren<Button>();
+
+        private static TMP_Text TileLabel(RectTransform panel, int index)
+            => panel.GetChild(index).Find("Status").GetComponent<TMP_Text>();
 
         [Test]
-        public void Attach_Show_PopulatesOffersAndGoldInPanel()
+        public void Show_OffersThreeItems_AsInventoryStyleTiles()
         {
-            inventory.AddGold(50);
-            MakePool(Entry(MakeEquipment("Sword"), 10));
+            MakePool(MakeEquipment("A"), MakeEquipment("B"), MakeEquipment("C"), MakeEquipment("D"));
             var panel = MakeOffersPanel();
-            var gold = MakeGoldLabel();
-            var prefab = MakeTilePrefab();
 
-            ShopScreen screen = Bind(panel, gold, prefab);
-            screen.Show();
+            Bind(panel, MakeTilePrefab()).Show();
 
-            Assert.AreEqual("50", gold.text, "Show must write the player's gold to the display.");
-            Assert.AreEqual(1, panel.childCount, "Shop must spawn one tile per offer.");
+            Assert.AreEqual(3, panel.childCount, "The shop must offer exactly three items.");
             var slot = panel.GetChild(0).GetComponent<InventorySlotUI>();
             Assert.IsNotNull(slot, "Tiles must reuse the Inventory Slot prefab.");
             Assert.IsFalse(slot.Interactable, "Shop tiles must not be draggable.");
-            Assert.AreEqual("Sword", slot.EquipmentData.EquipmentName, "Tile must show the offered item.");
+            Assert.AreEqual("", TileLabel(panel, 0).text,
+                "Tiles carry no caption: the equipment slot already shows the name.");
         }
 
         [Test]
-        public void BuyTile_Affordable_UnlocksDeductsAndRefreshes()
+        public void Show_FewerThanThreeAvailable_OffersWhatExists()
         {
-            inventory.AddGold(50);
-            var sword = MakeEquipment("Sword");
-            MakePool(Entry(sword, 10));
+            MakePool(MakeEquipment("A"), MakeEquipment("B"));
             var panel = MakeOffersPanel();
-            var gold = MakeGoldLabel();
-            var prefab = MakeTilePrefab();
 
-            Bind(panel, gold, prefab).Show();
+            Bind(panel, MakeTilePrefab()).Show();
 
-            BuyButton(panel).onClick.Invoke();
-
-            Assert.IsTrue(inventory.IsUnlocked(sword), "Buying must unlock the item.");
-            Assert.AreEqual(40, inventory.Gold, "Buying must deduct the item's price.");
-            Assert.AreEqual(1, savedCount, "Buying must persist the inventory.");
-            Assert.AreEqual("40", gold.text, "Gold display must update after a purchase.");
-            Assert.AreEqual(0, panel.childCount, "An owned offer must disappear from the shop.");
+            Assert.AreEqual(2, panel.childCount, "With two items available the shop offers both.");
         }
 
         [Test]
-        public void BuyTile_TooExpensive_DoesNothing()
+        public void Attach_Show_WritesTitleAndDescriptionIntoSuppliedLabels()
         {
-            inventory.AddGold(5);
-            var sword = MakeEquipment("Sword");
-            MakePool(Entry(sword, 10));
+            MakePool(MakeEquipment("Sword"));
             var panel = MakeOffersPanel();
-            var gold = MakeGoldLabel();
-            var prefab = MakeTilePrefab();
+            var title = MakeLabel("Special Title");
+            var description = MakeLabel("Special Description");
 
-            Bind(panel, gold, prefab).Show();
+            ShopScreen screen = ShopScreen.Attach(panel, MakeTilePrefab(), title, description);
+            screen.Show();
 
-            BuyButton(panel).onClick.Invoke();
+            Assert.IsFalse(string.IsNullOrEmpty(title.text),
+                "The shop must write its heading into the Special page's title label.");
+            Assert.IsFalse(string.IsNullOrEmpty(description.text),
+                "The shop must write a description into the Special page's description label.");
+        }
 
-            Assert.IsFalse(inventory.IsUnlocked(sword), "An unaffordable item must not be unlocked.");
-            Assert.AreEqual(5, inventory.Gold, "An unaffordable purchase must not change the balance.");
-            Assert.AreEqual(0, savedCount, "A failed purchase must not persist.");
-            Assert.AreEqual(1, panel.childCount, "An unaffordable offer must remain for another try.");
+        [Test]
+        public void Pick_UnlocksChosenItemAndPersists_WithoutAnyGold()
+        {
+            var sword = MakeEquipment("Sword");
+            MakePool(sword, MakeEquipment("B"), MakeEquipment("C"));
+            var panel = MakeOffersPanel();
+            Bind(panel, MakeTilePrefab()).Show();
+
+            int swordIndex = TileItemNames(panel).IndexOf("Sword");
+            PickButton(panel, swordIndex).onClick.Invoke();
+
+            Assert.IsTrue(inventory.IsUnlocked(sword), "Picking an offer must give the player that item.");
+            Assert.AreEqual(1, savedCount, "Picking must persist the inventory.");
+            Assert.AreEqual("Chosen", TileLabel(panel, swordIndex).text,
+                "The chosen tile must say it was chosen.");
+        }
+
+        [Test]
+        public void Pick_LocksTheOtherOffers_AndDoesNotReshuffle()
+        {
+            MakePool(MakeEquipment("A"), MakeEquipment("B"), MakeEquipment("C"));
+            var panel = MakeOffersPanel();
+            Bind(panel, MakeTilePrefab()).Show();
+            var before = TileItemNames(panel);
+
+            PickButton(panel, 0).onClick.Invoke();
+
+            CollectionAssert.AreEqual(before, TileItemNames(panel),
+                "Picking must not replace or reshuffle the offers.");
+            Assert.AreEqual(3, panel.childCount, "No replacement offer may slide in after a pick.");
+            for (int i = 0; i < panel.childCount; i++)
+            {
+                Assert.IsFalse(PickButton(panel, i).interactable,
+                    $"Offer {i} must be locked once one offer has been taken.");
+                float expected = i == 0 ? 1f : 0.35f;
+                Assert.AreEqual(expected, panel.GetChild(i).GetComponent<CanvasGroup>().alpha, 0.001f,
+                    i == 0 ? "The taken offer stays opaque." : "Offers that were not taken must lose opacity.");
+            }
+        }
+
+        [Test]
+        public void Pick_OnlyOnce_SecondPickIsIgnored()
+        {
+            var first = MakeEquipment("A");
+            var second = MakeEquipment("B");
+            MakePool(first, second);
+            var panel = MakeOffersPanel();
+            Bind(panel, MakeTilePrefab()).Show();
+
+            PickButton(panel, 0).onClick.Invoke();
+            PickButton(panel, 1).onClick.Invoke();
+
+            Assert.IsTrue(inventory.IsUnlocked(first));
+            Assert.IsFalse(inventory.IsUnlocked(second), "Only one offer may be taken per shop.");
+            Assert.AreEqual(1, savedCount, "The second pick must not persist anything.");
         }
 
         [Test]
         public void NoOffers_LeavesPanelEmpty()
         {
             var panel = MakeOffersPanel();
-            var gold = MakeGoldLabel();
-            var prefab = MakeTilePrefab();
 
-            Bind(panel, gold, prefab).Show();
+            Bind(panel, MakeTilePrefab()).Show();
 
             Assert.AreEqual(0, panel.childCount, "An empty pool must show no shop tiles.");
         }
@@ -192,20 +231,16 @@ namespace Tests.UI
         [Test]
         public void ShopTile_RightClick_ShowsEquipmentTooltip()
         {
-            inventory.AddGold(50);
             var sword = MakeEquipment("Sword");
-            MakePool(Entry(sword, 10));
+            MakePool(sword);
             var panel = MakeOffersPanel();
-            var gold = MakeGoldLabel();
-            var prefab = MakeTilePrefab();
-
-            Bind(panel, gold, prefab).Show();
+            Bind(panel, MakeTilePrefab()).Show();
 
             Transform tile = panel.GetChild(0);
             var slot = tile.GetComponent<InventorySlotUI>();
             Assert.IsFalse(slot.Interactable, "Shop tiles stay non-draggable.");
             Assert.IsNotNull(tile.GetComponent<Button>(),
-                "The buy button belongs on the tile itself so right-clicks still reach the slot.");
+                "The pick button belongs on the tile itself so right-clicks still reach the slot.");
 
             var tooltipGo = Track(new GameObject("Tooltip", typeof(Tooltip))) as GameObject;
             var tooltip = tooltipGo.GetComponent<Tooltip>();
@@ -225,30 +260,27 @@ namespace Tests.UI
             {
                 if (tmp.text == "Sword") showsName = true;
             }
-            Assert.IsTrue(showsName,
-                "Right-clicking a shop tile must show the offered item's tooltip.");
+            Assert.IsTrue(showsName, "Right-clicking a shop tile must show the offered item's tooltip.");
         }
 
         [Test]
         public void Show_OffersAreStablePerRunSeed_ButChangeWithNewRun()
         {
-            inventory.AddGold(100);
             MakePool(
-                Entry(MakeEquipment("A"), 10),
-                Entry(MakeEquipment("B"), 10),
-                Entry(MakeEquipment("C"), 10),
-                Entry(MakeEquipment("D"), 10),
-                Entry(MakeEquipment("E"), 10));
+                MakeEquipment("A"),
+                MakeEquipment("B"),
+                MakeEquipment("C"),
+                MakeEquipment("D"),
+                MakeEquipment("E"));
             var panel = MakeOffersPanel();
-            var gold = MakeGoldLabel();
             var prefab = MakeTilePrefab();
 
             GameState.CurrentLevel = 1;
             GameState.ShopSeed = 111;
-            ShopScreen screen = Bind(panel, gold, prefab);
+            ShopScreen screen = Bind(panel, prefab);
             screen.Show();
             var first = TileItemNames(panel);
-            Assert.AreEqual(4, first.Count, "The shop fills its offer count.");
+            Assert.AreEqual(3, first.Count, "The shop fills its offer count.");
 
             screen.Show();
             CollectionAssert.AreEqual(first, TileItemNames(panel),

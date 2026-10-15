@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Equipment;
+using Game;
 using UI;
 
 namespace Tests.UI
@@ -57,18 +58,6 @@ namespace Tests.UI
             return inventory;
         }
 
-        /// <summary>Mirrors the scene structure: Equipment UI > Gold Display > Gold Number Display.</summary>
-        private TMP_Text AddGoldDisplay(GameObject equipmentUiGo)
-        {
-            var goldGo = new GameObject("Gold Display", typeof(RectTransform));
-            goldGo.transform.SetParent(equipmentUiGo.transform);
-            owned.Add(goldGo);
-            var numberGo = new GameObject("Gold Number Display", typeof(RectTransform), typeof(TextMeshProUGUI));
-            numberGo.transform.SetParent(goldGo.transform);
-            owned.Add(numberGo);
-            return numberGo.GetComponent<TMP_Text>();
-        }
-
         [Test]
         public void EquipmentUI_Awake_DeactivatesGameObject()
         {
@@ -109,37 +98,75 @@ namespace Tests.UI
         }
 
         [Test]
-        public void EquipmentUI_ResolvesSpecialPanelAndGoldNumberDisplay()
+        public void EquipmentUI_ResolvesSpecialPanel()
         {
             var go = CreateEquipmentUIGo();
+            var page = new GameObject("Special Page", typeof(RectTransform));
+            page.transform.SetParent(go.transform, false);
+            owned.Add(page);
             var special = new GameObject("Special", typeof(RectTransform));
-            special.transform.SetParent(go.transform);
+            special.transform.SetParent(page.transform, false);
             owned.Add(special);
-            var label = AddGoldDisplay(go);
             var ui = go.GetComponent<EquipmentUI>();
 
-            Assert.IsNotNull(label,
-                "Gold Number Display must carry a concrete TMP component.");
             Assert.AreSame(special.transform, ui.ShopPanel,
-                "ShopPanel must resolve the 'Special' column the shop fills.");
-            Assert.AreSame(label, ui.GoldLabel,
-                "GoldLabel must resolve the Gold Display's number TMP.");
+                "ShopPanel must resolve the nested 'Special' column the shop fills.");
         }
 
         [Test]
-        public void EquipmentUI_InventoryGoldChange_UpdatesGoldNumberDisplay()
+        public void EquipmentUI_ResolvesSpecialTitleAndDescriptionLabels()
         {
             var go = CreateEquipmentUIGo();
-            var label = AddGoldDisplay(go);
+            var page = new GameObject("Special Page", typeof(RectTransform));
+            page.transform.SetParent(go.transform, false);
+            owned.Add(page);
+
+            var title = new GameObject("Special Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+            title.transform.SetParent(page.transform, false);
+            owned.Add(title);
+            var description = new GameObject("Special Description", typeof(RectTransform), typeof(TextMeshProUGUI));
+            description.transform.SetParent(page.transform, false);
+            owned.Add(description);
+
             var ui = go.GetComponent<EquipmentUI>();
-            var inventory = CreateInventory();
-            inventory.AddGold(40);
 
-            ui.SetInventory(inventory);
-            inventory.AddGold(10);
+            Assert.AreSame(title.GetComponent<TMP_Text>(), ui.SpecialTitleLabel,
+                "SpecialTitleLabel must resolve the 'Special Title' TMP under the Special page.");
+            Assert.AreSame(description.GetComponent<TMP_Text>(), ui.SpecialDescriptionLabel,
+                "SpecialDescriptionLabel must resolve the 'Special Description' TMP under the Special page.");
+        }
 
-            Assert.AreEqual("50", label.text,
-                "An inventory change must refresh the gold display to the current balance.");
+        [Test]
+        public void EquipmentUI_ApplySpecialArea_SwapsSpecialTabIcon()
+        {
+            var go = CreateEquipmentUIGo();
+            var bookmarks = new GameObject("Bookmarks", typeof(RectTransform));
+            bookmarks.transform.SetParent(go.transform, false);
+            owned.Add(bookmarks);
+
+            var tab = new GameObject("Special Tab", typeof(RectTransform));
+            tab.transform.SetParent(bookmarks.transform, false);
+            owned.Add(tab);
+
+            var iconGo = new GameObject("Image", typeof(RectTransform), typeof(Image));
+            iconGo.transform.SetParent(tab.transform, false);
+            owned.Add(iconGo);
+            var icon = iconGo.GetComponent<Image>();
+
+            Sprite shop = MakeSprite("Icon_Shop");
+            Sprite enchant = MakeSprite("Icon_Enchant");
+
+            var ui = go.GetComponent<EquipmentUI>();
+            SetPrivateField(ui, "specialShopIcon", shop);
+            SetPrivateField(ui, "specialEnchantIcon", enchant);
+
+            ui.ApplySpecialArea(SpecialArea.Enchant);
+            Assert.AreSame(enchant, icon.sprite,
+                "The Enchant area must swap the Special tab icon to the enchant sprite.");
+
+            ui.ApplySpecialArea(SpecialArea.Shop);
+            Assert.AreSame(shop, icon.sprite,
+                "The Shop area must swap the Special tab icon to the shop sprite.");
         }
 
         [Test]
@@ -182,7 +209,7 @@ namespace Tests.UI
 
             var inventoryPage = AddPage(go, "Inventory Slots");
             var deckPage = AddPage(go, "Decklist");
-            var specialPage = AddPage(go, "Special");
+            var specialPage = AddPage(go, "Special Page");
 
             var bookmarks = new GameObject("Bookmarks", typeof(RectTransform));
             bookmarks.transform.SetParent(go.transform, false);

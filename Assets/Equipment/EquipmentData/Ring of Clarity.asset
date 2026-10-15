@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.EquipmentData
   EquipmentName: Ring of Clarity
   Description: 
-  Icon: {fileID: 21300000, guid: 8f24757e8a18405499490210ef06704c, type: 3}
+  Icon: {fileID: 21300000, guid: 45f4f61f3b6b6794e8d56757bca3d495, type: 3}
   SlotType: 4
   Cards:
   - {fileID: 11400000, guid: 834fb79ddbee55e46b0a31b8a28dae86, type: 2}

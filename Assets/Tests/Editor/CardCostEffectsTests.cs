@@ -57,6 +57,58 @@ namespace Tests.Cards
         }
 
         [Test]
+        public void CardInstance_ResetCost_RestoresBaseCost()
+        {
+            var data = SelfCard("Priced", 3);
+            var instance = new CardInstance(data);
+
+            instance.Cost = 0;
+            Assert.IsTrue(instance.IsCostModified);
+
+            instance.ResetCost();
+
+            Assert.AreEqual(3, instance.Cost);
+            Assert.IsFalse(instance.IsCostModified);
+        }
+
+        [Test]
+        public void DiscardFromHand_ResetsModifiedCost()
+        {
+            var card = new CardInstance(SelfCard("Echo", 3));
+            source.Hand.AddCard(card);
+            card.Cost = 1;
+
+            source.DiscardFromHand(card);
+
+            Assert.AreEqual(3, card.Cost, "Discarding a card drops its in-hand cost change.");
+            CollectionAssert.Contains(GetDeck().DiscardPile, card);
+        }
+
+        [Test]
+        public void PlayCard_ResetsPlayedCardsModifiedCost()
+        {
+            var resolverGo = new GameObject("Resolver");
+            try
+            {
+                var resolver = resolverGo.AddComponent<ActionResolver>();
+
+                var card = new CardInstance(SelfCard("Priced", 2));
+                card.Cost = 0; // discounted in hand
+                source.Hand.AddCard(card);
+
+                bool played = resolver.PlayCard(source, card);
+
+                Assert.IsTrue(played);
+                Assert.AreEqual(2, card.Cost, "A played card drops its in-hand cost change.");
+                CollectionAssert.Contains(GetDeck().DiscardPile, card);
+            }
+            finally
+            {
+                Object.DestroyImmediate(resolverGo);
+            }
+        }
+
+        [Test]
         public void SetRandomCostModifier_ChangesTheContextCardCost()
         {
             var modifier = ScriptableObject.CreateInstance<SetRandomCostModifier>();
@@ -273,6 +325,82 @@ namespace Tests.Cards
                 Assert.AreEqual(blockBefore + 3, source.Stats.Block,
                     "Discarding the card should play it for free without paying a cost.");
                 Assert.IsFalse(source.Hand.Contains(card));
+            }
+            finally
+            {
+                Object.DestroyImmediate(arGo);
+                Object.DestroyImmediate(tmGo);
+            }
+        }
+
+        [Test]
+        public void TurnManager_PlayingDiscardPlayCardFromHand_ResolvesOnce()
+        {
+            var tmGo = new GameObject("TurnManager");
+            var arGo = new GameObject("ActionResolver");
+            try
+            {
+                TurnManager turnManager = tmGo.AddComponent<TurnManager>();
+                ActionResolver resolver = arGo.AddComponent<ActionResolver>();
+                typeof(TurnManager).GetField("actionResolver", BindingFlags.NonPublic | BindingFlags.Instance)
+                    .SetValue(turnManager, resolver);
+
+                turnManager.SetTurnOrder(new List<Character> { source });
+                turnManager.StartMatch();
+
+                var block = ScriptableObject.CreateInstance<GainBlockEffect>();
+                block.Amount = CardValue.MakeConstant(3);
+                var data = TestHelper.MakeCard("Echo", 0, TestHelper.Step(block, TargetType.Self));
+                data.PlaysOnDiscard = true;
+                var card = new CardInstance(data);
+                source.Hand.AddCard(card);
+
+                int blockBefore = source.Stats.Block;
+                turnManager.PlayCard(card);
+
+                Assert.AreEqual(blockBefore + 3, source.Stats.Block,
+                    "A discard-play card played from hand must resolve once, not again as a discard trigger.");
+                Assert.IsFalse(source.Hand.Contains(card));
+            }
+            finally
+            {
+                Object.DestroyImmediate(arGo);
+                Object.DestroyImmediate(tmGo);
+            }
+        }
+
+        [Test]
+        public void TurnManager_AfterEndMatch_DiscardsDoNotReplayAndPlaysAreRefused()
+        {
+            var tmGo = new GameObject("TurnManager");
+            var arGo = new GameObject("ActionResolver");
+            try
+            {
+                TurnManager turnManager = tmGo.AddComponent<TurnManager>();
+                ActionResolver resolver = arGo.AddComponent<ActionResolver>();
+                typeof(TurnManager).GetField("actionResolver", BindingFlags.NonPublic | BindingFlags.Instance)
+                    .SetValue(turnManager, resolver);
+
+                turnManager.SetTurnOrder(new List<Character> { source });
+                turnManager.StartMatch();
+
+                var block = ScriptableObject.CreateInstance<GainBlockEffect>();
+                block.Amount = CardValue.MakeConstant(3);
+                var data = TestHelper.MakeCard("Echo", 0, TestHelper.Step(block, TargetType.Self));
+                data.PlaysOnDiscard = true;
+
+                turnManager.EndMatch();
+
+                var discarded = new CardInstance(data);
+                source.Hand.AddCard(discarded);
+                int blockBefore = source.Stats.Block;
+                source.DiscardFromHand(discarded);
+                Assert.AreEqual(blockBefore, source.Stats.Block,
+                    "Once the match is decided, discarding (e.g. clearing the hand) must not replay cards.");
+
+                var played = new CardInstance(data);
+                source.Hand.AddCard(played);
+                Assert.IsFalse(turnManager.PlayCard(played), "No card can be played once the match is decided.");
             }
             finally
             {

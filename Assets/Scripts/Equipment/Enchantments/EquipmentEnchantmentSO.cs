@@ -19,6 +19,11 @@ namespace Equipment
         public string EnchantmentName = "New Enchantment";
         [TextArea] public string Description;
 
+        /// <summary>How an enchantment is shown to the player: "Name: Description" (just the name when there is no description).</summary>
+        public string DisplayLine => string.IsNullOrEmpty(Description)
+            ? EnchantmentName
+            : $"{EnchantmentName}: {Description}";
+
         /// <summary>Called when the enchanted equipment is put on.</summary>
         public virtual void OnEquipped(EquipmentInstance equipment, Character wearer) { }
 

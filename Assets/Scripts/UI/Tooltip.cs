@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -34,6 +35,13 @@ namespace UI
         [SerializeField] private int descriptionFontSize = 24;
         [SerializeField] private Color descriptionColor = new Color(0.8f, 0.8f, 0.8f, 1f);
 
+        [Header("Enchantments Section")]
+        [SerializeField] private int enchantHeaderFontSize = 27;
+        [SerializeField] private Color enchantHeaderColor = new Color(1f, 0.85f, 0.3f, 1f);
+        [SerializeField] private string enchantHeaderText = "Enchantments:";
+        [SerializeField] private int enchantFontSize = 22;
+        [SerializeField] private Color enchantColor = new Color(1f, 0.92f, 0.7f, 1f);
+
         [Header("Cards Section")]
         [SerializeField] private int cardsHeaderFontSize = 27;
         [SerializeField] private Color cardsHeaderColor = new Color(0.6f, 0.8f, 1f, 1f);
@@ -49,6 +57,8 @@ namespace UI
         private RectTransform panel;
         private TMP_Text headerText;
         private TMP_Text descriptionText;
+        private TMP_Text enchantHeader;
+        private TMP_Text enchantText;
         private TMP_Text cardsHeader;
         private TMP_Text cardsText;
 
@@ -119,6 +129,23 @@ namespace UI
             descriptionText.color = descriptionColor;
             descriptionText.textWrappingMode = TextWrappingModes.Normal;
             descriptionText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
+
+            var enchObj = new GameObject("EnchantHeader", typeof(TextMeshProUGUI));
+            enchObj.transform.SetParent(panel, false);
+            enchantHeader = enchObj.GetComponent<TextMeshProUGUI>();
+            enchantHeader.fontSize = enchantHeaderFontSize;
+            enchantHeader.fontStyle = FontStyles.Bold;
+            enchantHeader.color = enchantHeaderColor;
+            enchantHeader.text = enchantHeaderText;
+            enchantHeader.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
+
+            var enchTextObj = new GameObject("EnchantList", typeof(TextMeshProUGUI));
+            enchTextObj.transform.SetParent(panel, false);
+            enchantText = enchTextObj.GetComponent<TextMeshProUGUI>();
+            enchantText.fontSize = enchantFontSize;
+            enchantText.color = enchantColor;
+            enchantText.textWrappingMode = TextWrappingModes.Normal;
+            enchantText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, textWidth);
 
             var chObj = new GameObject("CardsHeader", typeof(TextMeshProUGUI));
             chObj.transform.SetParent(panel, false);
@@ -193,13 +220,35 @@ namespace UI
             panel.anchoredPosition = pos;
         }
 
-        public static void Show(EquipmentData data, Vector2 screenPosition)
+        /// <param name="enchantments">Enchantments applied to this piece (shown as "Name: Desc"). Null or empty hides the section.</param>
+        public static void Show(EquipmentData data, Vector2 screenPosition,
+            IReadOnlyList<EquipmentEnchantmentSO> enchantments = null)
         {
             var tip = GetOrCreate();
             if (tip == null || tip.canvasRoot == null) return;
 
             tip.headerText.text = data.EquipmentName;
             tip.descriptionText.text = data.Description;
+
+            if (enchantments != null && enchantments.Count > 0)
+            {
+                tip.enchantHeader.gameObject.SetActive(true);
+                tip.enchantText.gameObject.SetActive(true);
+                var sb = new System.Text.StringBuilder();
+                for (int i = 0; i < enchantments.Count; i++)
+                {
+                    if (enchantments[i] == null) continue;
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(enchantments[i].DisplayLine);
+                }
+                tip.enchantText.text = sb.ToString();
+            }
+            else
+            {
+                tip.enchantHeader.gameObject.SetActive(false);
+                tip.enchantText.gameObject.SetActive(false);
+                tip.enchantText.text = "";
+            }
 
             if (data.Cards != null && data.Cards.Count > 0)
             {
@@ -235,6 +284,8 @@ namespace UI
 
             tip.headerText.text = $"{card.CardName} - Cost: {card.Cost}";
             tip.descriptionText.text = card.Description;
+            tip.enchantHeader.gameObject.SetActive(false);
+            tip.enchantText.gameObject.SetActive(false);
             tip.cardsHeader.gameObject.SetActive(false);
             tip.cardsText.text = "";
 

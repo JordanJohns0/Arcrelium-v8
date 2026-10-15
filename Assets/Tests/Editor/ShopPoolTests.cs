@@ -55,23 +55,20 @@ namespace Tests.Equipment
             return inventory;
         }
 
-        private ShopPool MakePool(params ShopEntry[] entries)
+        private ShopPool MakePool(params EquipmentData[] stock)
         {
             var pool = ScriptableObject.CreateInstance<ShopPool>();
-            pool.stock.AddRange(entries);
+            pool.stock.AddRange(stock);
             tracked.Add(pool);
             return pool;
         }
-
-        private static ShopEntry Entry(EquipmentData item, int price) => new ShopEntry { item = item, price = price };
 
         [Test]
         public void Offers_ExcludesOwnedItems()
         {
             var owned = MakeEquipment(EquipmentSlotType.Head, "Owned");
             var fresh = MakeEquipment(EquipmentSlotType.Hand, "Fresh");
-            var pool = MakePool(Entry(owned, 10), Entry(fresh, 10));
-            ShopPool.SetMain(pool);
+            ShopPool.SetMain(MakePool(owned, fresh));
 
             var inventory = MakeInventory();
             inventory.Unlock(owned);
@@ -87,8 +84,7 @@ namespace Tests.Equipment
         {
             var equipped = MakeEquipment(EquipmentSlotType.Trinket, "Worn");
             var fresh = MakeEquipment(EquipmentSlotType.Head, "Fresh");
-            var pool = MakePool(Entry(equipped, 10), Entry(fresh, 10));
-            ShopPool.SetMain(pool);
+            ShopPool.SetMain(MakePool(equipped, fresh));
 
             var inventory = MakeInventory();
             inventory.Loadout.Set(EquipmentSlotType.Trinket, 0, equipped);
@@ -97,32 +93,6 @@ namespace Tests.Equipment
 
             Assert.AreEqual(1, offers.Count);
             Assert.AreSame(fresh, offers[0].Item);
-        }
-
-        [Test]
-        public void Offers_UsesAuthoredPrice()
-        {
-            var item = MakeEquipment(EquipmentSlotType.Hand, "Sword");
-            var pool = MakePool(Entry(item, 42));
-            ShopPool.SetMain(pool);
-
-            var offers = ShopPool.Offers(MakeInventory(), 4, new System.Random(1));
-
-            Assert.AreEqual(1, offers.Count);
-            Assert.AreEqual(42, offers[0].Price);
-        }
-
-        [Test]
-        public void Offers_ZeroPriceEntry_DerivesPrice()
-        {
-            var item = MakeEquipment(EquipmentSlotType.Hand, "Sword", cardCount: 2);
-            var pool = MakePool(Entry(item, 0));
-            ShopPool.SetMain(pool);
-
-            var offers = ShopPool.Offers(MakeInventory(), 4, new System.Random(1));
-
-            Assert.AreEqual(1, offers.Count);
-            Assert.AreEqual(ShopPricing.PriceFor(item), offers[0].Price);
         }
 
         [Test]
@@ -135,8 +105,7 @@ namespace Tests.Equipment
             rewardPool.rewards.AddRange(new[] { a, b });
             RewardPool.SetMain(rewardPool);
 
-            var shopPool = MakePool(); // no authored stock
-            ShopPool.SetMain(shopPool);
+            ShopPool.SetMain(MakePool()); // no authored stock
 
             var offers = ShopPool.Offers(MakeInventory(), 4, new System.Random(1));
 
@@ -146,26 +115,37 @@ namespace Tests.Equipment
         [Test]
         public void Offers_LimitedToCount()
         {
-            var pool = MakePool(
-                Entry(MakeEquipment(EquipmentSlotType.Head, "A"), 10),
-                Entry(MakeEquipment(EquipmentSlotType.Hand, "B"), 10),
-                Entry(MakeEquipment(EquipmentSlotType.Chest, "C"), 10),
-                Entry(MakeEquipment(EquipmentSlotType.Feet, "D"), 10));
-            ShopPool.SetMain(pool);
+            ShopPool.SetMain(MakePool(
+                MakeEquipment(EquipmentSlotType.Head, "A"),
+                MakeEquipment(EquipmentSlotType.Hand, "B"),
+                MakeEquipment(EquipmentSlotType.Chest, "C"),
+                MakeEquipment(EquipmentSlotType.Feet, "D")));
 
-            var offers = ShopPool.Offers(MakeInventory(), 2, new System.Random(1));
+            var offers = ShopPool.Offers(MakeInventory(), 3, new System.Random(1));
 
-            Assert.AreEqual(2, offers.Count);
+            Assert.AreEqual(3, offers.Count, "The shop offers exactly three items when enough are available.");
+        }
+
+        [Test]
+        public void Offers_NeverRepeatsAnItem()
+        {
+            var a = MakeEquipment(EquipmentSlotType.Head, "A");
+            var b = MakeEquipment(EquipmentSlotType.Hand, "B");
+            ShopPool.SetMain(MakePool(a, a, b));
+
+            var offers = ShopPool.Offers(MakeInventory(), 3, new System.Random(1));
+
+            Assert.AreEqual(2, offers.Count, "A duplicated stock entry must only be offered once.");
+            CollectionAssert.AreEquivalent(new[] { a, b }, offers.Select(o => o.Item).ToArray());
         }
 
         [Test]
         public void Offers_SeededRng_IsDeterministic()
         {
-            var pool = MakePool(
-                Entry(MakeEquipment(EquipmentSlotType.Head, "A"), 10),
-                Entry(MakeEquipment(EquipmentSlotType.Hand, "B"), 10),
-                Entry(MakeEquipment(EquipmentSlotType.Chest, "C"), 10));
-            ShopPool.SetMain(pool);
+            ShopPool.SetMain(MakePool(
+                MakeEquipment(EquipmentSlotType.Head, "A"),
+                MakeEquipment(EquipmentSlotType.Hand, "B"),
+                MakeEquipment(EquipmentSlotType.Chest, "C")));
 
             var first = ShopPool.Offers(MakeInventory(), 3, new System.Random(99));
             var second = ShopPool.Offers(MakeInventory(), 3, new System.Random(99));
@@ -179,40 +159,24 @@ namespace Tests.Equipment
         public void Offers_AllOwned_ReturnsEmpty()
         {
             var a = MakeEquipment(EquipmentSlotType.Head, "A");
-            var pool = MakePool(Entry(a, 10));
-            ShopPool.SetMain(pool);
+            ShopPool.SetMain(MakePool(a));
 
             var inventory = MakeInventory();
             inventory.Unlock(a);
 
-            Assert.AreEqual(0, ShopPool.Offers(inventory, 4, new System.Random(1)).Count);
+            Assert.AreEqual(0, ShopPool.Offers(inventory, 3, new System.Random(1)).Count);
         }
 
         [Test]
         public void Offers_SkipsNullEntries()
         {
             var a = MakeEquipment(EquipmentSlotType.Head, "A");
-            var pool = MakePool(Entry(null, 10), Entry(a, 10));
-            ShopPool.SetMain(pool);
+            ShopPool.SetMain(MakePool(null, a));
 
-            var offers = ShopPool.Offers(MakeInventory(), 4, new System.Random(1));
+            var offers = ShopPool.Offers(MakeInventory(), 3, new System.Random(1));
 
             Assert.AreEqual(1, offers.Count);
             Assert.AreSame(a, offers[0].Item);
-        }
-
-        [Test]
-        public void PriceFor_Null_IsZero()
-        {
-            Assert.AreEqual(0, ShopPricing.PriceFor(null));
-        }
-
-        [Test]
-        public void PriceFor_MoreCards_CostsMore()
-        {
-            var light = MakeEquipment(EquipmentSlotType.Hand, "Light");
-            var heavy = MakeEquipment(EquipmentSlotType.Hand, "Heavy", cardCount: 3);
-            Assert.Greater(ShopPricing.PriceFor(heavy), ShopPricing.PriceFor(light));
         }
     }
 }

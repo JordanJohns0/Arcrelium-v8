@@ -23,6 +23,8 @@ namespace Networking
         public static event Action OnLoadNextLevelReceived;
         public static event Action<ulong, LoadoutSync> OnLoadoutSyncReceived;
         public static event Action<CardPlayedDisplay> OnCardPlayedDisplayReceived;
+        public static event Action<ulong, StageVoteRequest> OnStageVoteRequestReceived;
+        public static event Action<StageVoteState> OnStageVoteStateReceived;
 
         public static NetworkManager Instance
         {
@@ -140,6 +142,22 @@ namespace Networking
             SendToAllClients(MessageType.CardPlayedDisplay, json);
         }
 
+        /// <summary>Client -> host: this player's vote for a stage option.</summary>
+        public void SendStageVoteRequest(int option)
+        {
+            string json = JsonUtility.ToJson(new StageVoteRequest { option = option });
+            SendToHost(MessageType.StageVoteRequest, json);
+        }
+
+        /// <summary>Host -> all clients: the current state of the stage vote.</summary>
+        public void BroadcastStageVote(StageVoteState state)
+        {
+            if (!IsHost) return;
+            if (LobbyManager.Instance.CurrentLobby == null) return;
+            string json = JsonUtility.ToJson(state);
+            SendToAllClients(MessageType.StageVoteState, json);
+        }
+
         private void SendToHost(MessageType type, string json)
         {
             byte[] header = { (byte)type };
@@ -247,6 +265,16 @@ namespace Networking
                 case MessageType.CardPlayedDisplay:
                     var cardDisplay = JsonUtility.FromJson<CardPlayedDisplay>(json);
                     OnCardPlayedDisplayReceived?.Invoke(cardDisplay);
+                    break;
+
+                case MessageType.StageVoteRequest:
+                    var voteRequest = JsonUtility.FromJson<StageVoteRequest>(json);
+                    OnStageVoteRequestReceived?.Invoke(sender.Value, voteRequest);
+                    break;
+
+                case MessageType.StageVoteState:
+                    var voteState = JsonUtility.FromJson<StageVoteState>(json);
+                    OnStageVoteStateReceived?.Invoke(voteState);
                     break;
             }
         }

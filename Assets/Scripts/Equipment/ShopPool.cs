@@ -3,41 +3,30 @@ using UnityEngine;
 
 namespace Equipment
 {
-    /// <summary>One authored shop listing: an item and the price it sells for.</summary>
-    [System.Serializable]
-    public class ShopEntry
-    {
-        public EquipmentData item;
-        [Min(0)] public int price;
-    }
-
-    /// <summary>An item offered for sale in the shop, with its resolved price.</summary>
+    /// <summary>An item the post-victory shop can offer the player.</summary>
     public struct ShopOffer
     {
         public readonly EquipmentData Item;
-        public readonly int Price;
 
-        public ShopOffer(EquipmentData item, int price)
+        public ShopOffer(EquipmentData item)
         {
             Item = item;
-            Price = price;
         }
     }
 
     /// <summary>
-    /// Catalogue the end-of-level shop draws its stock from. Authored listings win; when the
-    /// shop has no explicit stock (or no ShopPool asset exists) it falls back to the legacy
-    /// <see cref="RewardPool"/> with derived prices, so the shop always has something to sell.
+    /// Catalogue the end-of-level shop draws its offers from. The player picks ONE of the
+    /// offers for free; there is no gold. Authored stock wins; when it is empty (or no
+    /// ShopPool asset exists) it falls back to <see cref="RewardPool"/>.
     ///
     /// Offers are filtered to items the player does not already own and picked with a
-    /// seed so a given run+level shows a stable set (buying never reshuffles the rest)
-    /// while a fresh run rolls new stock. Each machine rolls locally — the host never
-    /// sees another player's inventory or offers.
+    /// seed so a given run+level shows a stable set, while a fresh run rolls new stock.
+    /// Each machine rolls locally — the host never sees another player's inventory.
     /// </summary>
     [CreateAssetMenu(fileName = "ShopPool", menuName = "Arcrelium/Shop Pool")]
     public class ShopPool : ScriptableObject
     {
-        public List<ShopEntry> stock = new List<ShopEntry>();
+        public List<EquipmentData> stock = new List<EquipmentData>();
 
         private static ShopPool main;
         private static bool mainSearched;
@@ -68,8 +57,8 @@ namespace Equipment
         }
 
         /// <summary>
-        /// Builds up to <paramref name="count"/> offers from the main shop pool, falling back
-        /// to the RewardPool when the main pool is missing or empty.
+        /// Builds up to <paramref name="count"/> distinct offers the player does not already
+        /// own, from the main shop pool (falling back to the RewardPool when it is empty).
         /// </summary>
         public static List<ShopOffer> Offers(PlayerInventory inventory, int count, System.Random rng)
         {
@@ -78,36 +67,25 @@ namespace Equipment
 
         private static List<ShopOffer> Build(ShopPool pool, PlayerInventory inventory, int count, System.Random rng)
         {
-            var candidates = new List<ShopOffer>();
+            var candidates = new List<EquipmentData>();
 
             if (pool != null && pool.stock != null)
-            {
-                foreach (var entry in pool.stock)
-                {
-                    if (entry == null || entry.item == null) continue;
-                    int price = entry.price > 0 ? entry.price : ShopPricing.PriceFor(entry.item);
-                    candidates.Add(new ShopOffer(entry.item, price));
-                }
-            }
+                candidates.AddRange(pool.stock);
 
             if (candidates.Count == 0)
             {
                 var rewards = RewardPool.Main;
                 if (rewards != null && rewards.rewards != null)
-                {
-                    foreach (var item in rewards.rewards)
-                    {
-                        if (item == null) continue;
-                        candidates.Add(new ShopOffer(item, ShopPricing.PriceFor(item)));
-                    }
-                }
+                    candidates.AddRange(rewards.rewards);
             }
 
             var eligible = new List<ShopOffer>();
-            foreach (var offer in candidates)
+            var seen = new HashSet<EquipmentData>();
+            foreach (var item in candidates)
             {
-                if (inventory != null && Owns(inventory, offer.Item)) continue;
-                eligible.Add(offer);
+                if (item == null || !seen.Add(item)) continue;
+                if (inventory != null && Owns(inventory, item)) continue;
+                eligible.Add(new ShopOffer(item));
             }
 
             Shuffle(eligible, rng);

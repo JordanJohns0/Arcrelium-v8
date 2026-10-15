@@ -39,6 +39,12 @@ namespace Game
         private readonly HashSet<Character> discardSubscribed = new HashSet<Character>();
         private readonly HashSet<CardInstance> discardPlaying = new HashSet<CardInstance>();
 
+        /// <summary>The card a hand play is discarding right now (see HandleCardDiscarded).</summary>
+        private CardInstance cardBeingPlayedFromHand;
+
+        /// <summary>Set by <see cref="EndMatch"/>: the match is decided and the turn flow is stopped.</summary>
+        private bool matchOver;
+
         // Plays submitted by a player while an earlier card is still resolving. They resolve
         // strictly in order (see PumpPendingPlays), one per idle frame, so effects and their
         // animations/popups happen in the order they were played rather than all at once.
@@ -109,11 +115,12 @@ namespace Game
 
         private void BeginTurn()
         {
+            if (matchOver) return;
             CurrentPhase = TurnPhase.Act;
             pendingPlays.Clear();
             passQueued = false;
             ActiveCharacter?.TickStatusesAtTurnStart();
-            ActiveCharacter?.DrawToHandLimit();
+            ActiveCharacter?.DrawCardsForTurn();
             OnTurnStarted?.Invoke(ActiveCharacter);
         }
 
@@ -126,7 +133,7 @@ namespace Game
             bool ignoreCost = false,
             bool ignoreHandMembership = false)
         {
-            if (CurrentPhase != TurnPhase.Act) return false;
+            if (CurrentPhase != TurnPhase.Act || matchOver) return false;
 
             // Once the player has queued End Turn the turn is already committed to ending,
             // so no further plays are accepted.
@@ -186,6 +193,8 @@ namespace Game
             if (actor == null || card == null) return;
 
             resolvingPlay = true;
+            CardInstance previousPlayed = cardBeingPlayedFromHand;
+            cardBeingPlayedFromHand = card;
             try
             {
                 if (costCards != null)
@@ -197,6 +206,7 @@ namespace Game
             }
             finally
             {
+                cardBeingPlayedFromHand = previousPlayed;
                 resolvingPlay = false;
             }
         }
@@ -248,6 +258,8 @@ namespace Game
             // A discard-triggered play ("when discarded, play it") may fire while this play's
             // cost cards are discarded; allow it through the Busy gate for the duration.
             resolvingPlay = true;
+            CardInstance previousPlayed = cardBeingPlayedFromHand;
+            cardBeingPlayedFromHand = play.Card;
             bool played;
             try
             {
@@ -257,6 +269,7 @@ namespace Game
             }
             finally
             {
+                cardBeingPlayedFromHand = previousPlayed;
                 resolvingPlay = false;
             }
 
@@ -277,8 +290,20 @@ namespace Game
             PumpPendingPlays();
         }
 
+        /// <summary>
+        /// Stops the turn flow for the rest of the match (called on victory): no more plays,
+        /// passes, or turn starts, queued plays are dropped, and discarding does not replay cards.
+        /// </summary>
+        public void EndMatch()
+        {
+            matchOver = true;
+            pendingPlays.Clear();
+            passQueued = false;
+        }
+
         public void Pass()
         {
+            if (matchOver) return;
             if (CurrentPhase != TurnPhase.Act) return;
             if (turnCoroutine != null) return;
 
@@ -345,7 +370,11 @@ namespace Game
         private void HandleCardDiscarded(Character character, CardInstance card)
         {
             if (character == null || card == null || card.Data == null) return;
+            if (matchOver) return;
             if (!card.Data.PlaysOnDiscard) return;
+            // The card being played from hand is discarded only as part of its own play (the
+            // cost of playing it). It resolves once, here, so it must not be replayed on discard.
+            if (card == cardBeingPlayedFromHand) return;
             if (GameState.ActiveMode == GameMode.Client) return;
             if (CurrentPhase != TurnPhase.Act) return;
             // A play being resolved right now is allowed to spawn its own discard-triggered play;

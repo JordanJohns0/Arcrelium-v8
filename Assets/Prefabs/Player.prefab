@@ -136,7 +136,8 @@ MonoBehaviour:
     CurrentHealth: 0
     Block: 0
   equipmentManager: {fileID: 1087468177673829988}
-  maxHandSize: 5
+  maxHandSize: 10
+  cardsDrawnPerTurn: 5
 --- !u!114 &722281499782144357
 MonoBehaviour:
   m_ObjectHideFlags: 0

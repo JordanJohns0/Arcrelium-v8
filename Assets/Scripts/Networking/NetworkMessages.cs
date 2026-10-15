@@ -14,7 +14,36 @@ namespace Networking
         ReadyStateSync,
         LoadNextLevel,
         LoadoutSync,
-        CardPlayedDisplay
+        CardPlayedDisplay,
+        StageVoteRequest,
+        StageVoteState
+    }
+
+    /// <summary>
+    /// Client -> host. The sender's vote for one of the two stage options. The host records it
+    /// for the sender's player (never trusting a player id from the message).
+    /// </summary>
+    [System.Serializable]
+    public class StageVoteRequest
+    {
+        public int option = -1;
+    }
+
+    /// <summary>
+    /// Host -> all clients. The whole stage vote: the two options (as enemy group and reward
+    /// indices into the shared config), who has voted for what, and the result once resolved.
+    /// Votes are parallel arrays because JsonUtility cannot serialize dictionaries.
+    /// </summary>
+    [System.Serializable]
+    public class StageVoteState
+    {
+        public int[] enemyGroups = new int[2];
+        public int[] rewards = new int[2];
+        public int expectedVoters;
+        public int[] votePlayerIds = new int[0];
+        public int[] voteOptions = new int[0];
+        public bool resolved;
+        public int chosen = -1;
     }
 
     [System.Serializable]
@@ -26,6 +55,8 @@ namespace Networking
         public int activeCharacterId;
         public bool victory;
         public bool gameOver;
+        /// <summary>Host-decided: the end-of-level Special pane is the enchantment station (not the shop).</summary>
+        public bool enchantArea;
     }
 
     /// <summary>
@@ -124,6 +155,8 @@ namespace Networking
     {
         public int playerIndex = -1;
         public string[] loadoutNames = new string[Equipment.EquipmentLoadout.SlotCount];
+        /// <summary>Enchantments this player applied this run, so the host can simulate them.</summary>
+        public List<Equipment.EnchantmentAssignment> enchantments = new List<Equipment.EnchantmentAssignment>();
     }
 
     /// <summary>
