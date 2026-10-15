@@ -63,6 +63,19 @@ namespace Game
         /// </summary>
         public static SpecialArea CurrentSpecialArea { get; set; } = SpecialArea.Shop;
 
+        /// <summary>
+        /// The enemy group chosen by the stage vote for the upcoming level (an index into the
+        /// GameManager's enemy group list), or -1 when no group was chosen. Kept across the scene
+        /// reload into the next level, like <see cref="MatchLoadouts"/>.
+        /// </summary>
+        public static int StageEnemyGroupIndex { get; set; } = -1;
+
+        /// <summary>
+        /// The reward index (into the GameManager's reward list) that the stage vote chose for the
+        /// level being fought; it decides what the post-victory panel opens. -1 when none.
+        /// </summary>
+        public static int StageRewardIndex { get; set; } = -1;
+
         /// <summary>Percent chance a level's Special pane is the enchantment station.</summary>
         internal const int EnchantAreaChancePercent = 35;
 
@@ -118,6 +131,8 @@ namespace Game
         {
             CurrentLevel = 1;
             shopSeed = RollShopSeed();
+            StageEnemyGroupIndex = -1;
+            StageRewardIndex = -1;
             ShowLoadoutScreen = true;
             Equipment.PlayerInventoryProvider.ResetToTemplate(Equipment.PlayerInventoryProvider.LocalPlayerKey);
             SceneManager.LoadScene("GameScene");
