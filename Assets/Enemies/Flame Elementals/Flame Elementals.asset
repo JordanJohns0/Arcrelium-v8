@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5a7b8c9d0e1f2a3b4c5d6e7f8091a2b3, type: 3}
-  m_Name: EnemyGroup_Orc
+  m_Name: Flame Elementals
   m_EditorClassIdentifier: Arcrelium.Game::Enemies.EnemyGroup
-  GroupName: Orcs
+  GroupName: Fire Elementals
   MemberTypes:
-  - {fileID: 11400000, guid: 7514e92c367c9f6439a1cc4e9b19d7d2, type: 2}
-  - {fileID: 11400000, guid: 6340e20e5bade974dbf40d9f9e1ee6d7, type: 2}
+  - {fileID: 11400000, guid: ba20345c8bee44342a6e843367c7e294, type: 2}
+  - {fileID: 11400000, guid: a6d6affd03e9ed4408e75b47864dea8e, type: 2}

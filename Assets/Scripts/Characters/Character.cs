@@ -151,6 +151,7 @@ namespace Characters
                     ? equipmentManager.GetAllCards()
                     : new List<CardData>();
 
+                deck.CostAdjuster = data => equipmentManager != null ? equipmentManager.GetCardCostDelta(data) : 0;
                 deck.SetStartingCards(equipmentCards);
                 deck.Shuffle();
                 DrawCards(startingHandSize);
@@ -160,6 +161,12 @@ namespace Characters
             {
                 Debug.LogWarning($"[Character] owner={ownerPlayerId} deck is NULL - no cards built");
             }
+
+            // Start-of-combat triggers fire once per level, while the character is set up for the
+            // encounter — before any turn begins. Each level reloads the scene and rebuilds
+            // characters, so this runs exactly once per combat on host, client and single-player.
+            if (equipmentManager != null)
+                equipmentManager.BeginCombat();
 
             OnCharacterCreated?.Invoke(this);
         }
@@ -513,8 +520,16 @@ namespace Characters
             OnCardDiscarded?.Invoke(this, card);
         }
 
-        public void TakeDamage(int amount, Character dealer = null)
+        public void TakeDamage(int amount, Character dealer = null, DamageType type = DamageType.None)
         {
+            // Immunity: enchantments on worn equipment can negate a damage source entirely.
+            // Nothing is applied, so block is not spent and no damage events fire.
+            if (type != DamageType.None && equipmentManager != null && equipmentManager.IsImmuneTo(type))
+            {
+                Debug.Log($"[Character] {name} is immune to {type} damage ({amount} negated).");
+                return;
+            }
+
             stats.ApplyDamage(amount);
             if (dealer != null) dealer.OnDamageDealt?.Invoke(amount, this);
             OnDamageTaken?.Invoke(amount);
@@ -616,7 +631,7 @@ namespace Characters
                         if (library != null) data = library.GetCardByName(name);
                     }
                     if (data != null)
-                        rebuilt.Add(new CardInstance(data));
+                        rebuilt.Add(MakeCardInstance(data));
                 }
             }
 
@@ -638,6 +653,17 @@ namespace Characters
         {
             NameColor = color;
             stats.NotifyChanged();
+        }
+
+        private CardInstance MakeCardInstance(CardData data)
+        {
+            var instance = new CardInstance(data);
+            if (equipmentManager != null && data != null)
+            {
+                int delta = equipmentManager.GetCardCostDelta(data);
+                if (delta != 0) instance.SetCostOffset(delta);
+            }
+            return instance;
         }
 
         private void ApplyColor(Color color)

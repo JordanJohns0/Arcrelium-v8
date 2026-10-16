@@ -32,8 +32,8 @@ namespace Cards.Effects
 
         public override void Execute(CardContext context)
         {
-            // Enchantment bonus damage stacks on top of the card's own damage value.
-            int damage = Damage.Evaluate(context.Source) + Mathf.Max(0, context.BonusDamage);
+            float multiplier = Mathf.Max(0f, context.DamageMultiplier);
+            int damage = Mathf.RoundToInt(Damage.Evaluate(context.Source) * multiplier) + Mathf.Max(0, context.BonusDamage);
             context.TargetCharacter.TakeDamage(damage, context.Source);
 
             ApplyOnHitEffects(context);

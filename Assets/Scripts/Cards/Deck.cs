@@ -22,6 +22,19 @@ namespace Cards
         public IReadOnlyList<CardInstance> DiscardPile => discardPile;
 
         /// <summary>
+        /// Optional cost adjustment applied to every card this deck creates (e.g. an equipment
+        /// enchantment that makes its own cards cost 1 less). Returns a delta added to the
+        /// card's base cost. Set by the owning Character when it is initialized.
+        /// </summary>
+        public System.Func<CardData, int> CostAdjuster;
+
+        /// <summary>
+        /// Fired when the discard pile is shuffled back into the draw pile mid-match (the
+        /// "you shuffled your deck" moment). Not fired for the initial match-start shuffle.
+        /// </summary>
+        public event Action OnShuffled;
+
+        /// <summary>
         /// Sets the cards that will populate the draw pile on Shuffle.
         /// Called by Character.Initialize from equipment cards.
         /// </summary>
@@ -38,7 +51,7 @@ namespace Cards
 
             foreach (CardData data in startingCards)
             {
-                drawPile.Add(new CardInstance(data));
+                drawPile.Add(CreateInstance(data));
             }
 
             for (int i = drawPile.Count - 1; i > 0; i--)
@@ -63,7 +76,7 @@ namespace Cards
 
             if (!shuffled) return;
 
-            var instance = new CardInstance(data);
+            var instance = CreateInstance(data);
             drawPile.Insert(UnityEngine.Random.Range(0, drawPile.Count + 1), instance);
         }
 
@@ -141,7 +154,7 @@ namespace Cards
             if (data == null) return;
             startingCards.Add(data);
             if (!shuffled) return;
-            var instance = new CardInstance(data);
+            var instance = CreateInstance(data);
             int index = UnityEngine.Random.Range(0, drawPile.Count + 1);
             drawPile.Insert(index, instance);
         }
@@ -175,6 +188,19 @@ namespace Cards
                 int j = UnityEngine.Random.Range(0, i + 1);
                 (drawPile[i], drawPile[j]) = (drawPile[j], drawPile[i]);
             }
+
+            OnShuffled?.Invoke();
+        }
+
+        private CardInstance CreateInstance(CardData data)
+        {
+            var instance = new CardInstance(data);
+            if (CostAdjuster != null && data != null)
+            {
+                int delta = CostAdjuster(data);
+                if (delta != 0) instance.SetCostOffset(delta);
+            }
+            return instance;
         }
     }
 }

@@ -179,8 +179,11 @@ namespace TileEffects
             foreach (HexCell step in path)
             {
                 if (step == null) break;
-                if (!step.IsWalkable) break;
+
+                // A cell the character already stands on was reached by an oil slide during the
+                // previous step; it costs nothing and the walk carries on from there.
                 if (step == character.CurrentCell) continue;
+                if (!step.IsWalkable) break;
 
                 WalkInto(character, step);
                 resolved.Add(character.CurrentCell);
@@ -242,14 +245,14 @@ namespace TileEffects
         }
 
         /// <summary>Deals AoE damage to the occupant of the center tile and everyone within radius.</summary>
-        public void DamageRadius(HexCell center, int amount, int radius)
+        public void DamageRadius(HexCell center, int amount, int radius, DamageType type = DamageType.Explosion)
         {
             if (grid == null || center == null) return;
 
             foreach (HexCell cell in grid.GetCellsInRange(center.Coordinates, radius))
             {
                 if (cell.Occupant == null || !cell.Occupant.Stats.IsAlive) continue;
-                cell.Occupant.TakeDamage(amount);
+                cell.Occupant.TakeDamage(amount, type: type);
             }
         }
 
@@ -268,7 +271,7 @@ namespace TileEffects
                 }
             }
 
-            DamageRadius(cell, amount, radius);
+            DamageRadius(cell, amount, radius, DamageType.Explosion);
             Debug.Log($"[TileEffects] Fire ignited oil on {cell.Coordinates} — explosion for {amount} damage!");
         }
 
@@ -344,14 +347,11 @@ namespace TileEffects
         {
             if (current == null || grid == null || !current.HasEffect(effect => effect.Slippery)) return null;
 
-            if (character != null && character.LastCell != null && character.LastCell != current)
+            if (character != null && character.LastCell != null && character.LastCell != current
+                && character.LastCell.Coordinates.DistanceTo(current.Coordinates) == 1)
             {
-                HexCoordinates previous = character.LastCell.Coordinates;
-                for (int dir = 0; dir < 6; dir++)
-                {
-                    if (current.Coordinates.Neighbor(dir) == previous)
-                        return grid.GetCell(current.Coordinates.Neighbor((dir + 3) % 6));
-                }
+                // Same rule the move planner uses, so a planned route and the real slide agree.
+                return MovePlanner.SlideDestination(grid, character.LastCell, current);
             }
 
             foreach (HexCell neighbor in grid.GetNeighbors(current.Coordinates))

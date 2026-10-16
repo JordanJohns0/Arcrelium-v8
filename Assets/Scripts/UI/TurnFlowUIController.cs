@@ -7,6 +7,7 @@ using Characters;
 using HexGrid;
 using Game;
 using Networking;
+using TileEffects;
 
 namespace UI
 {
@@ -268,12 +269,15 @@ namespace UI
                 return;
             }
 
-            List<HexCell> segment = grid.FindPath(endpoint.Coordinates, cell.Coordinates, moveRemaining);
-            if (segment == null || segment.Count > moveRemaining)
+            // The route is planned with the oil slide rules: a slick tile costs one step and the
+            // character then slides on, so the route (and what it costs) matches what will happen.
+            MoveRoute segmentRoute = MovePlanner.FindRoute(grid, endpoint, cell, moveRemaining);
+            if (segmentRoute == null)
             {
                 if (promptText != null) promptText.text = $"You can't reach that cell with {moveRemaining} movement left.";
                 return;
             }
+            List<HexCell> segment = segmentRoute.Cells;
 
             if (movePath.Contains(cell))
             {
@@ -297,7 +301,7 @@ namespace UI
             }
 
             movePath.AddRange(segment);
-            moveRemaining -= segment.Count;
+            moveRemaining -= segmentRoute.Steps;
             Debug.Log($"[TurnFlow] Move path now {movePath.Count} cells, {moveRemaining} distance left, " +
                       $"target {cell.Coordinates}");
 
@@ -581,14 +585,14 @@ namespace UI
             HexCell origin = movePath.Count > 0 ? movePath[movePath.Count - 1] : source.CurrentCell;
             if (origin == null) return;
 
+            // Only cells the character can actually end on: an oil tile it would slide off of is not a
+            // target, but the cell it slides onto is.
             int count = 0;
-            foreach (HexCell cell in grid.GetCellsInRange(origin.Coordinates, moveRemaining))
+            foreach (HexCell cell in MovePlanner.Reachable(grid, origin, moveRemaining).Keys)
             {
                 if (cell == origin) continue;
                 if (movePath.Contains(cell)) continue;
                 if (!IsValidTarget(pendingCard.Data, source, cell)) continue;
-
-                if (grid.FindPath(origin.Coordinates, cell.Coordinates, moveRemaining) == null) continue;
 
                 count++;
 
@@ -713,12 +717,13 @@ namespace UI
                 return;
             }
 
-            List<HexCell> segment = grid.FindPath(origin.Coordinates, hoveredCell.Coordinates, moveRemaining);
-            if (segment == null || segment.Count == 0 || segment.Count > moveRemaining)
+            MoveRoute hoverRoute = MovePlanner.FindRoute(grid, origin, hoveredCell, moveRemaining);
+            if (hoverRoute == null || hoverRoute.Cells.Count == 0)
             {
                 hoverPathRenderer.positionCount = 0;
                 return;
             }
+            List<HexCell> segment = hoverRoute.Cells;
 
             // Draw from the current endpoint through every intermediate hex to the hovered cell.
             int pointCount = segment.Count + 1;

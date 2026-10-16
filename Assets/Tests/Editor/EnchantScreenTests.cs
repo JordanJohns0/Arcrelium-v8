@@ -247,6 +247,67 @@ namespace Tests.UI
         }
 
         [Test]
+        public void Options_ExcludePiecesTheEnchantmentCannotTarget()
+        {
+            var chest = MakeEquipment("Plate");
+            chest.SlotType = EquipmentSlotType.Chest;
+            var boots = MakeEquipment("Boots");
+            boots.SlotType = EquipmentSlotType.Feet;
+            Own(chest, boots);
+
+            var chestOnly = MakeEnchantment("Warded", "Tougher.");
+            chestOnly.AllowedSlots = EnchantTargetSlots.Chest;
+            var panel = MakeOffersPanel();
+
+            EnchantScreen screen = EnchantScreen.Attach(panel, MakeTilePrefab());
+            screen.Show();
+
+            var offered = new List<EquipmentData>(screen.Options);
+            CollectionAssert.Contains(offered, chest);
+            CollectionAssert.DoesNotContain(offered, boots, "A chest-only enchantment must not offer boots.");
+            Assert.AreEqual(1, TileCount(panel));
+        }
+
+        [Test]
+        public void NoOffer_WhenNoOwnedPieceFitsAnyEnchantment()
+        {
+            var boots = MakeEquipment("Boots");
+            boots.SlotType = EquipmentSlotType.Feet;
+            Own(boots);
+
+            var helmOnly = MakeEnchantment("Warded", "Tougher.");
+            helmOnly.AllowedSlots = EnchantTargetSlots.Head;
+            var panel = MakeOffersPanel();
+
+            EnchantScreen screen = EnchantScreen.Attach(panel, MakeTilePrefab());
+            screen.Show();
+
+            Assert.IsNull(screen.Enchantment, "An enchantment that fits no owned piece must not be offered.");
+            Assert.AreEqual(0, TileCount(panel));
+            Assert.AreEqual("No enchantments available", TitleOf(panel).text);
+        }
+
+        [Test]
+        public void Description_ShowsTheEnchantmentsTargets()
+        {
+            var chest = MakeEquipment("Plate");
+            chest.SlotType = EquipmentSlotType.Chest;
+            Own(chest);
+
+            var chestOnly = MakeEnchantment("Warded", "Tougher.");
+            chestOnly.AllowedSlots = EnchantTargetSlots.Chest;
+            var panel = MakeOffersPanel();
+
+            EnchantScreen screen = EnchantScreen.Attach(panel, MakeTilePrefab());
+            screen.Show();
+
+            string description = DescriptionOf(panel).text;
+            StringAssert.Contains("Warded: Tougher.", description);
+            StringAssert.Contains("Applies to:", description);
+            StringAssert.Contains("Chest", description);
+        }
+
+        [Test]
         public void ChooseTile_CannotEnchantAPieceTwice_EvenWhenShownBeforeEnchanted()
         {
             var sword = MakeEquipment("Sword");
@@ -328,7 +389,7 @@ namespace Tests.UI
         }
 
         [Test]
-        public void NoEquipment_ShowsInfoButNoTiles()
+        public void NoEquipment_ShowsEmptyState()
         {
             MakeEnchantment("Sharpened");
             var panel = MakeOffersPanel();
@@ -339,7 +400,8 @@ namespace Tests.UI
 
             Assert.AreEqual(0, screen.Options.Count);
             Assert.AreEqual(0, TileCount(panel), "No equipment means no option tiles.");
-            Assert.AreEqual("Enchant", TitleOf(panel).text, "The enchant heading is still shown.");
+            Assert.IsNull(screen.Enchantment, "An enchantment with nothing to apply to is not offered.");
+            Assert.AreEqual("No enchantments available", TitleOf(panel).text);
         }
 
         [Test]

@@ -439,6 +439,12 @@ namespace Tests.Cards
                     };
                 case "Flame Bolt":
                     return RangedAttack(2);
+                case "Throw Flames":
+                    // Same damage as Flame Bolt (shares the Damage_2 effect); shorter range and
+                    // higher cost are exercised generically.
+                    return RangedAttack(2);
+                case "Crush":
+                    return Attack(3);
                 case "Mystic Bolt":
                     return RangedAttack(3);
                 case "Shoot Pebble":

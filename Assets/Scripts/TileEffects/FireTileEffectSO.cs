@@ -1,4 +1,5 @@
 using UnityEngine;
+using Characters;
 
 namespace TileEffects
 {
@@ -17,14 +18,14 @@ namespace TileEffects
         public override void OnCharacterEntered(TileEffectContext context)
         {
             if (context.Character == null || !context.Character.Stats.IsAlive) return;
-            context.Character.TakeDamage(FireDamage);
+            context.Character.TakeDamage(FireDamage, type: DamageType.Fire);
             Debug.Log($"[TileEffects] {context.Character.name} steps into fire on {context.Cell.Coordinates} and takes {FireDamage} damage.");
         }
 
         public override void OnCharacterTurnStarted(TileEffectContext context)
         {
             if (context.Character == null || !context.Character.Stats.IsAlive) return;
-            context.Character.TakeDamage(FireDamage);
+            context.Character.TakeDamage(FireDamage, type: DamageType.Fire);
             Debug.Log($"[TileEffects] {context.Character.name} starts their turn in fire on {context.Cell.Coordinates} and takes {FireDamage} damage.");
         }
 
@@ -43,7 +44,7 @@ namespace TileEffects
             var occupant = context.Character;
             if (occupant != null && occupant.Stats.IsAlive)
             {
-                occupant.TakeDamage(FireDamage);
+                occupant.TakeDamage(FireDamage, type: DamageType.Fire);
                 Debug.Log($"[TileEffects] {occupant.name} is engulfed as fire appears on {context.Cell.Coordinates} and takes {FireDamage} damage.");
             }
         }

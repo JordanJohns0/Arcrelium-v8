@@ -38,6 +38,17 @@ namespace Equipment
         private EquipmentInstance rightHandSlot;
         private readonly List<EquipmentInstance> trinketSlots = new List<EquipmentInstance>();
 
+        // Scratch buffers so trigger collection never allocates per fire.
+        private readonly List<EquipmentTrigger> triggerScratch = new List<EquipmentTrigger>();
+
+        // Once-per-turn / once-per-match budgets. Trigger references are stable, so a trigger
+        // marked OncePerTurn fires at most once per wearer-turn, and OncePerMatch once overall.
+        private readonly HashSet<EquipmentTrigger> firedThisTurn = new HashSet<EquipmentTrigger>();
+        private readonly HashSet<EquipmentTrigger> firedThisMatch = new HashSet<EquipmentTrigger>();
+
+        // Guards against OnShuffled re-entering itself (draw -> empty deck -> reshuffle -> draw...).
+        private bool shufflingDeck;
+
         public Character Character => character;
 
         public event Action<EquipmentInstance> OnEquipmentChanged;
@@ -68,6 +79,9 @@ namespace Equipment
             character.OnDamageTaken += HandleDamageTaken;
             character.OnDamageDealt += HandleDamageDealt;
             character.OnBlockGained += HandleBlockGained;
+
+            if (character.Deck != null)
+                character.Deck.OnShuffled += HandleDeckShuffled;
         }
 
         private void LoadFromInspector()
@@ -414,9 +428,109 @@ namespace Equipment
             }
         }
 
+        /// <summary>
+        /// Product of every damage multiplier contributed by enchantments on worn equipment
+        /// for <paramref name="playedCard"/>. 1.0 means unchanged. Consulted by ActionResolver.
+        /// </summary>
+        public float GetTotalCardDamageMultiplier(CardData playedCard)
+        {
+            float multiplier = 1f;
+
+            CollectEnchantmentDamageMultiplier(headSlot, playedCard, ref multiplier);
+            CollectEnchantmentDamageMultiplier(chestSlot, playedCard, ref multiplier);
+            CollectEnchantmentDamageMultiplier(feetSlot, playedCard, ref multiplier);
+            CollectEnchantmentDamageMultiplier(leftHandSlot, playedCard, ref multiplier);
+            CollectEnchantmentDamageMultiplier(rightHandSlot, playedCard, ref multiplier);
+
+            foreach (var slot in trinketSlots)
+                CollectEnchantmentDamageMultiplier(slot, playedCard, ref multiplier);
+
+            return multiplier;
+        }
+
+        private static void CollectEnchantmentDamageMultiplier(EquipmentInstance slot, CardData playedCard, ref float multiplier)
+        {
+            if (slot == null) return;
+
+            foreach (var enchantment in slot.AllEnchantments)
+            {
+                if (enchantment != null)
+                    multiplier *= enchantment.GetDamageMultiplier(slot, playedCard);
+            }
+        }
+
+        /// <summary>
+        /// Summed cost delta (e.g. -1) applied to <paramref name="card"/>, contributed by
+        /// enchantments on worn equipment. Consulted when the deck creates a card instance.
+        /// </summary>
+        public int GetCardCostDelta(CardData card)
+        {
+            int total = 0;
+            if (card == null) return 0;
+
+            CollectEnchantmentCostDelta(headSlot, card, ref total);
+            CollectEnchantmentCostDelta(chestSlot, card, ref total);
+            CollectEnchantmentCostDelta(feetSlot, card, ref total);
+            CollectEnchantmentCostDelta(leftHandSlot, card, ref total);
+            CollectEnchantmentCostDelta(rightHandSlot, card, ref total);
+
+            foreach (var slot in trinketSlots)
+                CollectEnchantmentCostDelta(slot, card, ref total);
+
+            return total;
+        }
+
+        private static void CollectEnchantmentCostDelta(EquipmentInstance slot, CardData card, ref int total)
+        {
+            if (slot == null) return;
+
+            foreach (var enchantment in slot.AllEnchantments)
+            {
+                if (enchantment != null)
+                    total += enchantment.GetCardCostDelta(slot, card);
+            }
+        }
+
+        /// <summary>
+        /// True when any enchantment on worn equipment makes the wearer immune to the given
+        /// damage source (e.g. fire or fire-oil explosions). Consulted by Character.TakeDamage.
+        /// </summary>
+        public bool IsImmuneTo(DamageType type)
+        {
+            if (type == DamageType.None) return false;
+
+            return SlotImmuneTo(headSlot, type)
+                || SlotImmuneTo(chestSlot, type)
+                || SlotImmuneTo(feetSlot, type)
+                || SlotImmuneTo(leftHandSlot, type)
+                || SlotImmuneTo(rightHandSlot, type)
+                || AnyTrinketImmuneTo(type);
+        }
+
+        private bool AnyTrinketImmuneTo(DamageType type)
+        {
+            foreach (var slot in trinketSlots)
+            {
+                if (SlotImmuneTo(slot, type)) return true;
+            }
+            return false;
+        }
+
+        private static bool SlotImmuneTo(EquipmentInstance slot, DamageType type)
+        {
+            if (slot == null) return false;
+
+            foreach (var enchantment in slot.AllEnchantments)
+            {
+                if (enchantment != null && enchantment.IsImmuneTo(type)) return true;
+            }
+            return false;
+        }
+
         private void HandleTurnStarted(Character turnCharacter)
         {
             if (turnCharacter != character) return;
+            firedThisTurn.Clear();
             FireTriggers(TriggerTiming.StartOfTurn);
         }
 
@@ -441,11 +555,7 @@ namespace Equipment
                     Other = turnCharacter
                 };
 
-                foreach (var trigger in GetTriggers(TriggerTiming.OnEnemyTurnEnded))
-                {
-                    if (trigger.Effect != null)
-                        trigger.Effect.Execute(context);
-                }
+                RunTriggers(TriggerTiming.OnEnemyTurnEnded, context);
             }
         }
 
@@ -462,11 +572,7 @@ namespace Equipment
                 CardContext = cardContext
             };
 
-            foreach (var trigger in GetTriggers(TriggerTiming.OnBeforeCardPlay))
-            {
-                if (trigger.Effect != null)
-                    trigger.Effect.Execute(context);
-            }
+            RunTriggers(TriggerTiming.OnBeforeCardPlay, context);
         }
 
         private void HandleMovedToCell(HexCell cell)
@@ -480,11 +586,7 @@ namespace Equipment
                 TargetCell = cell
             };
 
-            foreach (var trigger in GetTriggers(TriggerTiming.OnMovedToCell))
-            {
-                if (trigger.Effect != null)
-                    trigger.Effect.Execute(context);
-            }
+            RunTriggers(TriggerTiming.OnMovedToCell, context);
         }
 
         private void HandleLeftCell(HexCell cell)
@@ -500,11 +602,7 @@ namespace Equipment
                 TargetCell = cell
             };
 
-            foreach (var trigger in GetTriggers(TriggerTiming.OnLeftCell))
-            {
-                if (trigger.Effect != null)
-                    trigger.Effect.Execute(context);
-            }
+            RunTriggers(TriggerTiming.OnLeftCell, context);
         }
 
         private void HandleDamageTaken(int amount)
@@ -517,13 +615,7 @@ namespace Equipment
                 Timing = TriggerTiming.OnDamageTaken
             };
 
-            foreach (var trigger in GetTriggers(TriggerTiming.OnDamageTaken))
-            {
-                if (trigger.Effect == null) continue;
-                if (trigger.OnlyOnWearersTurn && turnManager != null &&
-                    turnManager.ActiveCharacter != character) continue;
-                trigger.Effect.Execute(context);
-            }
+            RunTriggers(TriggerTiming.OnDamageTaken, context);
         }
 
         private void HandleDamageDealt(int amount, Character target)
@@ -538,13 +630,7 @@ namespace Equipment
                 Other = target
             };
 
-            foreach (var trigger in GetTriggers(TriggerTiming.OnDealDamage))
-            {
-                if (trigger.Effect == null) continue;
-                if (trigger.OnlyOnWearersTurn && turnManager != null &&
-                    turnManager.ActiveCharacter != character) continue;
-                trigger.Effect.Execute(context);
-            }
+            RunTriggers(TriggerTiming.OnDealDamage, context);
         }
 
         private void HandleBlockGained(int amount)
@@ -558,11 +644,7 @@ namespace Equipment
                 Amount = amount
             };
 
-            foreach (var trigger in GetTriggers(TriggerTiming.OnGainBlock))
-            {
-                if (trigger.Effect != null)
-                    trigger.Effect.Execute(context);
-            }
+            RunTriggers(TriggerTiming.OnGainBlock, context);
         }
 
         public void FireTriggers(TriggerTiming timing)
@@ -575,32 +657,112 @@ namespace Equipment
                 Timing = timing
             };
 
-            foreach (var trigger in GetTriggers(timing))
+            RunTriggers(timing, context);
+        }
+
+        /// <summary>
+        /// Fires StartOfCombat triggers once, when the level begins (during character setup,
+        /// before the first turn). Each level rebuilds characters, so this is once per combat.
+        /// </summary>
+        public void BeginCombat() => FireTriggers(TriggerTiming.StartOfCombat);
+
+        /// <summary>
+        /// Fires every trigger (from equipment AND enchantments) for the timing, honouring
+        /// OnlyOnWearersTurn, per-trigger conditions, and once-per-turn/once-per-match budgets.
+        /// </summary>
+        private void RunTriggers(TriggerTiming timing, EquipmentContext context)
+        {
+            foreach (EquipmentTrigger trigger in GetTriggers(timing))
             {
-                if (trigger.Effect != null)
-                    trigger.Effect.Execute(context);
+                if (trigger.Effect == null) continue;
+                if (trigger.OnlyOnWearersTurn && turnManager != null &&
+                    turnManager.ActiveCharacter != character) continue;
+                if (trigger.Condition != null && !trigger.Condition.Evaluate(context)) continue;
+
+                if (trigger.OncePerMatch && firedThisMatch.Contains(trigger)) continue;
+                if (trigger.OncePerTurn && firedThisTurn.Contains(trigger)) continue;
+
+                trigger.Effect.Execute(context);
+
+                if (trigger.OncePerMatch) firedThisMatch.Add(trigger);
+                if (trigger.OncePerTurn) firedThisTurn.Add(trigger);
             }
         }
 
-        private static void AddCardsFromSlot(EquipmentInstance slot, List<CardData> cards)
+        /// <summary>
+        /// Fires OnShuffle triggers when the owner's discard pile is shuffled back into the
+        /// draw pile mid-match. Guarded so a draw effect that empties the deck again cannot
+        /// recursively re-enter this handler.
+        /// </summary>
+        private void HandleDeckShuffled()
         {
-            if (slot == null) return;
-            if (slot.Data.Cards != null)
-                cards.AddRange(slot.Data.Cards);
-
-            foreach (var enchantment in slot.AllEnchantments)
-                enchantment?.CollectGrantedCards(cards);
+            if (shufflingDeck) return;
+            shufflingDeck = true;
+            try
+            {
+                var context = new EquipmentContext
+                {
+                    Source = character,
+                    Grid = grid,
+                    TurnManager = turnManager,
+                    Timing = TriggerTiming.OnShuffle
+                };
+                RunTriggers(TriggerTiming.OnShuffle, context);
+            }
+            finally
+            {
+                shufflingDeck = false;
+            }
         }
 
-        private static void AddTriggersFromSlot(EquipmentInstance slot, TriggerTiming timing, List<EquipmentTrigger> triggers)
+        /// <summary>
+        /// Builds the per-slot card list (equipment's own cards plus enchantment-granted ones),
+        /// lets enchantments transform it (e.g. double granted cards), then appends it.
+        /// </summary>
+        private void AddCardsFromSlot(EquipmentInstance slot, List<CardData> cards)
         {
             if (slot == null) return;
-            if (slot.Data.Triggers == null) return;
 
-            foreach (var trigger in slot.Data.Triggers)
+            var slotCards = new List<CardData>();
+            if (slot.Data.Cards != null)
+                slotCards.AddRange(slot.Data.Cards);
+
+            foreach (var enchantment in slot.AllEnchantments)
+                enchantment?.CollectGrantedCards(slotCards);
+
+            foreach (var enchantment in slot.AllEnchantments)
+                enchantment?.ModifyGrantedCards(slot, slotCards);
+
+            cards.AddRange(slotCards);
+        }
+
+        /// <summary>
+        /// Collects all trigger effects from equipped items for the given timing,
+        /// including triggers contributed by enchantments.
+        /// </summary>
+        private void AddTriggersFromSlot(EquipmentInstance slot, TriggerTiming timing, List<EquipmentTrigger> triggers)
+        {
+            if (slot == null) return;
+
+            if (slot.Data.Triggers != null)
             {
-                if (trigger.Timing == timing)
-                    triggers.Add(trigger);
+                foreach (var trigger in slot.Data.Triggers)
+                {
+                    if (trigger != null && trigger.Timing == timing)
+                        triggers.Add(trigger);
+                }
+            }
+
+            foreach (var enchantment in slot.AllEnchantments)
+            {
+                if (enchantment == null) continue;
+                triggerScratch.Clear();
+                enchantment.CollectTriggers(triggerScratch);
+                foreach (var trigger in triggerScratch)
+                {
+                    if (trigger != null && trigger.Timing == timing)
+                        triggers.Add(trigger);
+                }
             }
         }
 
@@ -624,6 +786,9 @@ namespace Equipment
                 character.OnDamageTaken -= HandleDamageTaken;
                 character.OnDamageDealt -= HandleDamageDealt;
                 character.OnBlockGained -= HandleBlockGained;
+
+                if (character.Deck != null)
+                    character.Deck.OnShuffled -= HandleDeckShuffled;
             }
         }
     }

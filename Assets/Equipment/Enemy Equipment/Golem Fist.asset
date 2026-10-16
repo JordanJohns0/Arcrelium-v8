@@ -10,14 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60deef64499252041b27e1d2f99cff15, type: 3}
-  m_Name: Leather Goblin Armour
+  m_Name: Golem Fist
   m_EditorClassIdentifier: Assembly-CSharp::Equipment.EquipmentData
-  EquipmentName: Leather Goblin Armour
+  EquipmentName: Golem Fist
   Description: 
-  Icon: {fileID: 21300000, guid: 2a3b2e4bba7827846bc395d3e4f358d3, type: 3}
-  SlotType: 1
+  Icon: {fileID: 21300000, guid: f75f93577eb0d5b48b928421d4e37b09, type: 3}
+  SlotType: 3
   Cards:
-  - {fileID: 11400000, guid: 532bfc9a5deefbc4b8d8d08fa070bff7, type: 2}
-  - {fileID: 11400000, guid: 532bfc9a5deefbc4b8d8d08fa070bff7, type: 2}
+  - {fileID: 11400000, guid: d3ac55a7cd887fb489ebf4959c87f46c, type: 2}
   Triggers: []
   Enchantments: []

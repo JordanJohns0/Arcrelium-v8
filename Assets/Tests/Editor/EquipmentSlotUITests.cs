@@ -1,6 +1,7 @@
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Equipment;
 using UI;
@@ -14,6 +15,12 @@ namespace Tests.UI
             typeof(EquipmentSlotUI).GetField("background", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly FieldInfo filledBackgroundField =
             typeof(EquipmentSlotUI).GetField("filledBackgroundSprite", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo tooltipInstanceField =
+            typeof(Tooltip).GetField("instance", BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo tooltipCreateUiMethod =
+            typeof(Tooltip).GetMethod("CreateUI", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo tooltipEnchantTextField =
+            typeof(Tooltip).GetField("enchantText", BindingFlags.NonPublic | BindingFlags.Instance);
 
         private readonly System.Collections.Generic.List<Object> owned = new System.Collections.Generic.List<Object>();
 
@@ -88,6 +95,60 @@ namespace Tests.UI
             data.EquipmentName = "Helm";
             ui.SetEquipment(data);
             Assert.AreSame(typeSprite, background.sprite, "Without a filled frame the slot keeps its type art.");
+        }
+
+        [Test]
+        public void RightClick_ShowsTooltipWithTheEquippedItemsEnchantments()
+        {
+            var tooltipGo = new GameObject("Tooltip", typeof(Tooltip));
+            owned.Add(tooltipGo);
+            var tooltip = tooltipGo.GetComponent<Tooltip>();
+            tooltipInstanceField.SetValue(null, tooltip);
+            // Awake/CreateUI don't run automatically in edit mode — build the tooltip UI directly.
+            tooltipCreateUiMethod.Invoke(tooltip, null);
+
+            var inventory = ScriptableObject.CreateInstance<PlayerInventory>();
+            owned.Add(inventory);
+
+            var data = ScriptableObject.CreateInstance<EquipmentData>();
+            owned.Add(data);
+            data.SlotType = EquipmentSlotType.Trinket;
+            data.EquipmentName = "Lucky Charm";
+
+            var enchantment = ScriptableObject.CreateInstance<GrantCardEnchantmentSO>();
+            enchantment.EnchantmentName = "Sparkly";
+            enchantment.Description = "Glows in the dark";
+            owned.Add(enchantment);
+            inventory.Loadout.AddEnchantment(data, enchantment);
+
+            System.Func<PlayerInventory> previous = EquipmentSlotUI.LocalInventory;
+            EquipmentSlotUI.LocalInventory = () => inventory;
+            try
+            {
+                var bgGo = new GameObject("Background", typeof(RectTransform), typeof(Image));
+                owned.Add(bgGo);
+                var background = bgGo.GetComponent<Image>();
+                var ui = MakeSlot(background, MakeSprite(), null);
+                ui.Setup(EquipmentSlotType.Trinket, 0, null);
+                ui.SetEquipment(data);
+
+                var eventData = new PointerEventData(null)
+                {
+                    button = PointerEventData.InputButton.Right,
+                    position = new Vector2(50f, 50f)
+                };
+                ui.OnPointerClick(eventData);
+
+                var enchantText = (TMPro.TMP_Text)tooltipEnchantTextField.GetValue(tooltip);
+                Assert.IsNotNull(enchantText, "Tooltip must build its enchantment text.");
+                StringAssert.Contains("Sparkly", enchantText.text,
+                    "Right-clicking an equipped item must show its enchantments on the tooltip.");
+            }
+            finally
+            {
+                EquipmentSlotUI.LocalInventory = previous;
+                tooltipInstanceField.SetValue(null, null);
+            }
         }
     }
 }

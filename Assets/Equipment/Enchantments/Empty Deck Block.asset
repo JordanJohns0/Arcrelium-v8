@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7a74144ca504f52b1c97b2060428a92, type: 3}
+  m_Name: Empty Deck Block
+  m_EditorClassIdentifier: Arcrelium.Game::Equipment.TriggeredEnchantmentSO
+  EnchantmentName: Empty Deck Block
+  Description: When your play a card while your deck is empty, gain 1 block.
+  AllowedSlots: -1
+  MinCards: 0
+  MaxCards: -1
+  Triggers: 0
+  BuiltInEnchantments: 0
+  Placement: 0
+  OnlyItems: []
+  NeverItems: []
+  TriggerList:
+  - Timing: 2
+    Effect: {fileID: 11400000, guid: 2cf2bef9feb4832409e06f67dd319e01, type: 2}
+    OnlyOnWearersTurn: 0
+    Condition: {fileID: 11400000, guid: 1c78ce194d70c2d458292fc89429e7cc, type: 2}
+    OncePerTurn: 0
+    OncePerMatch: 0

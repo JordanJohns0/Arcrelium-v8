@@ -11,8 +11,11 @@ namespace UI
     /// End-of-level enchantment station. On some levels the "Special" column of the equipment
     /// panel shows this instead of <see cref="ShopScreen"/>: one random enchantment (with its
     /// description) and up to a few of the player's own equipment pieces — equipped or in the
-    /// bag — as options. Picking one applies the enchantment to that piece for the rest of the
-    /// run (several enchantments may stack on the same piece).
+    /// bag — as options. Only pieces the enchantment's targets allow are offered (see
+    /// <see cref="EquipmentEnchantmentSO.RestrictionFor"/>): e.g. a chest-only enchantment never
+    /// shows a pair of boots. If no enchantment in the pool fits any owned piece, none is offered.
+    /// Picking one applies the enchantment to that piece for the rest of the run (several
+    /// enchantments may stack on the same piece).
     ///
     /// Offers are seeded per run+level so they are stable for that window and only change for a
     /// new run/level, and each machine rolls its own — the host never sees another player's
@@ -182,16 +185,30 @@ namespace UI
 
             var library = GameDataLibrary.Instance;
             var pool = library != null ? library.GetAllEnchantments() : null;
-            if (pool != null && pool.Count > 0)
-                enchantment = pool[rng.Next(pool.Count)];
+            var candidates = CollectEquipment(currentInventory);
 
-            // Only offer equipment when there is something to apply to it.
-            if (enchantment != null)
+            // Offer an enchantment that has at least one piece it is allowed on. Enchantments are
+            // tried in a random order, so one whose targets rule out every piece is passed over.
+            if (pool != null)
             {
-                var candidates = CollectEquipment(currentInventory);
-                Shuffle(candidates, rng);
-                for (int i = 0; i < candidates.Count && options.Count < optionCount; i++)
-                    options.Add(candidates[i]);
+                var order = new List<EquipmentEnchantmentSO>();
+                foreach (EquipmentEnchantmentSO candidate in pool)
+                {
+                    if (candidate != null) order.Add(candidate);
+                }
+                Shuffle(order, rng);
+
+                foreach (EquipmentEnchantmentSO candidate in order)
+                {
+                    List<EquipmentData> eligible = EligibleFor(candidate, candidates, currentInventory);
+                    if (eligible.Count == 0) continue;
+
+                    enchantment = candidate;
+                    Shuffle(eligible, rng);
+                    for (int i = 0; i < eligible.Count && options.Count < optionCount; i++)
+                        options.Add(eligible[i]);
+                    break;
+                }
             }
 
             return true;
@@ -351,11 +368,23 @@ namespace UI
             if (enchantment == null || appliedEquipment != null) { UpdateTileStates(); return; }
             // Each piece can only be enchanted once, even across levels.
             if (currentInventory.GetEnchantments(tile.Equipment).Count > 0) { UpdateTileStates(); return; }
+            // Belt-and-braces: the offer already filtered to allowed pieces, but refuse a pick the
+            // targets rule out (e.g. the loadout changed after the offer was rolled).
+            if (!enchantment.CanApplyTo(tile.Equipment, currentInventory.Loadout.ContainsItem(tile.Equipment)))
+            {
+                UpdateTileStates();
+                return;
+            }
 
             // Mark applied before AddEnchantment, which raises OnInventoryChanged → Refresh →
             // UpdateTileStates, so the tile flips to "Enchanted" without the offer rebuilding.
             appliedEquipment = tile.Equipment;
-            currentInventory.AddEnchantment(tile.Equipment, enchantment);
+            if (!currentInventory.AddEnchantment(tile.Equipment, enchantment))
+            {
+                appliedEquipment = null;
+                UpdateTileStates();
+                return;
+            }
             PersistInventory(currentInventory);
             UpdateTileStates();
         }
@@ -366,7 +395,19 @@ namespace UI
             if (titleLabel != null)
                 titleLabel.text = enchantment != null ? enchantTitle : defaultTitle;
             if (descriptionLabel != null)
-                descriptionLabel.text = enchantment != null ? enchantment.DisplayLine : defaultDescription;
+            {
+                if (enchantment == null)
+                {
+                    descriptionLabel.text = defaultDescription;
+                }
+                else
+                {
+                    string targets = enchantment.TargetSummary();
+                    descriptionLabel.text = string.IsNullOrEmpty(targets)
+                        ? enchantment.DisplayLine
+                        : $"{enchantment.DisplayLine}\n{targets}";
+                }
+            }
 
             foreach (TileEntry tile in tiles)
             {
@@ -414,6 +455,21 @@ namespace UI
             return result;
         }
 
+        /// <summary>The candidates an enchantment's targets allow, keeping the list order.</summary>
+        private static List<EquipmentData> EligibleFor(EquipmentEnchantmentSO enchantment,
+            List<EquipmentData> candidates, PlayerInventory inventory)
+        {
+            var result = new List<EquipmentData>();
+            if (enchantment == null || candidates == null) return result;
+
+            foreach (EquipmentData item in candidates)
+            {
+                bool equipped = inventory != null && inventory.Loadout != null && inventory.Loadout.ContainsItem(item);
+                if (enchantment.CanApplyTo(item, equipped)) result.Add(item);
+            }
+            return result;
+        }
+
         private static void AddEnchantable(PlayerInventory inventory, List<EquipmentData> list, EquipmentData item)
         {
             if (item == null) return;
@@ -431,7 +487,7 @@ namespace UI
             list.Add(item);
         }
 
-        private static void Shuffle(List<EquipmentData> list, System.Random rng)
+        private static void Shuffle<T>(List<T> list, System.Random rng)
         {
             for (int i = list.Count - 1; i > 0; i--)
             {

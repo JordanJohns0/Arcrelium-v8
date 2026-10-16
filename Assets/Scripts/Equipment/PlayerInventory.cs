@@ -32,12 +32,18 @@ namespace Equipment
             return loadout.GetEnchantments(data);
         }
 
-        /// <summary>Applies an enchantment to a piece of equipment (equipped or in the bag).</summary>
-        public void AddEnchantment(EquipmentData data, EquipmentEnchantmentSO enchantment)
+        /// <summary>
+        /// Applies an enchantment to a piece of equipment (equipped or in the bag). Returns false
+        /// (changing nothing) when the enchantment's targets rule the piece out.
+        /// </summary>
+        public bool AddEnchantment(EquipmentData data, EquipmentEnchantmentSO enchantment)
         {
-            if (data == null || enchantment == null) return;
+            if (data == null || enchantment == null) return false;
+            if (!enchantment.CanApplyTo(data, loadout.ContainsItem(data))) return false;
+
             loadout.AddEnchantment(data, enchantment);
             OnInventoryChanged?.Invoke();
+            return true;
         }
 
         public void Unlock(EquipmentData data)
