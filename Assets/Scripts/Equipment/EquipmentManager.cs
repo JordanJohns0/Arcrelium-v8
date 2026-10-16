@@ -661,6 +661,12 @@ namespace Equipment
         }
 
         /// <summary>
+        /// Fires StartOfCombat triggers once, when the level begins (during character setup,
+        /// before the first turn). Each level rebuilds characters, so this is once per combat.
+        /// </summary>
+        public void BeginCombat() => FireTriggers(TriggerTiming.StartOfCombat);
+
+        /// <summary>
         /// Fires every trigger (from equipment AND enchantments) for the timing, honouring
         /// OnlyOnWearersTurn, per-trigger conditions, and once-per-turn/once-per-match budgets.
         /// </summary>

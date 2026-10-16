@@ -14,6 +14,7 @@ namespace Equipment
         OnGainBlock,
         OnEnemyTurnEnded,
         OnLeftCell,
-        OnShuffle
+        OnShuffle,
+        StartOfCombat
     }
 }

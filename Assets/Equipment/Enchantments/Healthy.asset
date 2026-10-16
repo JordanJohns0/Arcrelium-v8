@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Healthy
   m_EditorClassIdentifier: Arcrelium.Game::Equipment.BonusHealthEnchantmentSO
   EnchantmentName: Healthy
-  Description: +2 Max Health
+  Description: +1 Max Health
   AllowedSlots: -1
   MinCards: 0
   MaxCards: -1
@@ -22,4 +22,4 @@ MonoBehaviour:
   Placement: 0
   OnlyItems: []
   NeverItems: []
-  BonusMaxHealth: 2
+  BonusMaxHealth: 1

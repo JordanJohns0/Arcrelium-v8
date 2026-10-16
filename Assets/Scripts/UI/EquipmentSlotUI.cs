@@ -33,6 +33,9 @@ namespace UI
 
         public event Action<EquipmentSlotUI> OnSlotChanged;
 
+        /// <summary>Test seam: resolves the local player's inventory (for enchantments on the tooltip).</summary>
+        internal static Func<Equipment.PlayerInventory> LocalInventory = Equipment.PlayerInventoryProvider.GetLocal;
+
         public void Setup(Equipment.EquipmentSlotType type, int index, EquipmentUI parent)
         {
             slotType = type;
@@ -80,7 +83,9 @@ namespace UI
             if (currentEquipment == null) return;
             if (eventData.button == PointerEventData.InputButton.Right)
             {
-                Tooltip.Show(currentEquipment, eventData.position);
+                Equipment.PlayerInventory inventory = LocalInventory != null ? LocalInventory() : null;
+                var enchantments = inventory != null ? inventory.GetEnchantments(currentEquipment) : null;
+                Tooltip.Show(currentEquipment, eventData.position, enchantments);
                 return;
             }
             parentUI.TryUnequip(this);

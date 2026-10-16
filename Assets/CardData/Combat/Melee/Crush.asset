@@ -15,7 +15,7 @@ MonoBehaviour:
   CardName: Crush
   Description: Deal 3 damage
   Artwork: {fileID: 0}
-  Cost: 1
+  Cost: 3
   Steps:
   - Effect: {fileID: 11400000, guid: 606fcb0e0449e634ab7eb5f345576883, type: 2}
     TargetType: 3

@@ -360,6 +360,55 @@ namespace Tests.Equipment
                 Cards = new[] { "Snake Oil" },
                 Triggers = Array.Empty<(TriggerTiming, Type)>()
             },
+            new Spec
+            {
+                Name = "Golem Skin",
+                Slot = EquipmentSlotType.Chest,
+                Cards = new[] { "Fortify", "Fortify" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Golem Head",
+                Slot = EquipmentSlotType.Head,
+                Cards = new[] { "Wall of Flames" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Golem Fist",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Crush" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Golem Feet",
+                Slot = EquipmentSlotType.Feet,
+                Cards = new[] { "Heavy Footsteps" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Fire Elemental Hand",
+                Slot = EquipmentSlotType.Hand,
+                Cards = new[] { "Throw Flames", "Throw Flames" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Fire Elemental Feet",
+                Slot = EquipmentSlotType.Feet,
+                Cards = new[] { "Walk", "Walk" },
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
+            new Spec
+            {
+                Name = "Flame Elemental Essence",
+                Slot = EquipmentSlotType.Trinket,
+                Cards = Array.Empty<string>(),
+                Triggers = Array.Empty<(TriggerTiming, Type)>()
+            },
         };
 
         // Timings EquipmentManager actually fires during gameplay (see EquipmentManager.Initialize
@@ -376,7 +425,8 @@ namespace Tests.Equipment
             TriggerTiming.OnGainBlock,
             TriggerTiming.OnEnemyTurnEnded,
             TriggerTiming.OnLeftCell,
-            TriggerTiming.OnShuffle
+            TriggerTiming.OnShuffle,
+            TriggerTiming.StartOfCombat
         };
 
         private static IEnumerable<EquipmentData> AllEquipmentAssets()
@@ -559,8 +609,8 @@ namespace Tests.Equipment
 
         /// <summary>
         /// No equipment may exist purely as an empty shell: every item must grant the owner
-        /// cards and/or a trigger effect, otherwise equipping it does nothing.
-        /// NOTE: currently fails for Staff of Fire (no cards, no triggers).
+        /// cards, a trigger effect, or at least one built-in enchantment, otherwise equipping
+        /// it does nothing.
         /// </summary>
         [Test]
         public void NoEquipment_IsAnEmptyShell()
@@ -570,7 +620,8 @@ namespace Tests.Equipment
             {
                 bool hasCards = equipment.Cards != null && equipment.Cards.Count > 0;
                 bool hasTriggers = equipment.Triggers != null && equipment.Triggers.Count > 0;
-                if (!hasCards && !hasTriggers)
+                bool hasEnchantments = equipment.Enchantments != null && equipment.Enchantments.Count > 0;
+                if (!hasCards && !hasTriggers && !hasEnchantments)
                 {
                     empties.Add($"'{equipment.EquipmentName}'");
                 }

@@ -9,17 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a4962943e188717449647cf5e02356b2, type: 3}
-  m_Name: Tough
-  m_EditorClassIdentifier: Arcrelium.Game::Equipment.GrantCardEnchantmentSO
-  EnchantmentName: Tough
-  Description: 1x Brace
-  AllowedSlots: 7
-  MinCards: 0
+  m_Script: {fileID: 11500000, guid: 6f7e8a08b4d44445a7b310a28d32fca3, type: 3}
+  m_Name: Tripled
+  m_EditorClassIdentifier: Arcrelium.Game::Equipment.DoubleGrantedCardsEnchantmentSO
+  EnchantmentName: Tripled
+  Description: Triple each card granted by this equipment.
+  AllowedSlots: -1
+  MinCards: 1
   MaxCards: -1
   Triggers: 0
   BuiltInEnchantments: 0
   Placement: 0
   OnlyItems: []
   NeverItems: []
-  GrantedCard: {fileID: 11400000, guid: a20710a5778400249a96ec84b9416f8f, type: 2}
+  ExtraCopies: 2

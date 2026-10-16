@@ -274,6 +274,34 @@ namespace Tests.Equipment
         }
 
         [Test]
+        public void BeginCombat_FiresStartOfCombatEnchantmentTrigger()
+        {
+            var item = MakeEquip(EquipmentSlotType.Trinket, "Battle Charm");
+            var enchantment = MakeTriggeredEnchantment(TriggerTiming.StartOfCombat, out CountingEffect effect);
+            item.Enchantments.Add(enchantment);
+            manager.Equip(item);
+
+            manager.BeginCombat();
+
+            Assert.AreEqual(1, effect.Count, "BeginCombat must fire StartOfCombat triggers.");
+        }
+
+        [Test]
+        public void CharacterInitialize_FiresStartOfCombatOncePerLevel()
+        {
+            var item = MakeEquip(EquipmentSlotType.Trinket, "Battle Charm");
+            var enchantment = MakeTriggeredEnchantment(TriggerTiming.StartOfCombat, out CountingEffect effect);
+            item.Enchantments.Add(enchantment);
+            manager.Equip(item);
+
+            // One combat = one Character.Initialize, so the trigger must fire exactly once.
+            character.Initialize(character.OwnerPlayerId, character.CurrentCell, 0);
+
+            Assert.AreEqual(1, effect.Count,
+                "Start-of-combat triggers must fire once per character initialization (once per level).");
+        }
+
+        [Test]
         public void DoubleGrantedCards_DoublesOwnAndEnchantmentGrantedCards()
         {
             var own = ScriptableObject.CreateInstance<Cards.CardData>();

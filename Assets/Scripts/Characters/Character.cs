@@ -162,6 +162,12 @@ namespace Characters
                 Debug.LogWarning($"[Character] owner={ownerPlayerId} deck is NULL - no cards built");
             }
 
+            // Start-of-combat triggers fire once per level, while the character is set up for the
+            // encounter — before any turn begins. Each level reloads the scene and rebuilds
+            // characters, so this runs exactly once per combat on host, client and single-player.
+            if (equipmentManager != null)
+                equipmentManager.BeginCombat();
+
             OnCharacterCreated?.Invoke(this);
         }
 
