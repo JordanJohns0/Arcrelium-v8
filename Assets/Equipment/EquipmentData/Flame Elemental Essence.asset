@@ -18,4 +18,5 @@ MonoBehaviour:
   SlotType: 4
   Cards: []
   Triggers: []
-  Enchantments: []
+  Enchantments:
+  - {fileID: 11400000, guid: d47752578d8c42443808e3dfe417c236, type: 2}

@@ -245,14 +245,14 @@ namespace TileEffects
         }
 
         /// <summary>Deals AoE damage to the occupant of the center tile and everyone within radius.</summary>
-        public void DamageRadius(HexCell center, int amount, int radius)
+        public void DamageRadius(HexCell center, int amount, int radius, DamageType type = DamageType.Explosion)
         {
             if (grid == null || center == null) return;
 
             foreach (HexCell cell in grid.GetCellsInRange(center.Coordinates, radius))
             {
                 if (cell.Occupant == null || !cell.Occupant.Stats.IsAlive) continue;
-                cell.Occupant.TakeDamage(amount);
+                cell.Occupant.TakeDamage(amount, type: type);
             }
         }
 
@@ -271,7 +271,7 @@ namespace TileEffects
                 }
             }
 
-            DamageRadius(cell, amount, radius);
+            DamageRadius(cell, amount, radius, DamageType.Explosion);
             Debug.Log($"[TileEffects] Fire ignited oil on {cell.Coordinates} — explosion for {amount} damage!");
         }
 

@@ -514,8 +514,16 @@ namespace Characters
             OnCardDiscarded?.Invoke(this, card);
         }
 
-        public void TakeDamage(int amount, Character dealer = null)
+        public void TakeDamage(int amount, Character dealer = null, DamageType type = DamageType.None)
         {
+            // Immunity: enchantments on worn equipment can negate a damage source entirely.
+            // Nothing is applied, so block is not spent and no damage events fire.
+            if (type != DamageType.None && equipmentManager != null && equipmentManager.IsImmuneTo(type))
+            {
+                Debug.Log($"[Character] {name} is immune to {type} damage ({amount} negated).");
+                return;
+            }
+
             stats.ApplyDamage(amount);
             if (dealer != null) dealer.OnDamageDealt?.Invoke(amount, this);
             OnDamageTaken?.Invoke(amount);

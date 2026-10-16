@@ -2552,11 +2552,13 @@ MonoBehaviour:
   enemyGroups:
   - {fileID: 11400000, guid: d388ce3ecb1a3b64589b078d0ea7258f, type: 2}
   - {fileID: 11400000, guid: 8b9173dd566b22c40828a09284c58299, type: 2}
+  - {fileID: 11400000, guid: 414faa1465e5be74da2f0d83cab6d352, type: 2}
   enemyBaseDifficulty: 40
   enemyDifficultyPerLevel: 20
   allySpawnQ: 0
   allySpawnR: 0
   spawns: []
+  stageRewards: []
 --- !u!4 &531838726
 Transform:
   m_ObjectHideFlags: 0

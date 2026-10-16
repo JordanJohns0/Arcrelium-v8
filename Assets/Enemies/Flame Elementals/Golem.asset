@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f6a1b2c3d4e5f60718293a4b5c6d7e8, type: 3}
   m_Name: Golem
   m_EditorClassIdentifier: Arcrelium.Game::Enemies.EnemyType
-  EnemyName: Orc
-  characterPrefab: {fileID: 3890759042152615654, guid: 735c479c759ce754e8f03d722122b14a, type: 3}
-  PointCost: 25
-  MinCount: 1
+  EnemyName: Golem
+  characterPrefab: {fileID: 3890759042152615654, guid: 6e8d4267ca3b6534bb672bcdcd058bf9, type: 3}
+  PointCost: 40
+  MinCount: 0

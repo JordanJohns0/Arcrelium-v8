@@ -14,4 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Arcrelium.Game::Enemies.EnemyGroup
   GroupName: Fire Elementals
   MemberTypes:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: ba20345c8bee44342a6e843367c7e294, type: 2}
+  - {fileID: 11400000, guid: a6d6affd03e9ed4408e75b47864dea8e, type: 2}

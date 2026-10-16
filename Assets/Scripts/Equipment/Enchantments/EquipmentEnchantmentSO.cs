@@ -158,6 +158,12 @@ namespace Equipment
         public virtual int GetCardCostDelta(EquipmentInstance equipment, CardData card) => 0;
 
         /// <summary>
+        /// True when this enchantment makes the wearer take no damage at all from the given
+        /// source. Consulted by Character.TakeDamage before block or health are touched.
+        /// </summary>
+        public virtual bool IsImmuneTo(DamageType type) => false;
+
+        /// <summary>
         /// Extra damage added to damage dealt by <paramref name="playedCard"/> while the
         /// enchanted equipment is worn. Consulted by ActionResolver before card steps execute.
         /// </summary>

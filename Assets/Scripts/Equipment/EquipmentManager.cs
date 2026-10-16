@@ -491,6 +491,42 @@ namespace Equipment
             }
         }
 
+        /// <summary>
+        /// True when any enchantment on worn equipment makes the wearer immune to the given
+        /// damage source (e.g. fire or fire-oil explosions). Consulted by Character.TakeDamage.
+        /// </summary>
+        public bool IsImmuneTo(DamageType type)
+        {
+            if (type == DamageType.None) return false;
+
+            return SlotImmuneTo(headSlot, type)
+                || SlotImmuneTo(chestSlot, type)
+                || SlotImmuneTo(feetSlot, type)
+                || SlotImmuneTo(leftHandSlot, type)
+                || SlotImmuneTo(rightHandSlot, type)
+                || AnyTrinketImmuneTo(type);
+        }
+
+        private bool AnyTrinketImmuneTo(DamageType type)
+        {
+            foreach (var slot in trinketSlots)
+            {
+                if (SlotImmuneTo(slot, type)) return true;
+            }
+            return false;
+        }
+
+        private static bool SlotImmuneTo(EquipmentInstance slot, DamageType type)
+        {
+            if (slot == null) return false;
+
+            foreach (var enchantment in slot.AllEnchantments)
+            {
+                if (enchantment != null && enchantment.IsImmuneTo(type)) return true;
+            }
+            return false;
+        }
+
         private void HandleTurnStarted(Character turnCharacter)
         {
             if (turnCharacter != character) return;
